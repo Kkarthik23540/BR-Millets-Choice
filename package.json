@@ -1,0 +1,32 @@
+{
+  "name": "br-millet-choice",
+  "version": "1.0.0",
+  "private": true,
+  "description": "BR Millet Choice storefront and order-management application",
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "start": "node server/index.js",
+    "dev": "node --watch server/index.js",
+    "db:migrate": "node server/migrate.js",
+    "admin:create": "node server/create-admin.js",
+    "admin:promote": "node server/promote-admin.js",
+    "test": "node --test",
+    "check": "node --check server/index.js && node --check server/app.js && node --check server/promote-admin.js && node --check public/app.js"
+  },
+  "dependencies": {
+    "bcryptjs": "2.4.3",
+    "connect-pg-simple": "10.0.0",
+    "dotenv": "16.4.7",
+    "express": "4.22.3",
+    "express-rate-limit": "7.5.0",
+    "express-session": "1.19.0",
+    "helmet": "8.0.0",
+    "multer": "^2.5.0",
+    "nodemailer": "10.2.1",
+    "pg": "8.13.1",
+    "zod": "4.6.7"
+  }
+}
