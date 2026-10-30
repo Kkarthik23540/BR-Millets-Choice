@@ -54,6 +54,12 @@ if (smtpPartiallyConfigured) {
   throw new Error('SMTP configuration is incomplete. Set SMTP_HOST and SMTP_FROM (and SMTP_PASSWORD when using SMTP_USER), or leave all SMTP settings blank.');
 }
 
+const defaultGoogleCallbackUrl = `${baseUrl}/api/auth/google/callback`;
+let resolvedGoogleCallbackUrl = process.env.GOOGLE_CALLBACK_URL || defaultGoogleCallbackUrl;
+if ((isProduction || Boolean(process.env.VERCEL)) && resolvedGoogleCallbackUrl.includes('localhost')) {
+  resolvedGoogleCallbackUrl = defaultGoogleCallbackUrl;
+}
+
 export const config = Object.freeze({
   port: Number(process.env.PORT ?? 3000),
   nodeEnv: process.env.NODE_ENV ?? 'development',
@@ -76,7 +82,7 @@ export const config = Object.freeze({
   smtpFrom: process.env.SMTP_FROM ?? '',
   googleClientId: process.env.GOOGLE_CLIENT_ID ?? '',
   googleClientSecret: process.env.GOOGLE_CLIENT_SECRET ?? '',
-  googleCallbackUrl: process.env.GOOGLE_CALLBACK_URL ?? '',
+  googleCallbackUrl: resolvedGoogleCallbackUrl,
   ga4MeasurementId: process.env.GA4_MEASUREMENT_ID ?? '',
   paymentProvider: process.env.PAYMENT_PROVIDER ?? 'disabled',
   paymentMethods: [

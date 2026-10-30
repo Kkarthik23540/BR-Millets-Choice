@@ -559,56 +559,43 @@ app.get('/api/auth/google/callback', asyncRoute(async (req, res) => {
       return { user: existing.rows[0], verificationRequired: !existing.rows[0].email_verified_at };
     }
     const email = parse(emailSchema, identity.email);
+    const isOwnerEmail = email.toLowerCase() === 'kkarthik23540@gmail.com'
+      || (Boolean(config.adminAlertEmail) && email.toLowerCase() === config.adminAlertEmail.toLowerCase());
     let account = await client.query(
       'SELECT id, email, full_name, role, email_verified_at FROM users WHERE email = $1',
       [email],
     );
-    if ((!account.rowCount || !account.rows[0].email_verified_at) && !emailConfigured) {
-      throw new HttpError(503, 'Email verification is unavailable until SMTP is configured.', 'EMAIL_UNAVAILABLE');
-    }
     if (!account.rowCount) {
       account = await client.query(
-        `INSERT INTO users (email, full_name, role)
-         VALUES ($1, $2, 'customer')
+        `INSERT INTO users (email, full_name, role, email_verified_at)
+         VALUES ($1, $2, $3, NOW())
          RETURNING id, email, full_name, role, email_verified_at`,
-        [email, String(identity.name).slice(0, 100)],
+        [email, String(identity.name).slice(0, 100), isOwnerEmail ? 'admin' : 'customer'],
       );
+    } else {
+      if (!account.rows[0].email_verified_at) {
+        await client.query('UPDATE users SET email_verified_at = NOW() WHERE id = $1', [account.rows[0].id]);
+        account.rows[0].email_verified_at = new Date();
+      }
+      if (isOwnerEmail && account.rows[0].role !== 'admin') {
+        await client.query("UPDATE users SET role = 'admin' WHERE id = $1", [account.rows[0].id]);
+        account.rows[0].role = 'admin';
+      }
     }
     await client.query(
       `INSERT INTO oauth_identities (user_id, provider, provider_subject)
-       VALUES ($1, 'google', $2)`,
+       VALUES ($1, 'google', $2)
+       ON CONFLICT (provider, provider_subject) DO NOTHING`,
       [account.rows[0].id, identity.sub],
     );
     const user = account.rows[0];
-    if (!user.email_verified_at) {
-      const verificationToken = randomToken();
-      await client.query(
-        `UPDATE email_tokens SET consumed_at = NOW()
-         WHERE user_id = $1 AND purpose = 'verify' AND consumed_at IS NULL`,
-        [user.id],
-      );
-      await client.query(
-        `INSERT INTO email_tokens (user_id, purpose, token_hash, expires_at)
-         VALUES ($1, 'verify', $2, NOW() + INTERVAL '24 hours')`,
-        [user.id, hashToken(verificationToken)],
-      );
-      await enqueueTemplate(client, user.id, user.email, 'verify', {
-        name: user.full_name,
-        link: `${config.baseUrl}/verify?token=${encodeURIComponent(verificationToken)}`,
-      });
-      return { user, verificationRequired: true };
-    }
     return { user, verificationRequired: false };
   });
-  if (result.verificationRequired) {
-    res.redirect('/login?verification=pending');
-    return;
-  }
   const { user } = result;
   await new Promise((resolve, reject) => req.session.regenerate((error) => (error ? reject(error) : resolve())));
   req.session.userId = user.id;
   req.session.csrfToken = randomToken();
-  res.redirect('/account');
+  res.redirect(user.role === 'admin' ? '/admin' : '/account');
 }));
 
 app.get('/api/profile', requireUser, (req, res) => {
