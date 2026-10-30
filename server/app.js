@@ -84,8 +84,8 @@ app.use((req, res, next) => {
   });
   next();
 });
-app.use(express.json({ limit: '32kb' }));
-app.use(express.urlencoded({ extended: false, limit: '16kb' }));
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: false, limit: '10mb' }));
 const sessionStore = new PgSession({
   pool,
   tableName: 'user_sessions',
@@ -1557,6 +1557,7 @@ const variantInput = z.object({
 const productImageUrl = z.union([
   z.string().url().refine((value) => value.startsWith('https://'), 'Product image URLs must use HTTPS.'),
   z.string().regex(/^\/uploads\/products\/[0-9a-f-]{36}\.(?:jpg|png|webp)$/),
+  z.string().refine((val) => val.startsWith('data:image/'), 'Invalid image data format.'),
 ]);
 
 app.post('/api/admin/products', requireAdmin, asyncRoute(async (req, res) => {
@@ -1743,20 +1744,36 @@ app.post('/api/admin/product-images', requireAdmin, productImageUpload.single('i
   const image = req.file;
   if (!image) throw new HttpError(400, 'Choose an image to upload.', 'IMAGE_REQUIRED');
   let extension;
+  let mime;
   if (image.buffer.subarray(0, 8).equals(Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]))) {
     extension = '.png';
+    mime = 'image/png';
   } else if (image.buffer[0] === 0xff && image.buffer[1] === 0xd8 && image.buffer[2] === 0xff) {
     extension = '.jpg';
+    mime = 'image/jpeg';
   } else if (image.buffer.toString('ascii', 0, 4) === 'RIFF'
       && image.buffer.toString('ascii', 8, 12) === 'WEBP') {
     extension = '.webp';
+    mime = 'image/webp';
   } else {
     throw new HttpError(415, 'The selected file is not a valid JPEG, PNG, or WebP image.', 'IMAGE_CONTENT_INVALID');
   }
-  await mkdir(productUploadDir, { recursive: true });
-  const filename = `${crypto.randomUUID()}${extension}`;
-  await writeFile(path.join(productUploadDir, filename), image.buffer, { flag: 'wx' });
-  res.status(201).json({ image: { url: `/uploads/products/${filename}` } });
+
+  const dataUrl = `data:${mime};base64,${image.buffer.toString('base64')}`;
+
+  // On non-serverless local dev, write to disk if possible
+  if (!process.env.VERCEL) {
+    try {
+      await mkdir(productUploadDir, { recursive: true });
+      const filename = `${crypto.randomUUID()}${extension}`;
+      await writeFile(path.join(productUploadDir, filename), image.buffer, { flag: 'wx' });
+      return res.status(201).json({ image: { url: `/uploads/products/${filename}` } });
+    } catch {
+      // Fallback to data URL on read-only environments
+    }
+  }
+
+  res.status(201).json({ image: { url: dataUrl } });
 }));
 
 app.post('/api/admin/products/:id/variants', requireAdmin, asyncRoute(async (req, res) => {

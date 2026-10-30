@@ -427,3 +427,142 @@ a:hover { color: var(--earth); }
   html { scroll-behavior: auto; }
   *, *:before, *:after { transition-duration: .01ms !important; animation-duration: .01ms !important; }
 }
+
+
+/* ==========================================================================
+   BR Millet Choice - Fast UX, Navigation & Unique Brand Loader
+   ========================================================================== */
+#top-nav-loader {
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 3.5px;
+  width: 0%;
+  background: linear-gradient(90deg, #b58117, #21543d, #eab308);
+  z-index: 99999;
+  transition: width 0.25s ease, opacity 0.35s ease;
+  opacity: 0;
+  pointer-events: none;
+  box-shadow: 0 0 10px rgba(181, 129, 23, 0.6);
+}
+#top-nav-loader.is-loading {
+  opacity: 1;
+  animation: brmc-topbar 1.4s infinite linear;
+}
+@keyframes brmc-topbar {
+  0% { width: 15%; margin-left: 0%; }
+  50% { width: 65%; margin-left: 20%; }
+  100% { width: 35%; margin-left: 100%; }
+}
+
+.brmc-brand-loader {
+  min-height: 52vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem 1.5rem;
+  text-align: center;
+}
+.brmc-spinner-wrap {
+  position: relative;
+  width: 80px;
+  height: 80px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 1.25rem;
+}
+.brmc-spinner-ring {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 3.5px solid rgba(46, 125, 50, 0.15);
+  border-top-color: #2e7d32;
+  border-right-color: #b58117;
+  animation: brmc-spin 0.85s linear infinite;
+}
+.brmc-spinner-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  object-fit: contain;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  animation: brmc-pulse 1.8s ease-in-out infinite;
+}
+.brmc-spinner-brand {
+  font-family: var(--font-heading, inherit);
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: var(--forest, #1b4d3e);
+  letter-spacing: -0.01em;
+  margin-bottom: 0.25rem;
+}
+.brmc-spinner-sub {
+  font-size: 0.9rem;
+  color: var(--muted, #64748b);
+  margin-bottom: 1.25rem;
+}
+.brmc-spinner-line {
+  width: 140px;
+  height: 4px;
+  background: #e2e8f0;
+  border-radius: 999px;
+  overflow: hidden;
+  position: relative;
+}
+.brmc-spinner-bar {
+  position: absolute;
+  left: -50%;
+  width: 50%;
+  height: 100%;
+  background: linear-gradient(90deg, #2e7d32, #b58117);
+  border-radius: 999px;
+  animation: brmc-slide 1.4s ease-in-out infinite;
+}
+@keyframes brmc-spin {
+  to { transform: rotate(360deg); }
+}
+@keyframes brmc-pulse {
+  0%, 100% { transform: scale(0.96); opacity: 0.9; }
+  50% { transform: scale(1.05); opacity: 1; }
+}
+@keyframes brmc-slide {
+  0% { left: -50%; width: 40%; }
+  50% { left: 30%; width: 60%; }
+  100% { left: 105%; width: 40%; }
+}
+
+/* Button & Interaction enhancements */
+.btn {
+  position: relative;
+  transition: transform 0.12s ease, box-shadow 0.15s ease, background-color 0.15s ease, border-color 0.15s ease;
+}
+.btn:active:not(:disabled) {
+  transform: scale(0.98);
+}
+.btn.is-busy {
+  pointer-events: none;
+  opacity: 0.85;
+  color: transparent !important;
+}
+.btn.is-busy::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 1.15rem;
+  height: 1.15rem;
+  margin-left: -0.575rem;
+  margin-top: -0.575rem;
+  border: 2.5px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  animation: brmc-spin 0.65s linear infinite;
+  color: #fff;
+}
+.btn-outline.is-busy::after,
+.btn-ghost.is-busy::after,
+.btn-secondary.is-busy::after {
+  color: var(--forest, #21543d);
+}

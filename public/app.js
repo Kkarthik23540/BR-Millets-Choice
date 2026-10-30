@@ -68,6 +68,22 @@ function emptyState(title, message, href = '/contact', action = 'Contact us') {
   return `<div class="empty-state"><h2>${escapeHtml(title)}</h2><p class="text-secondary mb-3">${escapeHtml(message)}</p>${buttonLink(href, action, 'btn-outline-brand')}</div>`;
 }
 
+function startTopLoader() {
+  const loader = document.getElementById('top-nav-loader');
+  if (loader) {
+    loader.classList.remove('is-loading');
+    void loader.offsetWidth;
+    loader.classList.add('is-loading');
+  }
+}
+
+function stopTopLoader() {
+  const loader = document.getElementById('top-nav-loader');
+  if (loader) {
+    loader.classList.remove('is-loading');
+  }
+}
+
 function productSlug(name) {
   return name.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
 }
@@ -585,8 +601,7 @@ function updateAdminShell(user) {
       <a href="/admin/reviews" aria-label="Customer reviews" title="Customer reviews"><svg aria-hidden="true" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg><span>Reviews</span></a>
       <a href="/admin/enquiries" aria-label="Enquiries" title="Enquiries"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M4 5h16v12H9l-5 4z"></path><path d="M8 9h8M8 13h5"></path></svg><span>Enquiries</span></a>
       <a href="/admin/customers" aria-label="Customers" title="Customers"><svg aria-hidden="true" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3"></circle><circle cx="17" cy="9" r="2.3"></circle><path d="M3 20c.5-3.4 2.5-5 6-5s5.5 1.6 6 5M15 15c3.4-.2 5.2 1.3 6 4"></path></svg><span>Customers</span></a>
-      <a href="/profile" aria-label="Admin profile" title="Admin profile"><svg aria-hidden="true" viewBox="0 0 24 24"><circle cx="12" cy="8" r="3"></circle><path d="M5 20c.7-3.5 3.2-5 7-5s6.3 1.5 7 5"></path></svg><span>Admin profile</span></a>
-      <a class="site-nav-cart" href="/shop" aria-label="View Storefront" title="View Storefront" style="border-top:1px dashed var(--line);margin-top:1rem"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M4 7h16l-1 13H5L4 7Z"></path><path d="M9 8V5a3 3 0 0 1 6 0v3"></path></svg><span>View Storefront</span></a>`;
+      <a href="/profile" aria-label="Admin profile" title="Admin profile"><svg aria-hidden="true" viewBox="0 0 24 24"><circle cx="12" cy="8" r="3"></circle><path d="M5 20c.7-3.5 3.2-5 7-5s6.3 1.5 7 5"></path></svg><span>Admin profile</span></a>`;
   } else {
     navigation.innerHTML = `
       <a href="/" aria-label="Home" title="Home"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1z"></path></svg><span>Home</span></a>
@@ -1434,7 +1449,43 @@ function showAnalyticsPrompt() {
   document.querySelector('#analytics-consent').classList.remove('d-none');
 }
 
+window.addEventListener('popstate', () => {
+  startTopLoader();
+  void renderPage().finally(stopTopLoader);
+});
+
 document.addEventListener('click', async (event) => {
+  const anchor = event.target.closest('a');
+  if (anchor && anchor.href && !anchor.target && !anchor.hasAttribute('download') && event.button === 0 && !event.ctrlKey && !event.metaKey && !event.shiftKey && !event.altKey) {
+    try {
+      const url = new URL(anchor.href, location.origin);
+      if (url.origin === location.origin && !url.pathname.startsWith('/api/') && !url.pathname.startsWith('/uploads/') && !anchor.dataset.noSpa) {
+        if (url.pathname === location.pathname && url.search === location.search) {
+          if (url.hash) {
+            setMobileNavigationOpen(false);
+            return;
+          }
+          event.preventDefault();
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+          return;
+        }
+        event.preventDefault();
+        setMobileNavigationOpen(false);
+        window.history.pushState({}, '', url.pathname + url.search + url.hash);
+        startTopLoader();
+        try {
+          await renderPage();
+          window.scrollTo({ top: 0, behavior: 'instant' });
+        } finally {
+          stopTopLoader();
+        }
+        return;
+      }
+    } catch {
+      // Allow standard browser navigation if URL parsing fails
+    }
+  }
+
   const clickedNavLink = event.target.closest('.site-nav a');
   if (clickedNavLink) {
     setMobileNavigationOpen(false);
@@ -1655,7 +1706,14 @@ document.addEventListener('submit', async (event) => {
   try {
     if (validationError) throw new Error(validationError);
     if (form.dataset.form === 'shop-search') {
-      location.assign(`/shop?q=${encodeURIComponent(value('q'))}`);
+      window.history.pushState({}, '', `/shop?q=${encodeURIComponent(value('q'))}`);
+      startTopLoader();
+      try {
+        await renderPage();
+        window.scrollTo({ top: 0, behavior: 'instant' });
+      } finally {
+        stopTopLoader();
+      }
     } else if (form.dataset.form === 'register') {
       const result = await api('/api/auth/register', {
         method: 'POST',

@@ -34,6 +34,7 @@
     <script defer src="/app.js"></script>
   </head>
   <body>
+    <div id="top-nav-loader" aria-hidden="true"></div>
     <a class="skip-link" href="#main-content">Skip to content</a>
     <div class="announcement-bar">Order requests are confirmed only after availability is checked.</div>
     <header class="site-header">
@@ -89,7 +90,15 @@
       </aside>
       <div class="site-content">
         <main id="main-content" tabindex="-1">
-          <div class="container py-5"><p class="text-secondary">Loading BR Millet Choice…</p></div>
+          <div class="brmc-brand-loader" id="initial-page-loader">
+            <div class="brmc-spinner-wrap">
+              <div class="brmc-spinner-ring"></div>
+              <img src="/images/br-millet-choice-icon.png" alt="BR Millet Choice" class="brmc-spinner-icon">
+            </div>
+            <div class="brmc-spinner-brand">BR Millet Choice</div>
+            <div class="brmc-spinner-sub">Wholesome goodness, every day</div>
+            <div class="brmc-spinner-line"><div class="brmc-spinner-bar"></div></div>
+          </div>
         </main>
         <footer class="site-footer">
           <div class="container py-5">
