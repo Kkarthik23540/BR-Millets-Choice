@@ -97,11 +97,11 @@ export const config = Object.freeze({
   razorpayKeyId: process.env.RAZORPAY_KEY_ID ?? '',
   paymentProvider: process.env.PAYMENT_PROVIDER ?? 'disabled',
   paymentMethods: [
-    ...(process.env.ENABLE_CASH_ON_HANDOVER === 'true'
-      ? [{ value: 'cash_on_handover', label: 'Cash on delivery (confirmed by the team)' }]
+    ...(process.env.ENABLE_CASH_ON_HANDOVER !== 'false'
+      ? [{ value: 'cash_on_handover', label: 'Cash on delivery (Pay at doorstep)' }]
       : []),
-    ...(process.env.ENABLE_MANUAL_TRANSFER === 'true'
-      ? [{ value: 'manual_transfer', label: 'Manual transfer (instructions provided after confirmation)' }]
+    ...(process.env.ENABLE_MANUAL_TRANSFER !== 'false'
+      ? [{ value: 'manual_transfer', label: 'UPI / Manual transfer (instructions provided)' }]
       : []),
   ],
 });
