@@ -11,13 +11,18 @@ const smtpPartiallyConfigured = smtpValues.some(Boolean)
   && !(process.env.SMTP_HOST && process.env.SMTP_FROM)
   || Boolean(process.env.SMTP_USER && !process.env.SMTP_PASSWORD);
 
+const databaseUrl = process.env.DATABASE_URL
+  || process.env.POSTGRES_URL
+  || process.env.POSTGRES_PRISMA_URL
+  || process.env.POSTGRES_URL_NON_POOLING;
+
 if (isProduction && sessionSecret.length < 32) {
   throw new Error('SESSION_SECRET must contain at least 32 characters in production.');
 }
 if (isProduction && !baseUrl.startsWith('https://')) {
   throw new Error('BASE_URL must be the canonical HTTPS origin in production.');
 }
-if (!process.env.DATABASE_URL) {
+if (!databaseUrl) {
   throw new Error('DATABASE_URL is required. Copy .env.example to .env and configure PostgreSQL.');
 }
 if (smtpPartiallyConfigured) {
@@ -28,7 +33,7 @@ export const config = Object.freeze({
   port: Number(process.env.PORT ?? 3000),
   nodeEnv: process.env.NODE_ENV ?? 'development',
   isProduction,
-  databaseUrl: process.env.DATABASE_URL,
+  databaseUrl,
   sessionSecret: sessionSecret || 'local-development-secret-change-before-deploy',
   trustProxy: process.env.TRUST_PROXY === '1' || Boolean(process.env.VERCEL),
   baseUrl,

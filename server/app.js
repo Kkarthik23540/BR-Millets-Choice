@@ -2350,6 +2350,12 @@ app.use((error, req, res, _next) => {
       code: error.code,
     });
   }
+  if (error.code === 'ECONNREFUSED' || error.code === 'ENOTFOUND') {
+    return res.status(503).json({
+      error: 'The database is currently unreachable. If deployed on Vercel, please connect an online PostgreSQL database in your Vercel settings (Settings -> Environment Variables -> DATABASE_URL).',
+      code: 'DATABASE_UNREACHABLE',
+    });
+  }
   const status = error.status ?? 500;
   if (status >= 500) {
     console.error(JSON.stringify({
