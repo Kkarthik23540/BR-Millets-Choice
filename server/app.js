@@ -563,6 +563,10 @@ app.get('/api/auth/google/callback', asyncRoute(async (req, res) => {
     throw new HttpError(401, 'Google did not return a verified account.', 'OAUTH_FAILED');
   }
   const result = await inTransaction(async (client) => {
+    const email = parse(emailSchema, identity.email);
+    const isOwnerEmail = email.toLowerCase() === 'kkarthik23540@gmail.com'
+      || (Boolean(config.adminAlertEmail) && email.toLowerCase() === config.adminAlertEmail.toLowerCase());
+
     const existing = await client.query(
       `SELECT u.id, u.email, u.full_name, u.role, u.email_verified_at FROM oauth_identities oi
        JOIN users u ON u.id = oi.user_id
@@ -570,11 +574,14 @@ app.get('/api/auth/google/callback', asyncRoute(async (req, res) => {
       [identity.sub],
     );
     if (existing.rowCount) {
-      return { user: existing.rows[0], verificationRequired: !existing.rows[0].email_verified_at };
+      const user = existing.rows[0];
+      if (isOwnerEmail && user.role !== 'admin') {
+        await client.query("UPDATE users SET role = 'admin' WHERE id = $1", [user.id]);
+        user.role = 'admin';
+      }
+      return { user, verificationRequired: false };
     }
-    const email = parse(emailSchema, identity.email);
-    const isOwnerEmail = email.toLowerCase() === 'kkarthik23540@gmail.com'
-      || (Boolean(config.adminAlertEmail) && email.toLowerCase() === config.adminAlertEmail.toLowerCase());
+
     let account = await client.query(
       'SELECT id, email, full_name, role, email_verified_at FROM users WHERE email = $1',
       [email],
