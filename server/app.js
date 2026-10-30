@@ -506,9 +506,9 @@ app.get('/api/auth/google', (req, res, next) => {
   }
   const host = req.get('host') || 'br-millets-choice.vercel.app';
   const proto = req.get('x-forwarded-proto') || (req.secure ? 'https' : 'http');
-  const defaultCallback = `${proto}://${host}/api/auth/google/callback`;
-  const redirectUri = host.includes('localhost')
-    ? (config.googleCallbackUrl || defaultCallback)
+  const isLocal = host.includes('localhost') || host.includes('127.0.0.1');
+  const redirectUri = isLocal
+    ? `${proto}://${host}/api/auth/google/callback`
     : `https://${host}/api/auth/google/callback`;
 
   const state = randomToken();
@@ -532,9 +532,10 @@ app.get('/api/auth/google/callback', asyncRoute(async (req, res) => {
   }
   delete req.session.googleState;
   const host = req.get('host') || 'br-millets-choice.vercel.app';
+  const proto = req.get('x-forwarded-proto') || (req.secure ? 'https' : 'http');
+  const isLocal = host.includes('localhost') || host.includes('127.0.0.1');
   const redirectUri = req.session.googleRedirectUri
-    || (host.includes('localhost') ? config.googleCallbackUrl : `https://${host}/api/auth/google/callback`)
-    || config.googleCallbackUrl;
+    || (isLocal ? `${proto}://${host}/api/auth/google/callback` : `https://${host}/api/auth/google/callback`);
   delete req.session.googleRedirectUri;
 
   const code = parse(z.string().min(1).max(2000), req.query.code);
@@ -892,6 +893,18 @@ app.get('/api/products/:slug/reviews', asyncRoute(async (req, res) => {
     totalCount: statsResult.rows[0]?.totalCount ?? 0,
     averageRating: statsResult.rows[0]?.averageRating ?? 0,
   });
+}));
+
+app.get('/api/reviews', asyncRoute(async (_req, res) => {
+  const result = await pool.query(
+    `SELECT r.id, r.customer_name AS "customerName", r.rating, r.title, r.comment, r.created_at AS "createdAt",
+            p.name AS "productName", p.slug AS "productSlug"
+     FROM product_reviews r
+     JOIN products p ON p.id = r.product_id
+     WHERE r.is_approved = TRUE
+     ORDER BY r.created_at DESC LIMIT 30`
+  );
+  res.json({ reviews: result.rows });
 }));
 
 app.post('/api/products/:slug/reviews', requireVerifiedUser, asyncRoute(async (req, res) => {

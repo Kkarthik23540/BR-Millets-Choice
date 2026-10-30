@@ -3,15 +3,21 @@ import { config } from './config.js';
 
 const { Pool } = pg;
 
+function normalizeDatabaseUrl(rawUrl) {
+  if (!rawUrl || typeof rawUrl !== 'string') return rawUrl;
+  return rawUrl.replace(/sslmode=(require|prefer|verify-ca)/gi, 'sslmode=verify-full');
+}
+
+const cleanedDbUrl = normalizeDatabaseUrl(config.databaseUrl);
 const needsSsl = config.isProduction
-  || Boolean(config.databaseUrl?.includes('sslmode=')
-  || config.databaseUrl?.includes('neon.tech')
-  || config.databaseUrl?.includes('supabase')
-  || config.databaseUrl?.includes('render.com')
+  || Boolean(cleanedDbUrl?.includes('sslmode=')
+  || cleanedDbUrl?.includes('neon.tech')
+  || cleanedDbUrl?.includes('supabase')
+  || cleanedDbUrl?.includes('render.com')
   || process.env.VERCEL);
 
 export const pool = new Pool({
-  connectionString: config.databaseUrl,
+  connectionString: cleanedDbUrl,
   ssl: needsSsl ? { rejectUnauthorized: false } : undefined,
   max: 10,
   idleTimeoutMillis: 30_000,

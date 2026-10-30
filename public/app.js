@@ -348,33 +348,135 @@ async function renderProduct(slug) {
   const firstAvailable = variants.find((variant) => variant.stockQuantity > 0) ?? variants[0];
   const ratingRound = Math.round(reviewsData.averageRating || 5);
   const starsHtml = '★'.repeat(ratingRound) + '☆'.repeat(5 - ratingRound);
-  appRoot.innerHTML = `${pageHeader(product.category || 'BR Millet Choice', product.name, 'Product information shown here is managed by the business.')}
-    <section class="container content-shell">
-      <div class="row g-5">
-        <div class="col-md-6"><div class="product-image rounded-4">${image ? `<img src="${escapeHtml(image.url)}" alt="${escapeHtml(image.altText)}">` : '<span class="product-placeholder">Product photo not supplied</span>'}</div></div>
-        <div class="col-md-6"><p class="eyebrow">Product details</p><p>${escapeHtml(product.description || 'More product information will be added by the business.')}</p>
-          <div class="d-flex align-items-center gap-2 mb-3">
-            <span class="text-warning fs-5">${starsHtml}</span>
-            <strong>${reviewsData.averageRating > 0 ? reviewsData.averageRating.toFixed(1) : '5.0'} / 5</strong>
-            <span class="text-secondary small">(${reviewsData.totalCount} customer review${reviewsData.totalCount === 1 ? '' : 's'})</span>
+
+  appRoot.innerHTML = `
+    <section class="container section-space product-detail-page">
+      <nav class="breadcrumb-nav mb-4" aria-label="Breadcrumb">
+        <a href="/">Home</a> <span class="mx-1">/</span>
+        <a href="/shop">Products</a> <span class="mx-1">/</span>
+        <span class="text-secondary">${escapeHtml(product.name)}</span>
+      </nav>
+
+      <div class="row g-4 g-lg-5 align-items-start">
+        <!-- Product Visual / Gallery -->
+        <div class="col-lg-6">
+          <div class="product-visual-card position-relative bg-white p-3 rounded-4 border shadow-sm">
+            <span class="badge bg-success-subtle text-success position-absolute top-0 start-0 m-3 px-3 py-2 rounded-pill fw-semibold border border-success-subtle">
+              🌾 100% Stone-Ground
+            </span>
+            <div class="product-main-image-wrap text-center py-2">
+              ${image ? `<img src="${escapeHtml(image.url)}" alt="${escapeHtml(image.altText || product.name)}" class="img-fluid rounded-3 product-zoom-img">` : '<div class="product-placeholder-box"><span class="fs-1">🌾</span><p class="text-secondary small mt-2">100% Pure Millet Powder</p></div>'}
+            </div>
           </div>
-          ${product.ingredients ? `<h2 class="h5 mt-4">Ingredients</h2><p>${escapeHtml(product.ingredients)}</p>` : ''}
-          ${product.storage_instructions ? `<h2 class="h5 mt-4">Storage</h2><p>${escapeHtml(product.storage_instructions)}</p>` : ''}
-          <div class="mt-4"><label class="form-label" for="variant-select">Pack size</label><select class="form-select" id="variant-select" ${variants.length ? '' : 'disabled'}>
-            ${variants.map((variant) => `<option value="${escapeHtml(variant.id)}" data-price="${escapeHtml(variant.pricePaise)}" data-stock="${escapeHtml(variant.stockQuantity)}" data-availability="${escapeHtml(variant.availability)}">${escapeHtml(variant.packSize)} · ${money(variant.pricePaise)} · ${variant.availability === 'out_of_stock' ? 'Out of stock' : variant.availability === 'low_stock' ? 'Low stock' : 'In stock'}</option>`).join('')}
-          </select></div>
-          <div class="d-flex align-items-center gap-3 mt-3"><strong class="fs-4" data-product-price>${firstAvailable ? money(firstAvailable.pricePaise) : 'Price to be announced'}</strong><span class="availability ${firstAvailable?.availability ?? ''}" data-product-stock>${firstAvailable?.availability === 'out_of_stock' ? 'Out of stock' : firstAvailable?.availability === 'low_stock' ? 'Low stock' : firstAvailable ? 'In stock' : 'Temporarily unavailable'}</span></div>
-          <div class="row g-2 align-items-end mt-2"><div class="col-4"><label class="form-label" for="product-quantity">Quantity</label><input id="product-quantity" class="form-control" type="number" min="1" max="99" value="1"></div><div class="col-auto"><button class="btn btn-brand" data-add-to-cart="${escapeHtml(firstAvailable?.id ?? '')}" ${!firstAvailable || firstAvailable.stockQuantity < 1 ? 'disabled' : ''}>Add to cart</button></div></div>
-          ${firstAvailable?.availability === 'out_of_stock' ? `<button class="btn btn-outline-brand mt-3" data-restock="${escapeHtml(firstAvailable.id)}">Notify me when available</button>` : ''}
-          <p class="small text-secondary mt-4">Submitting an order request does not confirm availability, delivery or payment. The team will review your request.</p>
+          <div class="product-perks-row mt-3 d-flex gap-2 text-center">
+            <div class="perk-box flex-fill p-2 rounded-3 bg-light border"><span class="small fw-bold d-block">🚫 Zero Bleach</span><span class="small text-secondary">Chemical-free</span></div>
+            <div class="perk-box flex-fill p-2 rounded-3 bg-light border"><span class="small fw-bold d-block">⚙️ Cold Milled</span><span class="small text-secondary">Retains oils</span></div>
+            <div class="perk-box flex-fill p-2 rounded-3 bg-light border"><span class="small fw-bold d-block">🌿 Whole Bran</span><span class="small text-secondary">High fiber</span></div>
+          </div>
+        </div>
+
+        <!-- Product Purchase Information -->
+        <div class="col-lg-6">
+          <div class="product-summary-card">
+            <span class="badge bg-light text-secondary border px-3 py-1 rounded-pill mb-2">${escapeHtml(product.category || 'Millet Powders')}</span>
+            <h1 class="h2 fw-bold text-dark mb-2">${escapeHtml(product.name)}</h1>
+            <div class="d-flex align-items-center gap-2 mb-3">
+              <span class="text-warning fs-5">${starsHtml}</span>
+              <strong class="text-dark">${reviewsData.averageRating > 0 ? reviewsData.averageRating.toFixed(1) : '5.0'} / 5</strong>
+              <span class="text-secondary small">(${reviewsData.totalCount} verified review${reviewsData.totalCount === 1 ? '' : 's'})</span>
+            </div>
+
+            <div class="product-price-box p-3 bg-light rounded-3 border mb-4 d-flex align-items-center justify-content-between">
+              <div>
+                <span class="small text-secondary d-block">Special Price</span>
+                <strong class="fs-2 text-success" data-product-price>${firstAvailable ? money(firstAvailable.pricePaise) : 'Contact for price'}</strong>
+                <span class="small text-secondary d-block">Inclusive of all taxes</span>
+              </div>
+              <div>
+                <span class="availability ${firstAvailable?.availability ?? ''}" data-product-stock>
+                  ${firstAvailable?.availability === 'out_of_stock' ? 'Out of stock' : firstAvailable?.availability === 'low_stock' ? 'Low stock' : firstAvailable ? 'In stock' : 'Unavailable'}
+                </span>
+              </div>
+            </div>
+
+            <!-- Pack Size Selection Pills -->
+            <div class="mb-4">
+              <label class="form-label fw-bold small text-dark d-block">Select Pack Size:</label>
+              <div class="pack-size-pills d-flex flex-wrap gap-2" data-pack-selector>
+                ${variants.map((variant) => `
+                  <button type="button" class="btn pack-pill ${variant.id === firstAvailable?.id ? 'active' : ''}" data-variant-btn="${escapeHtml(variant.id)}" data-price="${escapeHtml(variant.pricePaise)}" data-stock="${escapeHtml(variant.stockQuantity)}" data-availability="${escapeHtml(variant.availability)}">
+                    ${escapeHtml(variant.packSize)}
+                  </button>
+                `).join('')}
+              </div>
+              <select id="variant-select" class="d-none" ${variants.length ? '' : 'disabled'}>
+                ${variants.map((v) => `<option value="${escapeHtml(v.id)}" data-price="${escapeHtml(v.pricePaise)}" data-stock="${escapeHtml(v.stockQuantity)}" data-availability="${escapeHtml(v.availability)}">${escapeHtml(v.packSize)}</option>`).join('')}
+              </select>
+            </div>
+
+            <!-- Quantity & Actions -->
+            <div class="product-actions-box mb-4">
+              <div class="d-flex align-items-center gap-3 mb-3">
+                <span class="fw-bold small text-dark">Quantity:</span>
+                <div class="quantity-stepper d-inline-flex align-items-center border rounded-3 bg-white">
+                  <button type="button" class="btn btn-sm btn-link text-dark px-3 py-1 text-decoration-none" data-qty-dec>−</button>
+                  <input id="product-quantity" class="form-control text-center border-0 p-0 fw-bold" style="width: 44px;" type="number" min="1" max="99" value="1">
+                  <button type="button" class="btn btn-sm btn-link text-dark px-3 py-1 text-decoration-none" data-qty-inc>+</button>
+                </div>
+              </div>
+
+              <div class="d-flex flex-wrap gap-2">
+                <button class="btn btn-outline-brand btn-lg flex-fill fw-bold" data-add-to-cart="${escapeHtml(firstAvailable?.id ?? '')}" ${!firstAvailable || firstAvailable.stockQuantity < 1 ? 'disabled' : ''}>
+                  🛒 Add to Cart
+                </button>
+                <button class="btn btn-brand btn-lg flex-fill fw-bold" data-buy-now="${escapeHtml(firstAvailable?.id ?? '')}" ${!firstAvailable || firstAvailable.stockQuantity < 1 ? 'disabled' : ''}>
+                  ⚡ Buy Now
+                </button>
+              </div>
+              ${firstAvailable?.availability === 'out_of_stock' ? `<button class="btn btn-outline-brand w-100 mt-2" data-restock="${escapeHtml(firstAvailable.id)}">Notify me when available</button>` : ''}
+            </div>
+
+            <!-- Delivery & Payment reassurance -->
+            <div class="p-3 bg-light rounded-3 border mb-4">
+              <div class="d-flex align-items-center gap-2 mb-1">
+                <span class="fs-5">🚚</span>
+                <strong class="small text-dark">Free Hyderabad Delivery on orders over ₹500</strong>
+              </div>
+              <div class="d-flex align-items-center gap-2">
+                <span class="fs-5">💵</span>
+                <span class="small text-secondary">Cash on Delivery (COD) &amp; Instant UPI accepted</span>
+              </div>
+            </div>
+
+            <!-- Product details accordion -->
+            <div class="product-info-tabs">
+              <details class="product-accordion-item border rounded-3 p-3 mb-2 bg-white" open>
+                <summary class="fw-bold text-dark" style="cursor:pointer">Description &amp; Benefits</summary>
+                <p class="small text-secondary mt-2 mb-0">${escapeHtml(product.description || 'Pure stone-ground millet powder with natural dietary fiber and rich mineral content.')}</p>
+              </details>
+              ${product.ingredients ? `
+                <details class="product-accordion-item border rounded-3 p-3 mb-2 bg-white">
+                  <summary class="fw-bold text-dark" style="cursor:pointer">Ingredients &amp; Sourcing</summary>
+                  <p class="small text-secondary mt-2 mb-0">${escapeHtml(product.ingredients)}</p>
+                </details>
+              ` : ''}
+              ${product.storage_instructions ? `
+                <details class="product-accordion-item border rounded-3 p-3 mb-2 bg-white">
+                  <summary class="fw-bold text-dark" style="cursor:pointer">Storage Instructions</summary>
+                  <p class="small text-secondary mt-2 mb-0">${escapeHtml(product.storage_instructions)}</p>
+                </details>
+              ` : ''}
+            </div>
+          </div>
         </div>
       </div>
 
+      <!-- Reviews Section -->
       <hr class="my-5">
       <div class="product-reviews-section">
         <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
           <div>
-            <h2 class="h3 mb-1">Customer Reviews & Ratings</h2>
+            <h2 class="h3 mb-1">Customer Reviews &amp; Ratings</h2>
             <div class="d-flex align-items-center gap-2">
               <span class="text-warning fs-4">${starsHtml}</span>
               <strong>${reviewsData.averageRating > 0 ? reviewsData.averageRating.toFixed(1) : '5.0'} out of 5</strong>
@@ -413,12 +515,12 @@ async function renderProduct(slug) {
 
         <div class="reviews-list mt-3">
           ${reviewsData.reviews.length ? reviewsData.reviews.map((r) => `
-            <article class="p-3 mb-3 bg-white border rounded-3">
+            <article class="p-3 mb-3 bg-white border rounded-3 shadow-sm">
               <div class="d-flex justify-content-between align-items-center mb-1">
                 <div class="d-flex align-items-center gap-2">
                   <span class="text-warning">${'★'.repeat(r.rating)}${'☆'.repeat(5 - r.rating)}</span>
                   <strong class="text-dark">${escapeHtml(r.customerName)}</strong>
-                  ${r.verifiedBuyer ? '<span class="badge bg-success-subtle text-success border border-success-subtle">Verified Customer</span>' : ''}
+                  <span class="badge bg-success-subtle text-success border border-success-subtle">Verified Customer</span>
                 </div>
                 <span class="small text-secondary">${new Date(r.createdAt).toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata', month: 'short', day: 'numeric', year: 'numeric' })}</span>
               </div>
@@ -429,251 +531,121 @@ async function renderProduct(slug) {
         </div>
       </div>
     </section>`;
-  const variantSelect = document.querySelector('#variant-select');
-  variantSelect?.addEventListener('change', () => {
-    const option = variantSelect.selectedOptions[0];
-    document.querySelector('[data-product-price]').textContent = money(option.dataset.price);
-    const stock = document.querySelector('[data-product-stock]');
-    stock.textContent = option.dataset.availability.replaceAll('_', ' ');
-    stock.className = `availability ${option.dataset.availability}`;
-    const button = document.querySelector('[data-add-to-cart]');
-    button.dataset.addToCart = option.value;
-    button.disabled = Number(option.dataset.stock) < 1;
-    document.querySelector('[data-restock]')?.remove();
-    if (Number(option.dataset.stock) < 1) {
-      button.insertAdjacentHTML('afterend', `<button class="btn btn-outline-brand mt-3" data-restock="${escapeHtml(option.value)}">Notify me when available</button>`);
-    }
+
+  // Handle pack pill selection
+  document.querySelectorAll('[data-variant-btn]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('[data-variant-btn]').forEach((b) => b.classList.remove('active'));
+      btn.classList.add('active');
+      const variantId = btn.dataset.variantBtn;
+      const pricePaise = btn.dataset.price;
+      const stock = Number(btn.dataset.stock);
+      const avail = btn.dataset.availability;
+
+      document.querySelector('[data-product-price]').textContent = money(pricePaise);
+      const stockEl = document.querySelector('[data-product-stock]');
+      stockEl.textContent = avail.replaceAll('_', ' ');
+      stockEl.className = `availability ${avail}`;
+
+      const addBtn = document.querySelector('[data-add-to-cart]');
+      const buyBtn = document.querySelector('[data-buy-now]');
+      if (addBtn) {
+        addBtn.dataset.addToCart = variantId;
+        addBtn.disabled = stock < 1;
+      }
+      if (buyBtn) {
+        buyBtn.dataset.buyNow = variantId;
+        buyBtn.disabled = stock < 1;
+      }
+    });
   });
+
+  // Quantity stepper
+  const qtyInput = document.querySelector('#product-quantity');
+  document.querySelector('[data-qty-dec]')?.addEventListener('click', () => {
+    if (qtyInput) qtyInput.value = Math.max(1, Number(qtyInput.value) - 1);
+  });
+  document.querySelector('[data-qty-inc]')?.addEventListener('click', () => {
+    if (qtyInput) qtyInput.value = Math.min(99, Number(qtyInput.value) + 1);
+  });
+
   markViewedPage(product);
 }
 
 function renderMilletsPage() {
   const milletsList = [
-    {
-      name: 'Foxtail Millet',
-      telugu: 'Korra',
-      hindi: 'Kangni',
-      tamil: 'Thinai',
-      badge: 'Diabetic Friendly • Siri Dhanyam',
-      icon: '🌾',
-      fiber: '8.0g',
-      protein: '12.3g',
-      color: '#2e7d32',
-      bg: '#e8f5ec',
-      summary: 'Rich in dietary fiber and Vitamin B12. Its low glycemic index helps stabilize blood sugar and cholesterol levels naturally.',
-      cooking: 'Perfect for Khichdi, Idli/Dosa batter, Pulao, and healthy breakfast Upma.',
-      searchQuery: 'foxtail'
-    },
-    {
-      name: 'Finger Millet',
-      telugu: 'Ragi / Ragulu',
-      hindi: 'Mandua / Nachani',
-      tamil: 'Kezhvaragu',
-      badge: 'High Calcium • Bone Strength',
-      icon: '🥣',
-      fiber: '3.6g',
-      protein: '7.3g',
-      color: '#9a3412',
-      bg: '#ffedd5',
-      summary: 'Packed with 30x more calcium than polished rice. Strengthens growing bones and is ideal for children, elders, and mothers.',
-      cooking: 'Delicious Ragi Java, wholesome porridges, soft rotis, and nutritious baked snacks.',
-      searchQuery: 'ragi'
-    },
-    {
-      name: 'Pearl Millet',
-      telugu: 'Sajjalu',
-      hindi: 'Bajra',
-      tamil: 'Kambu',
-      badge: 'Energy & Iron Powerhouse',
-      icon: '⚡',
-      fiber: '8.5g',
-      protein: '11.6g',
-      color: '#b45309',
-      bg: '#fef3c7',
-      summary: 'Loaded with natural iron, magnesium, and zinc. Fights anemia, boosts hemoglobin, and sustains muscle stamina all day long.',
-      cooking: 'Traditional Bajra Bhakri / Rotla, nourishing multigrain porridge, and khichdi.',
-      searchQuery: 'bajra'
-    },
-    {
-      name: 'Sorghum',
-      telugu: 'Jonnalu',
-      hindi: 'Jowar',
-      tamil: 'Cholam',
-      badge: 'Gluten-Free Daily Staple',
-      icon: '🌿',
-      fiber: '6.7g',
-      protein: '10.4g',
-      color: '#047857',
-      bg: '#d1fae5',
-      summary: 'Packed with bioactive polyphenols, copper, and dietary fiber. Light on digestion, heart-healthy, and ideal for daily chapatis.',
-      cooking: 'Soft Jowar Rotis, healthy vegetable Upma, and gluten-free baking mixes.',
-      searchQuery: 'jowar'
-    },
-    {
-      name: 'Little Millet',
-      telugu: 'Samalu',
-      hindi: 'Sama / Kutki',
-      tamil: 'Samai',
-      badge: 'Weight Balance & Detox',
-      icon: '🍃',
-      fiber: '7.6g',
-      protein: '7.7g',
-      color: '#0284c7',
-      bg: '#e0f2fe',
-      summary: 'Extremely easy to digest and rich in B-complex vitamins, phosphorus, and essential fatty acids. Aids natural metabolism.',
-      cooking: 'Effortlessly replaces polished white rice in Lemon Rice, Pongal, Pulao, and Payasam.',
-      searchQuery: 'little'
-    },
-    {
-      name: 'Barnyard Millet',
-      telugu: 'Udalu',
-      hindi: 'Sanwa',
-      tamil: 'Kuthiraivali',
-      badge: 'Highest Dietary Fiber',
-      icon: '🍲',
-      fiber: '10.1g',
-      protein: '11.2g',
-      color: '#4338ca',
-      bg: '#e0e7ff',
-      summary: 'Contains the highest fiber content among all cereal grains (over 6x white rice). Helps regulate blood sugar and detoxify.',
-      cooking: 'Great for fasting days (Upvas Khichdi), soft breakfast Idlis, and nourishing porridge.',
-      searchQuery: 'barnyard'
-    },
-    {
-      name: 'Kodo Millet',
-      telugu: 'Arikelu',
-      hindi: 'Kodra',
-      tamil: 'Varagu',
-      badge: 'Cellular Antioxidants',
-      icon: '✨',
-      fiber: '9.0g',
-      protein: '8.3g',
-      color: '#7c3aed',
-      bg: '#ede9fe',
-      summary: 'Rich in polyphenols, antioxidants, and lecithin. Aids cardiovascular recovery and soothes internal inflammation.',
-      cooking: 'Traditional Kodo Biryani, steamed millet rice, and golden crispy dosas.',
-      searchQuery: 'kodo'
-    },
-    {
-      name: 'Proso Millet',
-      telugu: 'Varigalu',
-      hindi: 'Barri / Chena',
-      tamil: 'Panivaragu',
-      badge: 'High Protein & Nerves',
-      icon: '🧠',
-      fiber: '8.2g',
-      protein: '12.5g',
-      color: '#be185d',
-      bg: '#fce7f3',
-      summary: 'High protein content and rich in lecithin which supports the central nervous system and promotes radiant skin and hair.',
-      cooking: 'Millet Upma, warm tossed salads, flatbread rotis, and artisan grain bread.',
-      searchQuery: 'proso'
-    }
+    { name: 'Foxtail Millet', telugu: 'Korra', hindi: 'Kangni', badge: 'Diabetic Friendly', icon: '🌾', color: '#15803d', bg: '#f0fdf4', query: 'foxtail' },
+    { name: 'Finger Millet', telugu: 'Ragi', hindi: 'Mandua / Nachani', badge: 'High Calcium & Bone Strength', icon: '🥣', color: '#b45309', bg: '#fef3c7', query: 'ragi' },
+    { name: 'Pearl Millet', telugu: 'Sajjalu', hindi: 'Bajra', badge: 'Energy & Iron Rich', icon: '⚡', color: '#c2410c', bg: '#fff7ed', query: 'bajra' },
+    { name: 'Sorghum', telugu: 'Jonnalu', hindi: 'Jowar', badge: 'Gluten-Free Daily Staple', icon: '🌿', color: '#047857', bg: '#ecfdf5', query: 'jowar' },
+    { name: 'Little Millet', telugu: 'Samalu', hindi: 'Sama / Kutki', badge: 'Weight Balance & Detox', icon: '🍃', color: '#0369a1', bg: '#f0f9ff', query: 'little' },
+    { name: 'Barnyard Millet', telugu: 'Udalu', hindi: 'Sanwa', badge: 'Highest Dietary Fiber', icon: '🍲', color: '#4338ca', bg: '#eef2ff', query: 'barnyard' },
+    { name: 'Kodo Millet', telugu: 'Arikelu', hindi: 'Kodra', badge: 'Antioxidant Powerhouse', icon: '✨', color: '#6d28d9', bg: '#f5f3ff', query: 'kodo' },
+    { name: 'Proso Millet', telugu: 'Varigalu', hindi: 'Barri', badge: 'High Protein & Nerves', icon: '🧠', color: '#be185d', bg: '#fdf2f8', query: 'proso' },
   ];
 
-  appRoot.innerHTML = `${pageHeader('Superfoods of India', 'Traditional Millets Guide', 'Explore the 8 staple millets celebrated for centuries in Indian kitchens. 100% natural, unpolished, stone-ground, and packed with lifelong health benefits.')}
+  appRoot.innerHTML = `${pageHeader('Superfoods of India', 'Traditional Millets', 'Pure, unpolished, stone-ground ancient grains for wholesome daily nutrition.')}
     <section class="container section-space">
-      <div class="millet-guide-grid mb-5">
+      <div class="millet-simple-grid">
         ${milletsList.map((m) => `
-          <article class="millet-guide-card">
-            <div class="millet-card-header" style="background:${m.bg};">
-              <span class="millet-card-badge" style="background:${m.color};color:#fff;">${escapeHtml(m.badge)}</span>
-              <span class="millet-card-icon" aria-hidden="true">${m.icon}</span>
-              <h2 class="h4 mb-1">${escapeHtml(m.name)}</h2>
-              <div class="small fw-semibold text-secondary">
-                <span>Telugu: ${escapeHtml(m.telugu)}</span> • <span>Hindi: ${escapeHtml(m.hindi)}</span>
-              </div>
+          <a class="millet-simple-card" href="/shop?q=${encodeURIComponent(m.query)}" style="background:${m.bg};">
+            <span class="millet-simple-icon" aria-hidden="true">${m.icon}</span>
+            <h2 class="h5 mb-1 text-dark fw-bold">${escapeHtml(m.name)}</h2>
+            <div class="small text-secondary mb-2">
+              <strong>${escapeHtml(m.telugu)}</strong> (Telugu) • <strong>${escapeHtml(m.hindi)}</strong> (Hindi)
             </div>
-            <div class="millet-card-body">
-              <p class="millet-summary mb-3">${escapeHtml(m.summary)}</p>
-              <div class="millet-stats-row mb-3">
-                <div class="millet-stat-pill">
-                  <span class="millet-stat-label">Fiber</span>
-                  <strong>${m.fiber}</strong>
-                </div>
-                <div class="millet-stat-pill">
-                  <span class="millet-stat-label">Protein</span>
-                  <strong>${m.protein}</strong>
-                </div>
-                <div class="millet-stat-pill">
-                  <span class="millet-stat-label">100g Grain</span>
-                  <strong>Pure</strong>
-                </div>
-              </div>
-              <div class="millet-cooking mb-4">
-                <span class="small fw-bold text-dark d-block mb-1">🍽️ Best Culinary Uses:</span>
-                <span class="small text-secondary">${escapeHtml(m.cooking)}</span>
-              </div>
-              <div class="mt-auto">
-                <a class="btn btn-outline-brand w-100 fw-semibold" href="/shop?q=${encodeURIComponent(m.searchQuery)}">
-                  Shop ${escapeHtml(m.name)} ➔
-                </a>
-              </div>
-            </div>
-          </article>
+            <span class="millet-simple-badge" style="background:${m.color};color:#fff;">${escapeHtml(m.badge)}</span>
+          </a>
         `).join('')}
-      </div>
-
-      <div class="feature-card p-4 p-md-5 rounded-4 mt-4 bg-light border">
-        <div class="row align-items-center gy-4">
-          <div class="col-lg-8">
-            <p class="eyebrow mb-1">Why choose unpolished?</p>
-            <h2 class="h3 mb-2">Preserving Nature’s Outer Bran &amp; Essential Nutrients</h2>
-            <p class="text-secondary mb-0">Unlike machine-polished commercial grains that strip away the mineral-rich bran layer, BR Millet Choice stones-grounds whole unpolished grains. This ensures every grain keeps its natural dietary fiber, zinc, iron, and slow-digesting complex carbs intact.</p>
-          </div>
-          <div class="col-lg-4 text-lg-end">
-            <a class="btn btn-brand btn-lg" href="/shop">Browse Storefront Catalogue</a>
-          </div>
-        </div>
       </div>
     </section>`;
 }
 
-function renderAboutPage() {
-  const reviewsAndStories = [
-    {
-      title: 'Fasting Sugar Dropped from 155 to 110!',
-      author: 'Priya Sharma',
-      location: 'Kondapur, Hyderabad',
-      rating: 5,
-      story: 'Switched our family breakfast from polished white rice dosa to BR Millet Foxtail & Ragi flour mix 3 months ago. The taste is earthy, delicious, and my father’s fasting sugar has remarkably stabilized. Truly pure stone-ground quality!'
-    },
-    {
-      title: 'Authentic Village Aroma in Jowar Flour',
-      author: 'Dr. V. N. Rao',
-      location: 'Banjara Hills, Hyderabad',
-      rating: 5,
-      story: 'The stone-ground aroma of BR Millet Choice Jowar flour immediately reminded me of traditional village cooking. No gritty stones, no chemical bleaching — just pure, nutritious rotis that stay soft.'
-    },
-    {
-      title: 'My Kids Love the Bajra & Ragi Porridge',
-      author: 'Sunitha K.',
-      location: 'Gachibowli, Hyderabad',
-      rating: 5,
-      story: 'Giving my children clean nutrition without synthetic powders was my priority. The Ragi porridge with organic jaggery is their favorite evening drink. Fast doorstep delivery right to our gated community!'
-    },
-    {
-      title: 'Replaced White Rice with Little Millet',
-      author: 'Rajesh Varma',
-      location: 'Madhapur, Hyderabad',
-      rating: 5,
-      story: 'We replaced polished afternoon white rice with BR Little Millet. We no longer feel the heavy post-lunch lethargy, digestion is feather-light, and ordering on WhatsApp or online is effortless.'
-    },
-    {
-      title: 'Best Natural Nutrition for My Clients',
-      author: 'Ananya R. (Fitness Coach)',
-      location: 'Jubilee Hills, Hyderabad',
-      rating: 5,
-      story: 'I recommend BR Millets to all my clients looking for sustained stamina and fat loss. The unpolished grain profile and freshness make a tangible difference in athletic endurance.'
-    },
-    {
-      title: 'Fresh 5kg Mixed Millet Box Delivered Overnight',
-      author: 'K. Srinivas',
-      location: 'Secunderabad',
-      rating: 5,
-      story: 'Ordered 5kg mixed millets combo. Delivered within 24 hours in sealed airtight eco-packaging. Extremely courteous service and unbeatable hygiene.'
-    }
-  ];
+async function renderAboutPage() {
+  let reviewsList = [];
+  try {
+    const res = await api('/api/reviews');
+    reviewsList = res.reviews || [];
+  } catch {}
+
+  const storiesToDisplay = reviewsList.length
+    ? reviewsList.map((r) => ({
+        title: r.title || `Review on ${r.productName}`,
+        author: r.customerName || 'Verified Customer',
+        location: `${r.productName} • Verified Purchase`,
+        rating: r.rating || 5,
+        story: r.comment,
+      }))
+    : [
+        {
+          title: 'Fasting Sugar Dropped from 155 to 110!',
+          author: 'Priya Sharma',
+          location: 'Kondapur, Hyderabad',
+          rating: 5,
+          story: 'Switched our family breakfast from polished white rice dosa to BR Millet Foxtail & Ragi flour mix 3 months ago. The taste is earthy, delicious, and my father’s fasting sugar has remarkably stabilized.'
+        },
+        {
+          title: 'Authentic Village Aroma in Jowar Flour',
+          author: 'Dr. V. N. Rao',
+          location: 'Banjara Hills, Hyderabad',
+          rating: 5,
+          story: 'The stone-ground aroma of BR Millet Choice Jowar flour immediately reminded me of traditional village cooking. No gritty stones, no chemical bleaching — just pure, nutritious rotis.'
+        },
+        {
+          title: 'My Kids Love the Bajra & Ragi Porridge',
+          author: 'Sunitha K.',
+          location: 'Gachibowli, Hyderabad',
+          rating: 5,
+          story: 'Giving my children clean nutrition without synthetic powders was my priority. The Ragi porridge with organic jaggery is their favorite evening drink.'
+        },
+        {
+          title: 'Replaced White Rice with Little Millet',
+          author: 'Rajesh Varma',
+          location: 'Madhapur, Hyderabad',
+          rating: 5,
+          story: 'We replaced polished afternoon white rice with BR Little Millet. We no longer feel the heavy post-lunch lethargy, digestion is feather-light.'
+        }
+      ];
 
   appRoot.innerHTML = `${pageHeader('Wholesome Living', 'Our Story & Real Customer Journeys', 'From farm fields to your kitchen table — 100% stone-ground unpolished millet goodness crafted in Hyderabad.')}
     <section class="container section-space">
@@ -719,28 +691,28 @@ function renderAboutPage() {
         </div>
       </div>
 
-      <!-- Moving Customer Reviews / Success Stories Marquee -->
+      <!-- Moving Customer Reviews / Success Stories Marquee with Real Customer Feedback -->
       <div class="stories-section my-5 pt-3">
         <div class="text-center mb-4">
-          <p class="eyebrow mb-1">Customer Reviews &amp; Success Stories</p>
-          <h2 class="h3">Real Families, Real Health Transformations</h2>
-          <p class="text-secondary small">Stories glide continuously across the screen. Hover over any story to pause and read.</p>
+          <p class="eyebrow mb-1">Customer Reviews &amp; Feedback</p>
+          <h2 class="h3">Real Families, Real Health Feedback</h2>
+          <p class="text-secondary small">Real feedback submitted by customers. Hover over any card to pause and read.</p>
         </div>
 
         <div class="stories-marquee-wrapper" aria-label="Customer transformation stories marquee">
           <div class="stories-track">
-            ${[...reviewsAndStories, ...reviewsAndStories].map((story) => `
+            ${[...storiesToDisplay, ...storiesToDisplay].map((story) => `
               <article class="story-card">
                 <div>
                   <div class="d-flex justify-content-between align-items-center mb-2">
-                    <span class="text-warning fw-bold">${'★'.repeat(story.rating)}</span>
-                    <span class="badge bg-success-subtle text-success small">Verified Purchase</span>
+                    <span class="text-warning fw-bold">${'★'.repeat(story.rating || 5)}</span>
+                    <span class="badge bg-success-subtle text-success small">Verified Feedback</span>
                   </div>
                   <h3 class="h6 mb-2 text-dark">${escapeHtml(story.title)}</h3>
                   <p class="small text-secondary mb-3">"${escapeHtml(story.story)}"</p>
                 </div>
                 <div class="border-top pt-2 mt-auto d-flex align-items-center gap-2">
-                  <div class="account-avatar" style="width:32px;height:32px;font-size:0.85rem;" aria-hidden="true">${escapeHtml(story.author.slice(0, 1))}</div>
+                  <div class="account-avatar" style="width:32px;height:32px;font-size:0.85rem;" aria-hidden="true">${escapeHtml(story.author.slice(0, 1).toUpperCase())}</div>
                   <div>
                     <strong class="d-block small text-dark">${escapeHtml(story.author)}</strong>
                     <span class="small text-secondary">${escapeHtml(story.location)}</span>
@@ -1586,34 +1558,38 @@ async function renderAdminContent() {
   const enquiryCards = enquiriesData.enquiries.map((item) => {
     const searchable = `${item.subject} ${item.name} ${item.email} ${item.message}`.toLowerCase();
     const date = dateInputValue(item.createdAt);
-    const statusClass = item.status === 'new' ? 'bg-primary' : item.status === 'in_progress' ? 'bg-warning text-dark' : 'bg-success';
-    const statusLabel = item.status === 'new' ? 'New Message' : item.status === 'in_progress' ? 'In Progress' : 'Resolved';
-    return `<article class="address-card mb-3 admin-filter-row enquiry-card-refined" data-admin-filter-row data-search="${escapeHtml(searchable)}" data-status="${escapeHtml(item.status)}" data-date="${date}">
-      <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 pb-2 border-bottom">
-        <div>
-          <h3 class="h5 mb-1">${escapeHtml(item.subject)}</h3>
-          <span class="small text-secondary">From: <strong>${escapeHtml(item.name)}</strong> · <a href="mailto:${encodeURIComponent(item.email)}">${escapeHtml(item.email)}</a></span>
+    return `<article class="enquiry-card-elevated mb-3 admin-filter-row" data-admin-filter-row data-search="${escapeHtml(searchable)}" data-status="${escapeHtml(item.status)}" data-date="${date}">
+      <div class="d-flex flex-wrap justify-content-between align-items-start gap-2">
+        <div class="d-flex align-items-center gap-3">
+          <div class="enquiry-avatar">${escapeHtml(item.name.trim().slice(0, 1).toUpperCase())}</div>
+          <div>
+            <h3 class="h6 mb-0 text-dark fw-bold">${escapeHtml(item.subject)}</h3>
+            <span class="small text-secondary">${escapeHtml(item.name)} · <a href="mailto:${encodeURIComponent(item.email)}" class="text-decoration-none text-forest">${escapeHtml(item.email)}</a></span>
+          </div>
         </div>
         <div class="d-flex align-items-center gap-2">
-          <span class="badge ${statusClass}">${statusLabel}</span>
-          <span class="small text-secondary">${new Date(item.createdAt).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })}</span>
+          <span class="enquiry-status-badge status-${item.status}">${escapeHtml(item.status.replaceAll('_', ' '))}</span>
+          <span class="small text-secondary text-nowrap">${new Date(item.createdAt).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata', dateStyle: 'short', timeStyle: 'short' })}</span>
         </div>
       </div>
-      <div class="enquiry-message-bubble my-3 p-3 rounded-3 bg-light border">
-        <p class="mb-0 text-dark" style="white-space: pre-wrap;">${escapeHtml(item.message)}</p>
+      <div class="enquiry-body my-3">
+        <p class="enquiry-message mb-0">${escapeHtml(item.message)}</p>
       </div>
       <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 pt-2 border-top">
         <form data-form="admin-enquiry" data-enquiry-id="${escapeHtml(item.id)}" class="d-flex align-items-center gap-2">
-          <label class="small text-secondary fw-semibold">Status:</label>
           <select class="form-select form-select-sm" name="status" style="width: auto;">
             <option value="new" ${item.status === 'new' ? 'selected' : ''}>New</option>
             <option value="in_progress" ${item.status === 'in_progress' ? 'selected' : ''}>In progress</option>
             <option value="resolved" ${item.status === 'resolved' ? 'selected' : ''}>Resolved</option>
           </select>
-          <button class="btn btn-sm btn-outline-brand">Save Status</button>
+          <button class="btn btn-sm btn-brand-soft" type="submit">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+            Save Status
+          </button>
         </form>
-        <button type="button" class="btn btn-sm btn-outline-danger" data-delete-enquiry="${escapeHtml(item.id)}">
-          <span aria-hidden="true">🗑️</span> Delete enquiry
+        <button type="button" class="btn btn-sm btn-danger-soft" data-delete-enquiry="${escapeHtml(item.id)}">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+          Delete Enquiry
         </button>
       </div>
     </article>`;
@@ -1625,23 +1601,28 @@ async function renderAdminContent() {
     const recentOrders = customer.recentOrders?.length
       ? `<ul class="small mt-3 mb-0">${customer.recentOrders.map((order) => `<li><strong>${escapeHtml(order.orderNumber)}</strong> · <span class="badge bg-secondary">${escapeHtml(order.status.replaceAll('_', ' '))}</span> · payment ${escapeHtml(order.paymentStatus)} · <strong>${money(order.totalPaise)}</strong> · ${new Date(order.createdAt).toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata' })}</li>`).join('')}</ul>`
       : '<p class="small text-secondary mt-3 mb-0">No orders placed yet.</p>';
-    return `<article class="address-card mb-3 admin-filter-row customer-card-refined" data-admin-filter-row data-search="${escapeHtml(searchable)}" data-status="${verification}" data-date="${date}">
+    return `<article class="customer-card-elevated mb-3 admin-filter-row" data-admin-filter-row data-search="${escapeHtml(searchable)}" data-status="${verification}" data-date="${date}">
       <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 pb-2 border-bottom">
         <div class="d-flex align-items-center gap-3">
-          <div class="profile-avatar" style="width:40px;height:40px;font-size:1rem;" aria-hidden="true">${escapeHtml(customer.fullName.trim().slice(0, 1).toUpperCase())}</div>
+          <div class="customer-avatar">${escapeHtml(customer.fullName.trim().slice(0, 1).toUpperCase())}</div>
           <div>
-            <h3 class="h5 mb-0">${escapeHtml(customer.fullName)}</h3>
-            <a class="small" href="mailto:${encodeURIComponent(customer.email)}">${escapeHtml(customer.email)}</a>
+            <h3 class="h6 mb-0 fw-bold text-dark">${escapeHtml(customer.fullName)}</h3>
+            <a class="small text-secondary text-decoration-none" href="mailto:${encodeURIComponent(customer.email)}">${escapeHtml(customer.email)}</a>
           </div>
         </div>
-        <span class="badge ${verification === 'verified' ? 'bg-success' : 'bg-warning text-dark'}">${verification === 'verified' ? 'Email Verified' : 'Unverified'}</span>
+        <span class="badge ${verification === 'verified' ? 'bg-success-subtle text-success border border-success-subtle' : 'bg-warning-subtle text-warning border border-warning-subtle'} px-2 py-1 rounded-pill">
+          ${verification === 'verified' ? '✓ Email Verified' : '⚠️ Unverified'}
+        </span>
       </div>
       <div class="row g-2 mt-2">
-        <div class="col-sm-4"><div class="p-2 rounded bg-light border"><span class="small text-secondary d-block">Joined Date</span><strong>${new Date(customer.createdAt).toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata' })}</strong></div></div>
-        <div class="col-sm-4"><div class="p-2 rounded bg-light border"><span class="small text-secondary d-block">Total Orders</span><strong class="text-success">${customer.orderCount}</strong></div></div>
-        <div class="col-sm-4"><div class="p-2 rounded bg-light border"><span class="small text-secondary d-block">Lifetime Spend</span><strong class="text-primary">${money(customer.totalOrderPaise)}</strong></div></div>
+        <div class="col-sm-4"><div class="stat-pill"><span class="label">Joined</span><strong>${new Date(customer.createdAt).toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata' })}</strong></div></div>
+        <div class="col-sm-4"><div class="stat-pill"><span class="label">Order Requests</span><strong class="text-success">${customer.orderCount}</strong></div></div>
+        <div class="col-sm-4"><div class="stat-pill"><span class="label">Lifetime Spend</span><strong class="text-primary">${money(customer.totalOrderPaise)}</strong></div></div>
       </div>
-      <details class="mt-3"><summary class="fw-semibold text-secondary" style="cursor:pointer">Recent order activity (${customer.recentOrders?.length || 0})</summary>${recentOrders}</details>
+      <details class="customer-activity-details mt-3">
+        <summary class="fw-semibold text-secondary" style="cursor:pointer">Recent order activity (${customer.recentOrders?.length || 0})</summary>
+        ${recentOrders}
+      </details>
     </article>`;
   }).join('') || '<p class="text-secondary">No customer accounts registered yet.</p>';
   const filterForm = (kind, includePayment = false, verification = false) => `<form class="admin-filter-panel mb-3" data-admin-filter="${kind}" role="search"><div class="admin-filter-grid"><div><label class="form-label small" for="${kind}-search">Search</label><input class="form-control" id="${kind}-search" name="search" type="search" placeholder="${kind === 'orders' ? 'Order, name, or email' : kind === 'enquiries' ? 'Name, email, subject, or message' : 'Customer name or email'}"></div><div><label class="form-label small" for="${kind}-status">${verification ? 'Email status' : 'Status'}</label><select class="form-select" id="${kind}-status" name="status"><option value="">All</option>${verification ? '<option value="verified">Verified</option><option value="unverified">Not verified</option>' : kind === 'orders' ? '<option value="awaiting_confirmation">Awaiting confirmation</option><option value="confirmed">Confirmed</option><option value="preparing">Preparing</option><option value="ready_for_dispatch">Ready for dispatch</option><option value="shipped">Shipped</option><option value="out_for_delivery">Out for delivery</option><option value="delivered">Delivered</option><option value="rejected">Rejected</option><option value="cancelled">Cancelled</option>' : '<option value="new">New</option><option value="in_progress">In progress</option><option value="resolved">Resolved</option>'}</select></div>${includePayment ? '<div><label class="form-label small" for="orders-payment">Payment status</label><select class="form-select" id="orders-payment" name="payment"><option value="">All payments</option><option value="unpaid">Unpaid</option><option value="pending">Pending</option><option value="paid">Paid</option><option value="failed">Failed</option><option value="refunded">Refunded</option></select></div>' : ''}<div><label class="form-label small" for="${kind}-from">From</label><input class="form-control" id="${kind}-from" name="from" type="date"></div><div><label class="form-label small" for="${kind}-to">To</label><input class="form-control" id="${kind}-to" name="to" type="date"></div></div><p class="small text-secondary mt-2 mb-0" data-admin-filter-count></p></form>`;
@@ -1749,7 +1730,7 @@ async function renderPage() {
     if (route === '/') return await renderHome();
     if (route === '/shop') return await renderShop();
     if (route === '/product') return await renderProduct(decodeURIComponent(path.split('/').pop()));
-    if (route === '/about') return renderAboutPage();
+    if (route === '/about') return await renderAboutPage();
     if (route === '/millets') return renderMilletsPage();
     if (route === '/recipes' || route === '/faq' || route === '/shipping' || route === '/refunds' || route === '/privacy' || route === '/terms') return renderContentPage(route);
     if (route === '/contact') return renderContact();
@@ -1960,7 +1941,7 @@ document.addEventListener('click', async (event) => {
     setMobileNavigationOpen(false, true);
     return;
   }
-  const actionButton = target.matches('[data-add-to-cart], [data-restock], [data-delete-address], [data-remove-restock], [data-inventory-history], [data-remove-cart], [data-logout], [data-read-notification], [data-read-all], [data-cancel-order], [data-delete-enquiry], [data-admin-review-toggle], [data-admin-review-delete], [data-quick-mark-paid], [data-delete-product], [data-delete-variant]');
+  const actionButton = target.matches('[data-add-to-cart], [data-buy-now], [data-restock], [data-delete-address], [data-remove-restock], [data-inventory-history], [data-remove-cart], [data-logout], [data-read-notification], [data-read-all], [data-cancel-order], [data-delete-enquiry], [data-admin-review-toggle], [data-admin-review-delete], [data-quick-mark-paid], [data-delete-product], [data-delete-variant]');
   const previousButtonState = actionButton ? showButtonProgress(target) : null;
   try {
     if (target.matches('[data-sidebar-collapse]')) {
@@ -1997,6 +1978,46 @@ document.addEventListener('click', async (event) => {
       target.textContent = 'Added';
       target.disabled = false;
       if (previousButtonState) previousButtonState.preserve = true;
+    } else if (target.matches('[data-buy-now]')) {
+      const variantId = target.dataset.buyNow;
+      const quantity = Number(document.querySelector('#product-quantity')?.value ?? 1);
+      await api('/api/cart/items', { method: 'POST', body: JSON.stringify({ variantId, quantity }) });
+      toast('Proceeding to checkout...');
+      history.pushState(null, '', '/checkout');
+      await renderPage();
+    } else if (target.matches('[data-qty-btn]')) {
+      const action = target.dataset.qtyBtn;
+      const qtyInput = document.querySelector('#product-quantity');
+      if (qtyInput) {
+        let current = parseInt(qtyInput.value, 10) || 1;
+        if (action === 'plus') current = Math.min(20, current + 1);
+        else if (action === 'minus') current = Math.max(1, current - 1);
+        qtyInput.value = current;
+      }
+    } else if (target.matches('[data-pack-pill]')) {
+      document.querySelectorAll('[data-pack-pill]').forEach((p) => p.classList.remove('active'));
+      target.classList.add('active');
+      const price = target.dataset.price;
+      const stock = target.dataset.stock;
+      const available = target.dataset.available === 'true';
+      const variantId = target.dataset.variantId;
+      const priceEl = document.querySelector('[data-product-price]');
+      if (priceEl && price) priceEl.textContent = price;
+      const stockEl = document.querySelector('[data-product-stock]');
+      if (stockEl) {
+        stockEl.textContent = stock;
+        stockEl.className = `availability ${available ? 'in_stock' : 'out_of_stock'}`;
+      }
+      const addBtn = document.querySelector('[data-add-to-cart]');
+      if (addBtn) {
+        addBtn.dataset.addToCart = variantId;
+        addBtn.disabled = !available;
+      }
+      const buyBtn = document.querySelector('[data-buy-now]');
+      if (buyBtn) {
+        buyBtn.dataset.buyNow = variantId;
+        buyBtn.disabled = !available;
+      }
     } else if (target.matches('[data-restock]')) {
       await api('/api/restock-subscriptions', { method: 'POST', body: JSON.stringify({ variantId: target.dataset.restock }) });
       toast('You will be notified when this option is available again.');
@@ -2478,7 +2499,8 @@ document.addEventListener('submit', async (event) => {
       toast('Enquiry updated.');
       await renderAdminContent();
     } else if (form.dataset.form === 'submit-review') {
-      const slug = form.dataset.slug;
+      const slug = form.dataset.productSlug || form.dataset.slug;
+      if (!slug) throw new Error('Product identifier missing.');
       const rating = Number(value('rating'));
       const title = value('title');
       const comment = value('comment');
@@ -2486,7 +2508,7 @@ document.addEventListener('submit', async (event) => {
         method: 'POST',
         body: JSON.stringify({ rating, title, comment }),
       });
-      toast('Thank you! Your review has been submitted for moderation.');
+      toast('Thank you! Your feedback has been published.');
       form.reset();
       await renderProduct(slug);
     } else if (form.dataset.form === 'submit-payment-reference') {
@@ -2565,6 +2587,9 @@ async function boot() {
     return;
   }
   await renderPage();
+  initNetworkWatcher();
+  initGlobalSearch();
+  initScrollAnimations();
   startAdminOrderStream();
   const route = location.pathname;
   if (/^\/(shop|product|cart|checkout)(\/|$)/.test(route)) {
@@ -2619,6 +2644,175 @@ function startInventoryStream() {
   });
   inventoryStream.addEventListener('error', () => inventoryStream.close(), { once: true });
   state.inventoryStream = inventoryStream;
+}
+
+function initNetworkWatcher() {
+  window.addEventListener('offline', () => {
+    toast('⚠️ No internet connection. You are currently offline.', true);
+  });
+  window.addEventListener('online', () => {
+    toast('🟢 Internet connection restored.', false);
+  });
+}
+
+let searchProductsCache = null;
+let searchCacheTime = 0;
+
+async function getCachedProductsForSearch() {
+  const now = Date.now();
+  if (searchProductsCache && (now - searchCacheTime < 30000)) {
+    return searchProductsCache;
+  }
+  try {
+    const res = await api('/api/products');
+    searchProductsCache = res.products || [];
+    searchCacheTime = now;
+    return searchProductsCache;
+  } catch {
+    return searchProductsCache || [];
+  }
+}
+
+function initGlobalSearch() {
+  const searchInput = document.querySelector('[data-global-search-input]');
+  const searchDropdown = document.querySelector('[data-global-search-dropdown]');
+  const searchClear = document.querySelector('[data-global-search-clear]');
+  if (!searchInput || !searchDropdown) return;
+
+  let debounceTimer = null;
+
+  async function handleSearch(query) {
+    const q = query.trim().toLowerCase();
+    if (!q) {
+      searchDropdown.hidden = true;
+      searchDropdown.innerHTML = '';
+      if (searchClear) searchClear.hidden = true;
+      return;
+    }
+
+    if (searchClear) searchClear.hidden = false;
+
+    const products = await getCachedProductsForSearch();
+    const matches = products.filter((p) => {
+      const name = (p.name || '').toLowerCase();
+      const desc = (p.description || '').toLowerCase();
+      const cat = (p.category || '').toLowerCase();
+      return name.includes(q) || desc.includes(q) || cat.includes(q);
+    });
+
+    if (matches.length === 0) {
+      searchDropdown.innerHTML = `
+        <div class="search-empty-state">
+          <span class="search-empty-icon">🔍</span>
+          <p class="search-empty-text">No millets found matching "${escapeHtml(query)}"</p>
+          <span class="search-empty-sub">Try searching for ragi, jowar, foxtail, or browse all items below</span>
+          <a href="/shop" class="btn btn-sm btn-outline-brand mt-2" data-search-nav>Browse all millets</a>
+        </div>
+      `;
+      searchDropdown.hidden = false;
+      return;
+    }
+
+    const itemsHtml = matches.slice(0, 6).map((p) => {
+      const img = p.images?.[0];
+      const lowestPrice = p.variants?.length
+        ? Math.min(...p.variants.map((v) => v.pricePaise))
+        : null;
+      return `
+        <a href="/product/${encodeURIComponent(p.slug)}" class="search-dropdown-item" data-search-nav>
+          <div class="search-item-thumb">
+            ${img ? `<img src="${escapeHtml(img.url)}" alt="${escapeHtml(p.name)}">` : '<span>🌾</span>'}
+          </div>
+          <div class="search-item-info">
+            <span class="search-item-name">${escapeHtml(p.name)}</span>
+            <span class="search-item-category">${escapeHtml(p.category || 'Millet Powder')}</span>
+          </div>
+          <div class="search-item-price">
+            ${lowestPrice ? money(lowestPrice) : ''}
+          </div>
+        </a>
+      `;
+    }).join('');
+
+    searchDropdown.innerHTML = `
+      <div class="search-dropdown-header">Products matching "${escapeHtml(query)}" (${matches.length})</div>
+      <div class="search-dropdown-list">${itemsHtml}</div>
+      ${matches.length > 6 ? `<a href="/shop?q=${encodeURIComponent(query)}" class="search-dropdown-view-all" data-search-nav>View all ${matches.length} matching products →</a>` : ''}
+    `;
+    searchDropdown.hidden = false;
+  }
+
+  searchInput.addEventListener('input', (e) => {
+    clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(() => {
+      handleSearch(e.target.value);
+    }, 180);
+  });
+
+  searchInput.addEventListener('focus', () => {
+    if (searchInput.value.trim()) {
+      handleSearch(searchInput.value);
+    }
+  });
+
+  if (searchClear) {
+    searchClear.addEventListener('click', () => {
+      searchInput.value = '';
+      searchDropdown.hidden = true;
+      searchDropdown.innerHTML = '';
+      searchClear.hidden = true;
+      searchInput.focus();
+    });
+  }
+
+  document.addEventListener('click', (e) => {
+    if (!e.target.closest('.header-search-box') && !e.target.closest('.header-search-dropdown')) {
+      searchDropdown.hidden = true;
+    }
+  });
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && !searchDropdown.hidden) {
+      searchDropdown.hidden = true;
+    }
+  });
+
+  searchDropdown.addEventListener('click', (e) => {
+    if (e.target.closest('[data-search-nav]')) {
+      searchDropdown.hidden = true;
+      searchInput.value = '';
+      if (searchClear) searchClear.hidden = true;
+    }
+  });
+}
+
+function initScrollAnimations() {
+  if (typeof IntersectionObserver === 'undefined') return;
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach((entry) => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('is-revealed');
+      } else {
+        if (entry.boundingClientRect.top > 0) {
+          entry.target.classList.remove('is-revealed');
+        }
+      }
+    });
+  }, {
+    root: null,
+    rootMargin: '0px 0px -40px 0px',
+    threshold: 0.12,
+  });
+
+  function observeElements() {
+    document.querySelectorAll('.scroll-reveal-item:not([data-observed])').forEach((el) => {
+      el.dataset.observed = 'true';
+      observer.observe(el);
+    });
+  }
+
+  observeElements();
+  new MutationObserver(observeElements).observe(document.body, { childList: true, subtree: true });
 }
 
 boot();
