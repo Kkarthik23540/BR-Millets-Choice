@@ -163,7 +163,31 @@ async function uploadAdminImage(form) {
 }
 
 async function getConfig() {
-  if (!state.config) state.config = await api('/api/config');
+  if (!state.config) {
+    try {
+      state.config = await api('/api/config');
+    } catch (err) {
+      console.warn('Could not load dynamic config, using fallback settings:', err);
+      state.config = {
+        businessName: 'BR Millet Choice',
+        supportEmail: 'kkarthik23540@gmail.com',
+        supportPhone: '+91 7893176982',
+        whatsapp: '+91 7893176982',
+        supportAddress: 'Soverign Shelters , lakdi ka pul, hyderabad, Telangana 500004',
+        businessHours: '',
+        businessLatitude: null,
+        businessLongitude: null,
+        emailConfigured: true,
+        googleConfigured: false,
+        paymentsEnabled: false,
+        paymentMethods: [
+          { value: 'cash_on_handover', label: 'Cash on delivery (confirmed by the team)' },
+          { value: 'manual_transfer', label: 'Manual transfer (instructions provided after confirmation)' },
+        ],
+        analyticsId: null,
+      };
+    }
+  }
   return state.config;
 }
 
@@ -880,7 +904,7 @@ async function renderCheckout() {
                 <div class="fw-bold">${isManual ? '📱 Direct UPI / Bank Transfer (GPay / PhonePe / Paytm)' : '💵 Cash on Handover / Delivery (COD)'}</div>
                 <div class="small text-secondary mt-1">
                   ${isManual
-    ? 'Pay directly using any UPI app to <strong>kkarthik23540@gmail.com</strong>. You can enter your UPI UTR reference or WhatsApp screenshot after submitting.'
+    ? 'Pay directly using any UPI app to <strong>kkarthik23540-5@okaxis</strong>. You can enter your UPI UTR reference or WhatsApp screenshot after submitting.'
     : 'Pay in cash when your order arrives at your delivery address. No advance payment required.'}
                 </div>
               </div>
@@ -915,8 +939,8 @@ async function renderOrders(orderId = '') {
             <p class="small mb-3">Please transfer <strong>${money(order.totalPaise)}</strong> using your preferred UPI app (Google Pay, PhonePe, Paytm, or BHIM):</p>
             <div class="p-3 bg-white rounded border mb-3">
               <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-2">
-                <span><strong>UPI ID:</strong> <code class="fs-6 text-dark user-select-all">kkarthik23540@gmail.com</code></span>
-                <button class="btn btn-sm btn-outline-brand" type="button" data-copy-text="kkarthik23540@gmail.com">Copy UPI ID</button>
+                <span><strong>UPI ID:</strong> <code class="fs-6 text-dark user-select-all">kkarthik23540-5@okaxis</code></span>
+                <button class="btn btn-sm btn-outline-brand" type="button" data-copy-text="kkarthik23540-5@okaxis">Copy UPI ID</button>
               </div>
               <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
                 <span><strong>Phone / GPay / PhonePe:</strong> <code class="fs-6 text-dark user-select-all">+91 7893176982</code></span>

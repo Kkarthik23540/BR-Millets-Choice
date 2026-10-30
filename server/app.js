@@ -86,13 +86,18 @@ app.use((req, res, next) => {
 });
 app.use(express.json({ limit: '32kb' }));
 app.use(express.urlencoded({ extended: false, limit: '16kb' }));
+const sessionStore = new PgSession({
+  pool,
+  tableName: 'user_sessions',
+  createTableIfMissing: true,
+  pruneSessionInterval: 60 * 15,
+});
+sessionStore.on('error', (error) => {
+  console.warn('Session store database warning:', error.message);
+});
+
 app.use(session({
-  store: new PgSession({
-    pool,
-    tableName: 'user_sessions',
-    createTableIfMissing: true,
-    pruneSessionInterval: 60 * 15,
-  }),
+  store: sessionStore,
   name: 'brmc.sid',
   secret: config.sessionSecret,
   resave: false,
@@ -233,30 +238,43 @@ app.get('/api/health', asyncRoute(async (_req, res) => {
 }));
 
 app.get('/api/csrf', (req, res) => {
-  if (!req.session.csrfToken) req.session.csrfToken = randomToken();
+  const token = req.session ? (req.session.csrfToken ||= randomToken()) : randomToken();
   res.set('Cache-Control', 'no-store');
-  res.json({ csrfToken: req.session.csrfToken });
+  res.json({ csrfToken: token });
 });
 
 async function getBusinessDetails() {
-  await pool.query(
-    `INSERT INTO business_details (id, address, phone, email, whatsapp)
-     VALUES (1, $1, $2, $3, $4) ON CONFLICT (id) DO NOTHING`,
-    [config.businessAddress, config.businessPhone, config.businessEmail, config.businessWhatsapp],
-  );
-  const result = await pool.query(
-    'SELECT address, phone, email, whatsapp, hours, latitude, longitude FROM business_details WHERE id = 1',
-  );
-  const details = result.rows[0];
-  return {
-    supportEmail: details?.email ?? config.businessEmail,
-    supportPhone: details?.phone ?? config.businessPhone,
-    whatsapp: details?.whatsapp ?? config.businessWhatsapp,
-    supportAddress: details?.address ?? config.businessAddress,
-    businessHours: details?.hours ?? '',
-    businessLatitude: details?.latitude ?? null,
-    businessLongitude: details?.longitude ?? null,
-  };
+  try {
+    await pool.query(
+      `INSERT INTO business_details (id, address, phone, email, whatsapp)
+       VALUES (1, $1, $2, $3, $4) ON CONFLICT (id) DO NOTHING`,
+      [config.businessAddress, config.businessPhone, config.businessEmail, config.businessWhatsapp],
+    );
+    const result = await pool.query(
+      'SELECT address, phone, email, whatsapp, hours, latitude, longitude FROM business_details WHERE id = 1',
+    );
+    const details = result.rows[0];
+    return {
+      supportEmail: details?.email ?? config.businessEmail,
+      supportPhone: details?.phone ?? config.businessPhone,
+      whatsapp: details?.whatsapp ?? config.businessWhatsapp,
+      supportAddress: details?.address ?? config.businessAddress,
+      businessHours: details?.hours ?? '',
+      businessLatitude: details?.latitude ?? null,
+      businessLongitude: details?.longitude ?? null,
+    };
+  } catch (err) {
+    console.warn('Could not query business details from database, using config fallback:', err.message);
+    return {
+      supportEmail: config.businessEmail,
+      supportPhone: config.businessPhone,
+      whatsapp: config.businessWhatsapp,
+      supportAddress: config.businessAddress,
+      businessHours: '',
+      businessLatitude: null,
+      businessLongitude: null,
+    };
+  }
 }
 
 app.get('/api/config', asyncRoute(async (_req, res) => {
@@ -902,11 +920,16 @@ app.get('/api/products', asyncRoute(async (req, res) => {
     parameters.push(category);
     filters.push(`p.category = $${parameters.length}`);
   }
-  const result = await pool.query(
-    `${productQuery} WHERE ${filters.join(' AND ')} GROUP BY p.id ORDER BY p.name LIMIT 100`,
-    parameters,
-  );
-  res.json({ products: result.rows });
+  try {
+    const result = await pool.query(
+      `${productQuery} WHERE ${filters.join(' AND ')} GROUP BY p.id ORDER BY p.name LIMIT 100`,
+      parameters,
+    );
+    res.json({ products: result.rows });
+  } catch (err) {
+    console.warn('Could not query products from database:', err.message);
+    res.json({ products: [] });
+  }
 }));
 
 app.get('/api/products/:slug', asyncRoute(async (req, res) => {
