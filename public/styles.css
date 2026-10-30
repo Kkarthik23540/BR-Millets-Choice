@@ -566,3 +566,136 @@ a:hover { color: var(--earth); }
 .btn-secondary.is-busy::after {
   color: var(--forest, #21543d);
 }
+
+
+/* ==========================================================================
+   Page Scroll Movement Bar & Section Overlay Animation
+   ========================================================================== */
+.site-header {
+  position: sticky;
+  top: 0;
+  z-index: 1020;
+}
+
+.page-scroll-indicator {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 0%;
+  height: 3.5px;
+  background: linear-gradient(90deg, #1b4d3e 0%, #2e7d32 40%, #d4af37 80%, #f59e0b 100%);
+  z-index: 1040;
+  transition: width 0.08s ease-out;
+  pointer-events: none;
+  box-shadow: 0 1px 6px rgba(46, 125, 50, 0.45);
+}
+
+/* Sections overlay entrance from bottom to top */
+@keyframes brmc-slide-up-overlay {
+  0% {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.site-content main > section,
+.site-content main > .container,
+.hero-shell,
+.home-benefits .feature-card,
+.product-grid > article,
+.admin-stat,
+.admin-shortcut,
+.account-panel,
+.feature-card,
+.contact-form,
+.product-detail-layout {
+  animation: brmc-slide-up-overlay 0.52s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.product-grid > article:nth-child(1) { animation-delay: 0.04s; }
+.product-grid > article:nth-child(2) { animation-delay: 0.10s; }
+.product-grid > article:nth-child(3) { animation-delay: 0.16s; }
+.product-grid > article:nth-child(4) { animation-delay: 0.22s; }
+.home-benefits .feature-card:nth-child(1) { animation-delay: 0.06s; }
+.home-benefits .feature-card:nth-child(2) { animation-delay: 0.14s; }
+.home-benefits .feature-card:nth-child(3) { animation-delay: 0.22s; }
+
+.brmc-reveal {
+  opacity: 0;
+  transform: translateY(26px);
+  transition: opacity 0.55s cubic-bezier(0.16, 1, 0.3, 1), transform 0.55s cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: opacity, transform;
+}
+.brmc-reveal.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Google Maps Container */
+.google-map-container {
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.08);
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  background: #f8fafc;
+  position: relative;
+}
+.google-map-container iframe {
+  display: block;
+  width: 100%;
+  height: 320px;
+  border: 0;
+}
+.google-map-bar {
+  padding: 0.75rem 1rem;
+  background: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-top: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+/* Impressive Modern Layouts & Card Elevation */
+.feature-card, .product-card, .admin-stat, .admin-shortcut, .address-card {
+  border-radius: 14px;
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.product-card:hover, .feature-card:hover, .admin-shortcut:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 28px -4px rgba(27, 77, 62, 0.12), 0 4px 10px -2px rgba(0, 0, 0, 0.04);
+}
+
+/* Fresh stock badges */
+.availability.in_stock {
+  background: #e8f5e9;
+  color: #1b5e20;
+  font-weight: 600;
+  padding: 0.25rem 0.65rem;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+.availability.in_stock::before {
+  content: '●';
+  color: #2e7d32;
+  font-size: 0.85em;
+}
+.availability.low_stock {
+  background: #fff8e1;
+  color: #b78103;
+  font-weight: 600;
+  padding: 0.25rem 0.65rem;
+  border-radius: 999px;
+}
+.availability.out_of_stock {
+  background: #ffebee;
+  color: #c62828;
+  font-weight: 600;
+  padding: 0.25rem 0.65rem;
+  border-radius: 999px;
+}

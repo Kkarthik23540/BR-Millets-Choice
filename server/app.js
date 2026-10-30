@@ -1092,7 +1092,7 @@ app.post('/api/orders', requireVerifiedUser, asyncRoute(async (req, res) => {
       `INSERT INTO orders (
          order_number, user_id, address_snapshot, status, payment_method,
          subtotal_paise, delivery_fee_paise, total_paise, idempotency_key, customer_note
-       ) VALUES ($1, $2, $3::jsonb, 'awaiting_confirmation', $4, $5, 0, $5, $6, $7)
+       ) VALUES ($1, $2, $3::jsonb, 'confirmed', $4, $5, 0, $5, $6, $7)
        RETURNING id, order_number, status, payment_status, total_paise, created_at`,
       [orderNumber, req.user.id, JSON.stringify(address), data.paymentMethod, subtotal.toString(), idempotencyKey, data.customerNote],
     );
@@ -1111,19 +1111,19 @@ app.post('/api/orders', requireVerifiedUser, asyncRoute(async (req, res) => {
     }
     await client.query(
       `INSERT INTO order_status_history (order_id, changed_by, old_status, new_status, note)
-       VALUES ($1, $2, NULL, 'awaiting_confirmation', 'Order request received')`,
+       VALUES ($1, $2, NULL, 'confirmed', 'Order placed and confirmed (stock reserved)')`,
       [order.id, req.user.id],
     );
-    await notifyUser(client, req.user.id, 'order', 'Order request received', `${orderNumber} is awaiting availability confirmation.`, `/orders/${order.id}`);
+    await notifyUser(client, req.user.id, 'order', 'Order confirmed', `${orderNumber} has been placed successfully.`, `/orders/${order.id}`);
     await notifyAdmins(
       client,
-      'New order request',
-      `${orderNumber} was submitted and is awaiting confirmation.`,
+      'New order confirmed',
+      `${orderNumber} was placed and confirmed.`,
       'order',
     );
     await enqueueTemplate(client, req.user.id, req.user.email, 'order_received', {
       orderNumber,
-      status: 'Awaiting admin confirmation',
+      status: 'Confirmed',
       items: itemData.map((item) => ({
         productName: item.productName,
         packSize: item.packSize,

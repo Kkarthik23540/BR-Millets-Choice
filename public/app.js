@@ -84,6 +84,16 @@ function stopTopLoader() {
   }
 }
 
+function updatePageScrollProgress() {
+  const indicator = document.getElementById('page-scroll-indicator');
+  if (!indicator) return;
+  const scrollTop = window.scrollY || document.documentElement.scrollTop;
+  const docHeight = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+  const progress = docHeight > 0 ? Math.min(100, Math.max(0, (scrollTop / docHeight) * 100)) : 0;
+  indicator.style.width = `${progress}%`;
+}
+window.addEventListener('scroll', updatePageScrollProgress, { passive: true });
+
 function productSlug(name) {
   return name.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
 }
@@ -243,17 +253,17 @@ async function renderHome() {
   const data = await api('/api/products');
   appRoot.innerHTML = `
     <section class="hero"><div class="container"><div class="row align-items-center gy-4 gy-lg-5">
-      <div class="col-lg-7"><p class="hero-eyebrow">Welcome to BR Millet Choice</p><h1>Millet goodness, made simple.</h1><p class="hero-copy">Browse our products, check the available pack options and send an order request. We’ll confirm availability with you.</p><div class="d-flex flex-wrap gap-3 mt-4">${buttonLink('/shop', 'Browse products')} ${buttonLink('/contact', 'Contact us', 'btn-outline-brand')}</div></div>
+      <div class="col-lg-7"><p class="hero-eyebrow">Welcome to BR Millet Choice</p><h1>Pure Millets, Healthy Living.</h1><p class="hero-copy">Nutrient-rich, pure stone-ground millet powders crafted for wholesome daily nutrition. Products in stock can be ordered directly online with instant confirmation and fast doorstep delivery.</p><div class="d-flex flex-wrap gap-3 mt-4">${buttonLink('/shop', 'Order online')} ${buttonLink('/contact', 'Contact us', 'btn-outline-brand')}</div></div>
       <div class="col-lg-5"><div class="hero-brand-card"><img src="/images/br-millet-choice-logo.png" alt="BR Millets Choice — Pure Millets, Healthy Living" width="640" height="640"></div></div>
     </div></div></section>
     <section class="trust-strip py-3"><div class="container"><div class="row gy-3">
-      <div class="col-sm-4"><div class="trust-item"><span class="trust-icon" aria-hidden="true">✓</span><div><strong>Clear product details</strong><small>Published as supplied</small></div></div></div>
-      <div class="col-sm-4"><div class="trust-item"><span class="trust-icon" aria-hidden="true">↗</span><div><strong>Order request first</strong><small>Availability is confirmed by the team</small></div></div></div>
-      <div class="col-sm-4"><div class="trust-item"><span class="trust-icon" aria-hidden="true">♡</span><div><strong>Personal support</strong><small>Contact details shown when provided</small></div></div></div>
+      <div class="col-sm-4"><div class="trust-item"><span class="trust-icon" aria-hidden="true">🌾</span><div><strong>100% Pure Millets</strong><small>Stone-ground & chemical-free</small></div></div></div>
+      <div class="col-sm-4"><div class="trust-item"><span class="trust-icon" aria-hidden="true">⚡</span><div><strong>Direct Online Booking</strong><small>Instantly booked when in stock</small></div></div></div>
+      <div class="col-sm-4"><div class="trust-item"><span class="trust-icon" aria-hidden="true">🚚</span><div><strong>Fresh Delivery</strong><small>Freshly ground & doorstep delivered</small></div></div></div>
     </div></div></section>
-    <section class="section-space"><div class="container"><div class="d-flex flex-wrap justify-content-between align-items-end gap-3 mb-4"><div><p class="eyebrow">The catalogue</p><h2 class="section-heading mb-2">Explore our products</h2><p class="section-intro mb-0">Choose from the available options. Prices and stock are loaded from the business catalogue.</p></div>${buttonLink('/shop', 'View all products', 'btn-outline-brand')}</div>${cardGrid(data.products.slice(0, 3))}</div></section>
-    <section class="soft-section section-space"><div class="container"><div class="row align-items-center gy-4"><div class="col-lg-5"><p class="eyebrow">A simple way to shop</p><h2 class="section-heading">Everything you need, in one place.</h2><p class="section-intro">View product details and pack options, then send an order request. Availability is confirmed by our team before an order is final.</p>${buttonLink('/about', 'Our story', 'btn-outline-brand')}</div><div class="col-lg-7"><div class="home-benefits"><article class="feature-card"><span class="trust-icon" aria-hidden="true">01</span><h3>Explore</h3><p class="product-meta mb-0">Browse the available products and pack sizes.</p></article><article class="feature-card"><span class="trust-icon" aria-hidden="true">02</span><h3>Request</h3><p class="product-meta mb-0">Send your selection as an order request.</p></article><article class="feature-card"><span class="trust-icon" aria-hidden="true">03</span><h3>Confirm</h3><p class="product-meta mb-0">The team checks availability with you.</p></article></div></div></div></div></section>
-    <section class="home-contact-cta"><div class="container d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3"><div><p class="eyebrow mb-2">Need help?</p><h2 class="h3 mb-1">We’re here to answer your questions.</h2><p class="mb-0 text-secondary">Get in touch about products or order requests.</p></div>${buttonLink('/contact', 'Contact us')}</div></section>`;
+    <section class="section-space"><div class="container"><div class="d-flex flex-wrap justify-content-between align-items-end gap-3 mb-4"><div><p class="eyebrow">Featured powders</p><h2 class="section-heading mb-2">Explore our pure products</h2><p class="section-intro mb-0">Select your favorite millet powders. When stock is available, order directly online.</p></div>${buttonLink('/shop', 'View all products', 'btn-outline-brand')}</div>${cardGrid(data.products.slice(0, 3))}</div></section>
+    <section class="soft-section section-space"><div class="container"><div class="row align-items-center gy-4"><div class="col-lg-5"><p class="eyebrow">How it works</p><h2 class="section-heading">Wholesome goodness at your doorstep.</h2><p class="section-intro">Experience the purest traditional millets. Check live stock, book your packs online, and receive fresh grains delivered straight to your home.</p>${buttonLink('/about', 'Our story', 'btn-outline-brand')}</div><div class="col-lg-7"><div class="home-benefits"><article class="feature-card"><span class="trust-icon" aria-hidden="true">01</span><h3>Choose</h3><p class="product-meta mb-0">Select your pure millet powder and preferred pack size.</p></article><article class="feature-card"><span class="trust-icon" aria-hidden="true">02</span><h3>Book</h3><p class="product-meta mb-0">Order directly with instant stock reservation.</p></article><article class="feature-card"><span class="trust-icon" aria-hidden="true">03</span><h3>Enjoy</h3><p class="product-meta mb-0">Freshly ground and delivered straight to your doorstep.</p></article></div></div></div></div></section>
+    <section class="home-contact-cta"><div class="container d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3"><div><p class="eyebrow mb-2">Need help?</p><h2 class="h3 mb-1">We’re here to answer your questions.</h2><p class="mb-0 text-secondary">Get in touch about products, custom pack sizes, or order support.</p></div>${buttonLink('/contact', 'Contact us')}</div></section>`;
   markViewedPage();
 }
 
@@ -401,79 +411,51 @@ function renderContact() {
   updateSupportDetails();
 }
 
-function osmMarkerIcon() {
-  return window.L.divIcon({
-    className: 'business-location-marker',
-    html: '<span></span>',
-    iconSize: [20, 20],
-    iconAnchor: [10, 10],
-  });
-}
-
-function initializeBusinessLocationPicker() {
-  const mapElement = document.querySelector('#business-location-picker-map');
-  if (!mapElement) return;
-  const form = mapElement.closest('form');
+function initializeGoogleMapPicker() {
+  const frame = document.querySelector('#admin-google-maps-frame');
+  if (!frame) return;
+  const form = frame.closest('form');
+  const addressInput = form.elements.namedItem('address');
   const latitudeInput = form.elements.namedItem('latitude');
   const longitudeInput = form.elements.namedItem('longitude');
   const status = form.querySelector('[data-business-location-status]');
-  if (!window.L) {
-    status.textContent = 'The map could not be loaded. Check your connection and reload this page.';
-    mapElement.hidden = true;
-    return;
-  }
+  const extLink = document.querySelector('#admin-google-maps-link');
 
-  const latitude = Number(latitudeInput.value);
-  const longitude = Number(longitudeInput.value);
-  const hasSavedLocation = latitudeInput.value !== '' && longitudeInput.value !== ''
-    && Number.isFinite(latitude) && Number.isFinite(longitude);
-  const initialPosition = hasSavedLocation ? [latitude, longitude] : [17.385, 78.4867];
-  const map = window.L.map(mapElement, { scrollWheelZoom: false }).setView(initialPosition, hasSavedLocation ? 16 : 12);
-  const tileLayer = window.L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    maxZoom: 19,
-    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap contributors</a>',
-  }).addTo(map);
-  tileLayer.on('tileerror', () => {
-    status.textContent = 'Map tiles could not be loaded. Check your connection before selecting a location.';
-  });
-
-  let marker = hasSavedLocation ? window.L.marker(initialPosition, { icon: osmMarkerIcon() }).addTo(map) : null;
-  const setLocation = (position) => {
-    const lat = position.lat;
-    const lng = position.lng;
-    if (!marker) marker = window.L.marker([lat, lng], { icon: osmMarkerIcon() }).addTo(map);
-    else marker.setLatLng([lat, lng]);
-    latitudeInput.value = lat.toFixed(6);
-    longitudeInput.value = lng.toFixed(6);
-    status.textContent = `Selected map pin: ${lat.toFixed(6)}, ${lng.toFixed(6)}. Save public details to publish it.`;
+  const updatePreview = () => {
+    const address = addressInput?.value.trim() || '';
+    const lat = latitudeInput?.value.trim() || '';
+    const lng = longitudeInput?.value.trim() || '';
+    const query = address || (lat && lng ? `${lat},${lng}` : 'Soverign Shelters, lakdi ka pul, Hyderabad');
+    frame.src = `https://www.google.com/maps?q=${encodeURIComponent(query)}&output=embed`;
+    if (extLink) extLink.href = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`;
+    if (status) status.textContent = `Google Maps previewing: ${query}`;
   };
-  map.on('click', (event) => setLocation(event.latlng));
-  form.querySelector('[data-business-location-clear]').addEventListener('click', () => {
-    if (marker) map.removeLayer(marker);
-    marker = null;
-    latitudeInput.value = '';
-    longitudeInput.value = '';
-    status.textContent = 'Map pin cleared. Save public details to remove the published map.';
-  });
-  form.querySelector('[data-business-location-current]').addEventListener('click', (event) => {
+
+  form.querySelector('[data-google-map-preview]')?.addEventListener('click', updatePreview);
+  addressInput?.addEventListener('change', updatePreview);
+
+  form.querySelector('[data-google-map-current]')?.addEventListener('click', (event) => {
     const button = event.currentTarget;
     if (!navigator.geolocation) {
-      status.textContent = 'Location access is not available in this browser.';
+      if (status) status.textContent = 'Geolocation is not available in this browser.';
       return;
     }
-    const previousButtonState = showButtonProgress(button);
-    status.textContent = 'Finding your location…';
+    const previous = showButtonProgress(button);
+    if (status) status.textContent = 'Fetching current GPS coordinates…';
     navigator.geolocation.getCurrentPosition(
       ({ coords }) => {
-        const position = { lat: coords.latitude, lng: coords.longitude };
-        map.setView([position.lat, position.lng], 16);
-        setLocation(position);
-        toast('Map pin selected. Save the business details to publish it.');
-        restoreButtonProgress(button, previousButtonState);
+        latitudeInput.value = coords.latitude.toFixed(6);
+        longitudeInput.value = coords.longitude.toFixed(6);
+        const query = `${coords.latitude.toFixed(6)},${coords.longitude.toFixed(6)}`;
+        frame.src = `https://www.google.com/maps?q=${encodeURIComponent(query)}&output=embed`;
+        if (extLink) extLink.href = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`;
+        if (status) status.textContent = `GPS coordinates captured: ${query}. Click "Save public details" to publish.`;
+        toast('GPS location coordinates updated.');
+        restoreButtonProgress(button, previous);
       },
-      () => {
-        status.textContent = 'Could not get your location. Allow location access or select the pin on the map.';
-        restoreButtonProgress(button, previousButtonState);
+      (err) => {
+        if (status) status.textContent = `GPS error: ${err.message}. Enter your business address above.`;
+        restoreButtonProgress(button, previous);
       },
       { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 },
     );
@@ -483,35 +465,26 @@ function initializeBusinessLocationPicker() {
 function renderPublicLocationMap() {
   const section = document.querySelector('[data-location-map]');
   if (!section) return;
-  if (state.publicLocationMap) {
-    state.publicLocationMap.remove();
-    state.publicLocationMap = null;
-  }
-  const latitude = Number(state.config.businessLatitude);
-  const longitude = Number(state.config.businessLongitude);
-  const hasLocation = state.config.businessLatitude != null && state.config.businessLongitude != null
-    && Number.isFinite(latitude) && Number.isFinite(longitude);
-  section.hidden = !hasLocation;
-  if (!hasLocation) {
+  const address = state.config.supportAddress || '';
+  const lat = state.config.businessLatitude;
+  const lng = state.config.businessLongitude;
+  const query = address || (lat != null && lng != null ? `${lat},${lng}` : 'Soverign Shelters, lakdi ka pul, Hyderabad');
+  if (!query) {
+    section.hidden = true;
     section.innerHTML = '';
     return;
   }
-  const mapUrl = `https://www.openstreetmap.org/?mlat=${encodeURIComponent(latitude)}&mlon=${encodeURIComponent(longitude)}#map=16/${encodeURIComponent(latitude)}/${encodeURIComponent(longitude)}`;
-  section.innerHTML = `<div class="location-map-heading"><h3 class="h5 mb-0">View on map</h3><a href="${mapUrl}" target="_blank" rel="noopener noreferrer">Open map</a></div><div class="location-map location-public-map" data-public-location-map role="region" aria-label="Map showing the business location"></div><p class="map-attribution mb-0">Map data &copy; OpenStreetMap contributors</p>`;
-  if (!window.L) {
-    section.querySelector('[data-public-location-map]').textContent = 'The map could not be loaded. Use Open map to view the location.';
-    return;
-  }
-  const map = window.L.map(section.querySelector('[data-public-location-map]'), { scrollWheelZoom: false }).setView([latitude, longitude], 15);
-  const tileLayer = window.L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    maxZoom: 19,
-    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap contributors</a>',
-  }).addTo(map);
-  tileLayer.on('tileerror', () => {
-    section.querySelector('.map-attribution').textContent = 'Map tiles could not be loaded. Use Open map to view the location.';
-  });
-  window.L.marker([latitude, longitude], { icon: osmMarkerIcon(), keyboard: true }).addTo(map);
-  state.publicLocationMap = map;
+  section.hidden = false;
+  section.innerHTML = `
+    <div class="location-map-heading d-flex align-items-center justify-content-between mb-2">
+      <h3 class="h5 mb-0">Our Location</h3>
+      <a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-brand">
+        <svg class="me-1" aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>Google Maps
+      </a>
+    </div>
+    <div class="google-map-container">
+      <iframe src="https://www.google.com/maps?q=${encodeURIComponent(query)}&output=embed" loading="lazy" allowfullscreen referrerpolicy="no-referrer-when-downgrade" title="Google Maps business location"></iframe>
+    </div>`;
 }
 
 function renderAuthPage(kind, user = null) {
@@ -690,7 +663,7 @@ async function renderAccount() {
           ${user.emailVerified ? `<div class="account-address-list mt-3">${addressCards}</div><details class="address-form-disclosure mt-3" ${addresses.length ? '' : 'open'}><summary>Add address</summary><div class="mt-3">${addressForm()}</div></details>` : '<p class="text-secondary mt-3 mb-0">Verify your email to manage addresses.</p>'}
         </section>
         <section class="feature-card account-panel" id="account-orders">
-          <div class="account-panel-heading"><div><p class="eyebrow mb-1">Purchases</p><h2 class="h4 mb-0">Order requests</h2></div><span class="account-count">${orders.length}</span></div>
+          <div class="account-panel-heading"><div><p class="eyebrow mb-1">Purchases</p><h2 class="h4 mb-0">My orders</h2></div><span class="account-count">${orders.length}</span></div>
           ${user.emailVerified ? `<div class="account-order-list mt-3">${orderCards}</div>` : '<p class="text-secondary mt-3 mb-0">Verify your email to view orders.</p>'}
         </section>
         <section class="feature-card account-panel" id="account-notifications">
@@ -806,18 +779,25 @@ function renderAdminProfile(user) {
           </section>
           <section class="feature-card mt-3">
             <p class="eyebrow mb-1">Shown to customers</p><h2 class="h4 mb-2">Public business details</h2>
-            <p class="small text-secondary">These details appear on the Contact page. Select your business pin on the map; only the saved location is shown to customers.</p>
+            <p class="small text-secondary">These details appear on the Contact page. Enter your address or click "Use GPS coordinates" to preview your pin on Google Maps.</p>
             <form data-form="admin-business-details" class="admin-business-form">
               <div><label class="form-label" for="business-address">Business address / location</label><textarea class="form-control" id="business-address" name="address" rows="3" maxlength="500">${escapeHtml(details.address ?? '')}</textarea></div>
               <div class="business-location-picker">
-                <div class="business-location-map-controls">
-                  <button class="btn btn-sm btn-outline-brand" type="button" data-business-location-current>Use my current location</button>
-                  <button class="btn btn-sm btn-outline-secondary" type="button" data-business-location-clear>Clear pin</button>
+                <div class="d-flex flex-wrap gap-2 mb-2 align-items-center justify-content-between">
+                  <div class="d-flex gap-2">
+                    <button class="btn btn-sm btn-outline-brand" type="button" data-google-map-current>Use GPS coordinates</button>
+                    <button class="btn btn-sm btn-outline-secondary" type="button" data-google-map-preview>Refresh Google Map</button>
+                  </div>
+                  <a id="admin-google-maps-link" class="btn btn-sm btn-outline-brand" href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(details.address || 'Soverign Shelters, lakdi ka pul, Hyderabad')}" target="_blank" rel="noopener noreferrer">
+                    <svg class="me-1" aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>Open in Google Maps
+                  </a>
                 </div>
-                <div id="business-location-picker-map" class="location-map location-picker-map" role="region" aria-label="Choose the business location on the map"></div>
+                <div class="google-map-container mb-2">
+                  <iframe id="admin-google-maps-frame" src="https://www.google.com/maps?q=${encodeURIComponent(details.address || (details.latitude && details.longitude ? `${details.latitude},${details.longitude}` : 'Soverign Shelters, lakdi ka pul, Hyderabad'))}&output=embed" loading="lazy" allowfullscreen referrerpolicy="no-referrer-when-downgrade" title="Google Maps business location"></iframe>
+                </div>
                 <input type="hidden" name="latitude" value="${escapeHtml(details.latitude ?? '')}">
                 <input type="hidden" name="longitude" value="${escapeHtml(details.longitude ?? '')}">
-                <p class="small text-secondary mb-0" data-business-location-status role="status">${details.latitude != null && details.longitude != null ? `Saved map pin: ${Number(details.latitude).toFixed(6)}, ${Number(details.longitude).toFixed(6)}` : 'Click the map to add the public business location pin.'}</p>
+                <p class="small text-secondary mb-0" data-business-location-status role="status">${details.latitude != null && details.longitude != null ? `Google Maps location active: ${Number(details.latitude).toFixed(6)}, ${Number(details.longitude).toFixed(6)}` : 'Google Maps displays your business location based on your address and coordinates.'}</p>
               </div>
               <div><label class="form-label" for="business-phone">Contact phone</label><input class="form-control" id="business-phone" name="phone" type="tel" autocomplete="tel" maxlength="40" value="${escapeHtml(details.phone ?? '')}"></div>
               <div><label class="form-label" for="business-email">Contact email</label><input class="form-control" id="business-email" name="email" type="email" maxlength="254" value="${escapeHtml(details.email ?? '')}"></div>
@@ -829,7 +809,7 @@ function renderAdminProfile(user) {
         </div>
       </div>
     </section>`;
-  initializeBusinessLocationPicker();
+  initializeGoogleMapPicker();
 }
 
 function addressForm() {
@@ -998,14 +978,14 @@ async function renderOrders(orderId = '') {
           </div>
         ` : ''}
 
-        <div class="row g-4"><div class="col-lg-7"><div class="feature-card"><h2 class="h4">Items</h2><ul class="detail-list">${order.items.map((item) => `<li class="d-flex justify-content-between"><span>${escapeHtml(item.productName)} · ${escapeHtml(item.packSize)} × ${item.quantity}</span><strong>${money(item.lineTotalPaise)}</strong></li>`).join('')}</ul><div class="d-flex justify-content-between"><span>Total requested</span><strong>${money(order.totalPaise)}</strong></div><p class="small text-secondary mt-2 mb-0">Payment status: <span class="badge ${isPaid ? 'bg-success' : 'bg-secondary'}">${escapeHtml(order.paymentStatus)}</span> · Method: ${escapeHtml(order.paymentMethod.replaceAll('_', ' '))}</p></div></div>
-        <div class="col-lg-5"><div class="feature-card"><h2 class="h4">Delivery details</h2><p>${escapeHtml(order.address.recipient_name)} · ${escapeHtml(order.address.phone)}<br>${escapeHtml(order.address.line1)} ${escapeHtml(order.address.line2)}<br>${escapeHtml(order.address.city)}, ${escapeHtml(order.address.state)} ${escapeHtml(order.address.postal_code)}</p><h3 class="h5">Status history</h3><ul class="detail-list">${order.history.map((item) => `<li><strong>${escapeHtml(item.status.replaceAll('_', ' '))}</strong><br><span class="small text-secondary">${new Date(item.createdAt).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })} · ${escapeHtml(item.note || 'Status updated')}</span></li>`).join('')}</ul>${['awaiting_confirmation', 'confirmed'].includes(order.status) ? `<button class="btn btn-outline-danger" data-cancel-order="${escapeHtml(order.id)}">Cancel order request</button>` : ''}</div></div></div>
+        <div class="row g-4"><div class="col-lg-7"><div class="feature-card"><h2 class="h4">Items</h2><ul class="detail-list">${order.items.map((item) => `<li class="d-flex justify-content-between"><span>${escapeHtml(item.productName)} · ${escapeHtml(item.packSize)} × ${item.quantity}</span><strong>${money(item.lineTotalPaise)}</strong></li>`).join('')}</ul><div class="d-flex justify-content-between"><span>Total</span><strong>${money(order.totalPaise)}</strong></div><p class="small text-secondary mt-2 mb-0">Payment status: <span class="badge ${isPaid ? 'bg-success' : 'bg-secondary'}">${escapeHtml(order.paymentStatus)}</span> · Method: ${escapeHtml(order.paymentMethod.replaceAll('_', ' '))}</p></div></div>
+        <div class="col-lg-5"><div class="feature-card"><h2 class="h4">Delivery details</h2><p>${escapeHtml(order.address.recipient_name)} · ${escapeHtml(order.address.phone)}<br>${escapeHtml(order.address.line1)} ${escapeHtml(order.address.line2)}<br>${escapeHtml(order.address.city)}, ${escapeHtml(order.address.state)} ${escapeHtml(order.address.postal_code)}</p><h3 class="h5">Status history</h3><ul class="detail-list">${order.history.map((item) => `<li><strong>${escapeHtml(item.status.replaceAll('_', ' '))}</strong><br><span class="small text-secondary">${new Date(item.createdAt).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })} · ${escapeHtml(item.note || 'Status updated')}</span></li>`).join('')}</ul>${['awaiting_confirmation', 'confirmed'].includes(order.status) ? `<button class="btn btn-outline-danger" data-cancel-order="${escapeHtml(order.id)}">Cancel order</button>` : ''}</div></div></div>
       </section>`;
     return;
   }
   const data = await api('/api/orders');
-  appRoot.innerHTML = `${pageHeader('Your account', 'My orders', 'Order request statuses reflect the latest business update.')}
-    <section class="container section-space">${data.orders.length ? `<div class="table-responsive"><table class="table align-middle"><thead><tr><th>Order</th><th>Date</th><th>Status</th><th>Amount</th><th></th></tr></thead><tbody>${data.orders.map((order) => `<tr><td>${escapeHtml(order.orderNumber)}</td><td>${new Date(order.createdAt).toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata' })}</td><td><span class="status-pill">${escapeHtml(order.status.replaceAll('_', ' '))}</span></td><td>${money(order.totalPaise)}</td><td><a href="/orders/${encodeURIComponent(order.id)}">View details</a></td></tr>`).join('')}</tbody></table></div>` : emptyState('No orders yet', 'Your order requests will appear here.', '/shop', 'Explore products')}</section>`;
+  appRoot.innerHTML = `${pageHeader('Your account', 'My orders', 'View your order details and track delivery progress.')}
+    <section class="container section-space">${data.orders.length ? `<div class="table-responsive"><table class="table align-middle"><thead><tr><th>Order</th><th>Date</th><th>Status</th><th>Amount</th><th></th></tr></thead><tbody>${data.orders.map((order) => `<tr><td>${escapeHtml(order.orderNumber)}</td><td>${new Date(order.createdAt).toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata' })}</td><td><span class="status-pill">${escapeHtml(order.status.replaceAll('_', ' '))}</span></td><td>${money(order.totalPaise)}</td><td><a href="/orders/${encodeURIComponent(order.id)}">View details</a></td></tr>`).join('')}</tbody></table></div>` : emptyState('No orders yet', 'Your orders will appear here.', '/shop', 'Explore products')}</section>`;
 }
 
 async function renderNotifications() {
@@ -1300,6 +1280,16 @@ async function renderPage() {
   const canonical = document.querySelector('link[rel="canonical"]');
   canonical.href = `${location.origin}${route === '/product' ? path : route}`;
   document.querySelector('[data-year]').textContent = String(new Date().getFullYear());
+
+  const footer = document.querySelector('.site-footer');
+  if (footer) {
+    if (route === '/') {
+      footer.classList.remove('d-none');
+    } else {
+      footer.classList.add('d-none');
+    }
+  }
+  updatePageScrollProgress();
 
   try {
     await getConfig();
@@ -1832,8 +1822,8 @@ document.addEventListener('submit', async (event) => {
         });
         sessionStorage.setItem(`brmc-order-request-${result.order.id}`, 'sent');
       }
-      appRoot.innerHTML = `${pageHeader('Request received', 'Thank you for your order request')}
-        <section class="container content-shell"><div class="notice"><strong>${escapeHtml(result.order.orderNumber)}</strong> is awaiting availability confirmation. It is not yet a confirmed order.</div><p class="mt-3">Current status: ${escapeHtml(result.order.status.replaceAll('_', ' '))}.</p>${buttonLink(`/orders/${encodeURIComponent(result.order.id)}`, 'View order details')} ${buttonLink('/shop', 'Continue browsing', 'btn-outline-brand')}</section>`;
+      appRoot.innerHTML = `${pageHeader('Order Confirmed', 'Thank you for your order!')}
+        <section class="container content-shell"><div class="notice">Your order <strong>${escapeHtml(result.order.orderNumber)}</strong> has been placed and confirmed successfully! Stock is reserved and your order is being prepared.</div><p class="mt-3">Order Status: <span class="badge bg-success">${escapeHtml(result.order.status.replaceAll('_', ' '))}</span></p>${buttonLink(`/orders/${encodeURIComponent(result.order.id)}`, 'View order details')} ${buttonLink('/shop', 'Continue shopping', 'btn-outline-brand')}</section>`;
     } else if (form.dataset.form === 'admin-product') {
       const active = formData.has('active');
       const imageUrl = await uploadAdminImage(form);
