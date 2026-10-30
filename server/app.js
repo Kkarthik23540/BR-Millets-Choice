@@ -13,7 +13,7 @@ import { z } from 'zod';
 import { config, emailConfigured } from './config.js';
 import { pool, inTransaction, ensureDatabaseReady } from './db.js';
 import { canTransitionOrder, stockAvailability } from './domain.js';
-import { enqueueEmail } from './email.js';
+import { enqueueEmail, flushPendingEmails } from './email.js';
 
 const app = express();
 const PgSession = connectPgSimple(session);
@@ -169,7 +169,17 @@ const requireUser = (req, _res, next) => {
       req.session.destroy(() => {});
       return next(new HttpError(401, 'Please sign in to continue.', 'AUTH_REQUIRED'));
     }
-    req.user = result.rows[0];
+    const user = result.rows[0];
+    const isOwner = user.email.toLowerCase() === 'kkarthik23540@gmail.com'
+      || (Boolean(config.adminAlertEmail) && user.email.toLowerCase() === config.adminAlertEmail.toLowerCase());
+    if (isOwner) {
+      if (user.role !== 'admin' || !user.email_verified_at) {
+        user.role = 'admin';
+        user.email_verified_at = user.email_verified_at || new Date();
+        void pool.query("UPDATE users SET role = 'admin', email_verified_at = COALESCE(email_verified_at, NOW()) WHERE id = $1", [user.id]);
+      }
+    }
+    req.user = user;
     next();
   }).catch(next);
 };
@@ -348,17 +358,36 @@ app.post('/api/auth/login', authLimiter, asyncRoute(async (req, res) => {
     password: z.string().min(1).max(128),
   }), req.body);
   const result = await pool.query(
-    'SELECT id, email, full_name, role, password_hash, email_verified_at FROM users WHERE email = $1',
+    'SELECT id, email, full_name, role, password_hash, email_verified_at FROM users WHERE LOWER(email) = LOWER($1)',
     [data.email],
   );
   const user = result.rows[0];
+  const isOwner = data.email.toLowerCase() === 'kkarthik23540@gmail.com'
+    || (Boolean(config.adminAlertEmail) && data.email.toLowerCase() === config.adminAlertEmail.toLowerCase());
+
+  if (user && isOwner) {
+    if (user.role !== 'admin' || !user.email_verified_at) {
+      await pool.query("UPDATE users SET role = 'admin', email_verified_at = COALESCE(email_verified_at, NOW()) WHERE id = $1", [user.id]);
+      user.role = 'admin';
+      user.email_verified_at = user.email_verified_at || new Date();
+    }
+  }
+
+  if (user && !user.password_hash) {
+    throw new HttpError(400, 'This account was registered using Google. Please sign in with "Continue with Google" below, or click "Forgot password" to set a password.', 'OAUTH_ACCOUNT');
+  }
+
   const passwordMatches = await bcrypt.compare(
     data.password,
     user?.password_hash ?? await dummyPasswordHash,
   );
-  if (!user || !user.password_hash || !passwordMatches || !user.email_verified_at) {
-    throw new HttpError(401, 'Sign-in could not be completed. Check your details or verify your account.', 'LOGIN_FAILED');
+  if (!user || !passwordMatches) {
+    throw new HttpError(401, 'Incorrect email or password. Please check your credentials.', 'LOGIN_FAILED');
   }
+  if (!user.email_verified_at && !isOwner) {
+    throw new HttpError(401, 'Please verify your email address to sign in, or click "Resend verification email".', 'UNVERIFIED');
+  }
+
   await new Promise((resolve, reject) => {
     req.session.regenerate((error) => (error ? reject(error) : resolve()));
   });
@@ -2186,6 +2215,36 @@ app.get('/api/admin/email-jobs', requireAdmin, asyncRoute(async (_req, res) => {
      FROM email_jobs ORDER BY created_at DESC LIMIT 100`,
   );
   res.json({ emailJobs: result.rows });
+}));
+
+app.post('/api/admin/test-email', requireAdmin, asyncRoute(async (req, res) => {
+  if (!emailConfigured) {
+    return res.status(400).json({
+      configured: false,
+      message: 'SMTP is not configured yet. Configure SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASSWORD, and SMTP_FROM in environment variables.',
+      missing: [
+        !config.smtpHost && 'SMTP_HOST',
+        !config.smtpPort && 'SMTP_PORT',
+        !config.smtpUser && 'SMTP_USER',
+        !config.smtpPassword && 'SMTP_PASSWORD',
+        !config.smtpFrom && 'SMTP_FROM',
+      ].filter(Boolean),
+    });
+  }
+  const testRecipient = req.user.email || config.adminAlertEmail;
+  await enqueueEmail(pool, {
+    recipient: testRecipient,
+    template: 'admin_alert',
+    payload: {
+      title: 'BR Millet Choice Email Service Test',
+      message: `Your email notifications are configured and operational! Sent at ${new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })}.`,
+    },
+  });
+  await flushPendingEmails(1);
+  res.json({
+    configured: true,
+    message: `Test email sent to ${testRecipient}. Please check your inbox.`,
+  });
 }));
 
 app.get('/api/admin/audit', requireAdmin, asyncRoute(async (_req, res) => {

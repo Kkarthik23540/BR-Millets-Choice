@@ -416,9 +416,9 @@ a:hover { color: var(--earth); }
   .site-nav { grid-template-columns: minmax(0, 1fr); }
   .page-hero { padding: 2.2rem 0; }
   .profile-nav { grid-template-columns: minmax(0, 1fr); }
-  .account-jump-nav { align-items: stretch; }
-  .account-jump-nav > a { flex: 1 1 calc(50% - .2rem); }
-  .account-jump-nav > .btn { flex: 1 1 100%; margin-left: 0 !important; }
+  .account-jump-nav { display: flex; overflow-x: auto; scrollbar-width: none; }
+  .account-jump-nav > a { flex: 0 0 auto; }
+  .account-jump-nav > .btn { flex: 0 0 auto; }
   .account-panel-heading { align-items: flex-start; }
   .contact-detail-list li { grid-template-columns: minmax(0, 1fr); gap: .15rem; }
   .footer-bottom { overflow-wrap: anywhere; }
@@ -1412,4 +1412,84 @@ a:hover { color: var(--earth); }
 }
 .customer-activity-details summary::-webkit-details-marker {
   display: none;
+}
+
+/* Mobile Header Cart Shortcut */
+.mobile-header-cart {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 8px;
+  border: 1px solid var(--line);
+  color: var(--forest);
+  background: #ffffff;
+  text-decoration: none;
+  margin-left: auto;
+  flex-shrink: 0;
+}
+.mobile-header-cart .cart-count {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  background: var(--forest);
+  color: #ffffff;
+  font-size: 0.7rem;
+  font-weight: 700;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 4px;
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+@media (max-width: 991.98px) {
+  .mobile-header-cart {
+    display: inline-flex;
+  }
+}
+@media (max-width: 768px) {
+  .site-header-inner {
+    flex-wrap: wrap;
+    row-gap: 0.5rem;
+    padding: 0.5rem 0.85rem;
+  }
+  .site-header-search {
+    order: 3;
+    flex-basis: 100%;
+    width: 100%;
+    margin-left: 0;
+    margin-top: 0.35rem;
+  }
+  .hero {
+    padding: 2.25rem 0 2rem;
+    text-align: center;
+  }
+  .hero h1 {
+    font-size: clamp(1.85rem, 6.5vw, 2.5rem);
+    max-width: 100%;
+    margin: 0.75rem 0;
+  }
+  .hero-copy {
+    font-size: 0.95rem;
+    margin-inline: auto;
+  }
+  .hero .d-flex {
+    justify-content: center;
+  }
+  .hero-brand-card {
+    width: min(65vw, 210px);
+    margin-top: 1.25rem;
+  }
+  .announcement-bar {
+    font-size: 0.76rem;
+    padding: 0.35rem 0.5rem;
+    line-height: 1.35;
+  }
+  .trust-item {
+    justify-content: center;
+  }
 }

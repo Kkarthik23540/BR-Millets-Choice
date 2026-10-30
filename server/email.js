@@ -46,6 +46,9 @@ export async function enqueueEmail(client, { userId = null, recipient, template,
      VALUES ($1, $2, $3, $4::jsonb)`,
     [userId, recipient, template, JSON.stringify(sealEmailPayload(payload))],
   );
+  if (emailConfigured) {
+    void flushPendingEmails().catch((err) => console.error('Immediate email dispatch error:', err.message));
+  }
 }
 
 const preferenceForTemplate = {
@@ -199,7 +202,7 @@ async function processOneEmail() {
       );
     });
     console.error(`Email job ${job.id} ${exhausted ? 'failed' : 'will retry'}: ${error.message}`);
-    return;
+    return false;
   }
 
   try {
@@ -218,8 +221,18 @@ async function processOneEmail() {
         [job.id, job.attempts, sendResult.messageId ?? null],
       );
     });
+    return true;
   } catch (error) {
     console.error(`SMTP accepted email job ${job.id}, but its result could not be persisted: ${error.message}`);
+    return true;
+  }
+}
+
+export async function flushPendingEmails(max = 5) {
+  if (!transporter) return;
+  for (let i = 0; i < max; i++) {
+    const processed = await processOneEmail();
+    if (!processed) break;
   }
 }
 
