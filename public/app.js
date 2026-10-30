@@ -99,8 +99,73 @@ function productSlug(name) {
 }
 
 function toast(message, error = false, href = '') {
-  toastRegion.innerHTML = `<div class="app-toast${error ? ' error' : ''}" role="status">${escapeHtml(message)}${href ? `<a href="${escapeHtml(href)}">Review orders</a>` : ''}</div>`;
-  window.setTimeout(() => { toastRegion.innerHTML = ''; }, 4500);
+  const toastEl = document.createElement('div');
+  toastEl.className = `app-toast${error ? ' error' : ''}`;
+  toastEl.setAttribute('role', 'status');
+  toastEl.innerHTML = `
+    <div class="toast-body">
+      <span class="toast-symbol" aria-hidden="true">${error ? '✕' : '✓'}</span>
+      <span class="toast-text">${escapeHtml(message)}</span>
+      ${href ? `<a class="toast-link" href="${escapeHtml(href)}">Review</a>` : ''}
+    </div>
+    <button class="toast-close" type="button" aria-label="Dismiss notification" title="Close">✕</button>
+  `;
+  const removeToast = () => {
+    toastEl.classList.add('toast-leaving');
+    window.setTimeout(() => toastEl.remove(), 260);
+  };
+  toastEl.querySelector('.toast-close').addEventListener('click', removeToast);
+  toastRegion.appendChild(toastEl);
+  window.setTimeout(removeToast, 5000);
+}
+
+async function compressImageFile(file, maxWidth = 1200, quality = 0.85) {
+  if (!file || !file.type.startsWith('image/')) return file;
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        let width = img.width;
+        let height = img.height;
+        if (width > maxWidth || height > maxWidth) {
+          if (width > height) {
+            height = Math.round((height * maxWidth) / width);
+            width = maxWidth;
+          } else {
+            width = Math.round((width * maxWidth) / height);
+            height = maxWidth;
+          }
+        }
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, width, height);
+        canvas.toBlob((blob) => {
+          if (blob) {
+            resolve(new File([blob], file.name.replace(/\.[^.]+$/, '.jpg'), { type: 'image/jpeg' }));
+          } else {
+            resolve(file);
+          }
+        }, 'image/jpeg', quality);
+      };
+      img.onerror = () => resolve(file);
+      img.src = e.target.result;
+    };
+    reader.onerror = () => resolve(file);
+    reader.readAsDataURL(file);
+  });
+}
+
+async function uploadAdminImage(form) {
+  const file = form.querySelector('[data-product-image]')?.files?.[0];
+  if (!file) return null;
+  const compressed = await compressImageFile(file);
+  const payload = new FormData();
+  payload.append('image', compressed);
+  const result = await api('/api/admin/product-images', { method: 'POST', body: payload });
+  return result.image.url;
 }
 
 function showButtonProgress(button) {
@@ -179,14 +244,7 @@ async function api(url, options = {}) {
   return data;
 }
 
-async function uploadAdminImage(form) {
-  const file = form.querySelector('[data-product-image]')?.files?.[0];
-  if (!file) return null;
-  const payload = new FormData();
-  payload.append('image', file);
-  const result = await api('/api/admin/product-images', { method: 'POST', body: payload });
-  return result.image.url;
-}
+
 
 async function getConfig() {
   if (!state.config) {
@@ -389,6 +447,317 @@ async function renderProduct(slug) {
   markViewedPage(product);
 }
 
+function renderMilletsPage() {
+  const milletsList = [
+    {
+      name: 'Foxtail Millet',
+      telugu: 'Korra',
+      hindi: 'Kangni',
+      tamil: 'Thinai',
+      badge: 'Diabetic Friendly • Siri Dhanyam',
+      icon: '🌾',
+      fiber: '8.0g',
+      protein: '12.3g',
+      color: '#2e7d32',
+      bg: '#e8f5ec',
+      summary: 'Rich in dietary fiber and Vitamin B12. Its low glycemic index helps stabilize blood sugar and cholesterol levels naturally.',
+      cooking: 'Perfect for Khichdi, Idli/Dosa batter, Pulao, and healthy breakfast Upma.',
+      searchQuery: 'foxtail'
+    },
+    {
+      name: 'Finger Millet',
+      telugu: 'Ragi / Ragulu',
+      hindi: 'Mandua / Nachani',
+      tamil: 'Kezhvaragu',
+      badge: 'High Calcium • Bone Strength',
+      icon: '🥣',
+      fiber: '3.6g',
+      protein: '7.3g',
+      color: '#9a3412',
+      bg: '#ffedd5',
+      summary: 'Packed with 30x more calcium than polished rice. Strengthens growing bones and is ideal for children, elders, and mothers.',
+      cooking: 'Delicious Ragi Java, wholesome porridges, soft rotis, and nutritious baked snacks.',
+      searchQuery: 'ragi'
+    },
+    {
+      name: 'Pearl Millet',
+      telugu: 'Sajjalu',
+      hindi: 'Bajra',
+      tamil: 'Kambu',
+      badge: 'Energy & Iron Powerhouse',
+      icon: '⚡',
+      fiber: '8.5g',
+      protein: '11.6g',
+      color: '#b45309',
+      bg: '#fef3c7',
+      summary: 'Loaded with natural iron, magnesium, and zinc. Fights anemia, boosts hemoglobin, and sustains muscle stamina all day long.',
+      cooking: 'Traditional Bajra Bhakri / Rotla, nourishing multigrain porridge, and khichdi.',
+      searchQuery: 'bajra'
+    },
+    {
+      name: 'Sorghum',
+      telugu: 'Jonnalu',
+      hindi: 'Jowar',
+      tamil: 'Cholam',
+      badge: 'Gluten-Free Daily Staple',
+      icon: '🌿',
+      fiber: '6.7g',
+      protein: '10.4g',
+      color: '#047857',
+      bg: '#d1fae5',
+      summary: 'Packed with bioactive polyphenols, copper, and dietary fiber. Light on digestion, heart-healthy, and ideal for daily chapatis.',
+      cooking: 'Soft Jowar Rotis, healthy vegetable Upma, and gluten-free baking mixes.',
+      searchQuery: 'jowar'
+    },
+    {
+      name: 'Little Millet',
+      telugu: 'Samalu',
+      hindi: 'Sama / Kutki',
+      tamil: 'Samai',
+      badge: 'Weight Balance & Detox',
+      icon: '🍃',
+      fiber: '7.6g',
+      protein: '7.7g',
+      color: '#0284c7',
+      bg: '#e0f2fe',
+      summary: 'Extremely easy to digest and rich in B-complex vitamins, phosphorus, and essential fatty acids. Aids natural metabolism.',
+      cooking: 'Effortlessly replaces polished white rice in Lemon Rice, Pongal, Pulao, and Payasam.',
+      searchQuery: 'little'
+    },
+    {
+      name: 'Barnyard Millet',
+      telugu: 'Udalu',
+      hindi: 'Sanwa',
+      tamil: 'Kuthiraivali',
+      badge: 'Highest Dietary Fiber',
+      icon: '🍲',
+      fiber: '10.1g',
+      protein: '11.2g',
+      color: '#4338ca',
+      bg: '#e0e7ff',
+      summary: 'Contains the highest fiber content among all cereal grains (over 6x white rice). Helps regulate blood sugar and detoxify.',
+      cooking: 'Great for fasting days (Upvas Khichdi), soft breakfast Idlis, and nourishing porridge.',
+      searchQuery: 'barnyard'
+    },
+    {
+      name: 'Kodo Millet',
+      telugu: 'Arikelu',
+      hindi: 'Kodra',
+      tamil: 'Varagu',
+      badge: 'Cellular Antioxidants',
+      icon: '✨',
+      fiber: '9.0g',
+      protein: '8.3g',
+      color: '#7c3aed',
+      bg: '#ede9fe',
+      summary: 'Rich in polyphenols, antioxidants, and lecithin. Aids cardiovascular recovery and soothes internal inflammation.',
+      cooking: 'Traditional Kodo Biryani, steamed millet rice, and golden crispy dosas.',
+      searchQuery: 'kodo'
+    },
+    {
+      name: 'Proso Millet',
+      telugu: 'Varigalu',
+      hindi: 'Barri / Chena',
+      tamil: 'Panivaragu',
+      badge: 'High Protein & Nerves',
+      icon: '🧠',
+      fiber: '8.2g',
+      protein: '12.5g',
+      color: '#be185d',
+      bg: '#fce7f3',
+      summary: 'High protein content and rich in lecithin which supports the central nervous system and promotes radiant skin and hair.',
+      cooking: 'Millet Upma, warm tossed salads, flatbread rotis, and artisan grain bread.',
+      searchQuery: 'proso'
+    }
+  ];
+
+  appRoot.innerHTML = `${pageHeader('Superfoods of India', 'Traditional Millets Guide', 'Explore the 8 staple millets celebrated for centuries in Indian kitchens. 100% natural, unpolished, stone-ground, and packed with lifelong health benefits.')}
+    <section class="container section-space">
+      <div class="millet-guide-grid mb-5">
+        ${milletsList.map((m) => `
+          <article class="millet-guide-card">
+            <div class="millet-card-header" style="background:${m.bg};">
+              <span class="millet-card-badge" style="background:${m.color};color:#fff;">${escapeHtml(m.badge)}</span>
+              <span class="millet-card-icon" aria-hidden="true">${m.icon}</span>
+              <h2 class="h4 mb-1">${escapeHtml(m.name)}</h2>
+              <div class="small fw-semibold text-secondary">
+                <span>Telugu: ${escapeHtml(m.telugu)}</span> • <span>Hindi: ${escapeHtml(m.hindi)}</span>
+              </div>
+            </div>
+            <div class="millet-card-body">
+              <p class="millet-summary mb-3">${escapeHtml(m.summary)}</p>
+              <div class="millet-stats-row mb-3">
+                <div class="millet-stat-pill">
+                  <span class="millet-stat-label">Fiber</span>
+                  <strong>${m.fiber}</strong>
+                </div>
+                <div class="millet-stat-pill">
+                  <span class="millet-stat-label">Protein</span>
+                  <strong>${m.protein}</strong>
+                </div>
+                <div class="millet-stat-pill">
+                  <span class="millet-stat-label">100g Grain</span>
+                  <strong>Pure</strong>
+                </div>
+              </div>
+              <div class="millet-cooking mb-4">
+                <span class="small fw-bold text-dark d-block mb-1">🍽️ Best Culinary Uses:</span>
+                <span class="small text-secondary">${escapeHtml(m.cooking)}</span>
+              </div>
+              <div class="mt-auto">
+                <a class="btn btn-outline-brand w-100 fw-semibold" href="/shop?q=${encodeURIComponent(m.searchQuery)}">
+                  Shop ${escapeHtml(m.name)} ➔
+                </a>
+              </div>
+            </div>
+          </article>
+        `).join('')}
+      </div>
+
+      <div class="feature-card p-4 p-md-5 rounded-4 mt-4 bg-light border">
+        <div class="row align-items-center gy-4">
+          <div class="col-lg-8">
+            <p class="eyebrow mb-1">Why choose unpolished?</p>
+            <h2 class="h3 mb-2">Preserving Nature’s Outer Bran &amp; Essential Nutrients</h2>
+            <p class="text-secondary mb-0">Unlike machine-polished commercial grains that strip away the mineral-rich bran layer, BR Millet Choice stones-grounds whole unpolished grains. This ensures every grain keeps its natural dietary fiber, zinc, iron, and slow-digesting complex carbs intact.</p>
+          </div>
+          <div class="col-lg-4 text-lg-end">
+            <a class="btn btn-brand btn-lg" href="/shop">Browse Storefront Catalogue</a>
+          </div>
+        </div>
+      </div>
+    </section>`;
+}
+
+function renderAboutPage() {
+  const reviewsAndStories = [
+    {
+      title: 'Fasting Sugar Dropped from 155 to 110!',
+      author: 'Priya Sharma',
+      location: 'Kondapur, Hyderabad',
+      rating: 5,
+      story: 'Switched our family breakfast from polished white rice dosa to BR Millet Foxtail & Ragi flour mix 3 months ago. The taste is earthy, delicious, and my father’s fasting sugar has remarkably stabilized. Truly pure stone-ground quality!'
+    },
+    {
+      title: 'Authentic Village Aroma in Jowar Flour',
+      author: 'Dr. V. N. Rao',
+      location: 'Banjara Hills, Hyderabad',
+      rating: 5,
+      story: 'The stone-ground aroma of BR Millet Choice Jowar flour immediately reminded me of traditional village cooking. No gritty stones, no chemical bleaching — just pure, nutritious rotis that stay soft.'
+    },
+    {
+      title: 'My Kids Love the Bajra & Ragi Porridge',
+      author: 'Sunitha K.',
+      location: 'Gachibowli, Hyderabad',
+      rating: 5,
+      story: 'Giving my children clean nutrition without synthetic powders was my priority. The Ragi porridge with organic jaggery is their favorite evening drink. Fast doorstep delivery right to our gated community!'
+    },
+    {
+      title: 'Replaced White Rice with Little Millet',
+      author: 'Rajesh Varma',
+      location: 'Madhapur, Hyderabad',
+      rating: 5,
+      story: 'We replaced polished afternoon white rice with BR Little Millet. We no longer feel the heavy post-lunch lethargy, digestion is feather-light, and ordering on WhatsApp or online is effortless.'
+    },
+    {
+      title: 'Best Natural Nutrition for My Clients',
+      author: 'Ananya R. (Fitness Coach)',
+      location: 'Jubilee Hills, Hyderabad',
+      rating: 5,
+      story: 'I recommend BR Millets to all my clients looking for sustained stamina and fat loss. The unpolished grain profile and freshness make a tangible difference in athletic endurance.'
+    },
+    {
+      title: 'Fresh 5kg Mixed Millet Box Delivered Overnight',
+      author: 'K. Srinivas',
+      location: 'Secunderabad',
+      rating: 5,
+      story: 'Ordered 5kg mixed millets combo. Delivered within 24 hours in sealed airtight eco-packaging. Extremely courteous service and unbeatable hygiene.'
+    }
+  ];
+
+  appRoot.innerHTML = `${pageHeader('Wholesome Living', 'Our Story & Real Customer Journeys', 'From farm fields to your kitchen table — 100% stone-ground unpolished millet goodness crafted in Hyderabad.')}
+    <section class="container section-space">
+      <div class="row align-items-center gy-4 mb-5">
+        <div class="col-lg-6">
+          <p class="eyebrow mb-2">The BR Millet Choice Philosophy</p>
+          <h2 class="h3 mb-3">Reviving Ancient Indian Grains For Modern Vitality</h2>
+          <p class="lead text-secondary">BR Millet Choice was founded in Hyderabad with a singular mission: to eliminate adulterated, machine-polished grains and bring pure, uncompromised, farm-fresh millets back to Indian family dining tables.</p>
+          <p class="text-secondary">We partner directly with sustainable dryland millet farmers across Telangana and Andhra Pradesh. Each harvest is thoroughly cleaned, de-stoned, sun-dried, and slowly cold stone-ground in small hygienic batches. This time-honored slow grinding process protects delicate grain oils and dietary fibers from heat destruction.</p>
+        </div>
+        <div class="col-lg-6">
+          <div class="p-4 p-md-5 rounded-4 bg-light border">
+            <h3 class="h5 mb-3 text-dark">Our 4 Core Quality Promises</h3>
+            <div class="d-flex align-items-start gap-3 mb-3">
+              <span class="fs-4" aria-hidden="true">🌾</span>
+              <div>
+                <strong>100% Whole &amp; Unpolished</strong>
+                <p class="small text-secondary mb-0">Zero artificial polishing, keeping all dietary fiber, iron, and minerals intact.</p>
+              </div>
+            </div>
+            <div class="d-flex align-items-start gap-3 mb-3">
+              <span class="fs-4" aria-hidden="true">⚙️</span>
+              <div>
+                <strong>Traditional Cold Stone-Ground</strong>
+                <p class="small text-secondary mb-0">Slow-speed milling prevents friction heat and preserves natural grain nutrition.</p>
+              </div>
+            </div>
+            <div class="d-flex align-items-start gap-3 mb-3">
+              <span class="fs-4" aria-hidden="true">🚫</span>
+              <div>
+                <strong>Zero Preservatives or Additives</strong>
+                <p class="small text-secondary mb-0">No synthetic anti-caking agents, no bleaching, 100% pure whole grains.</p>
+              </div>
+            </div>
+            <div class="d-flex align-items-start gap-3">
+              <span class="fs-4" aria-hidden="true">🚚</span>
+              <div>
+                <strong>Fresh Weekly Batches in Hyderabad</strong>
+                <p class="small text-secondary mb-0">Milled fresh every single week and delivered directly to your doorstep.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Moving Customer Reviews / Success Stories Marquee -->
+      <div class="stories-section my-5 pt-3">
+        <div class="text-center mb-4">
+          <p class="eyebrow mb-1">Customer Reviews &amp; Success Stories</p>
+          <h2 class="h3">Real Families, Real Health Transformations</h2>
+          <p class="text-secondary small">Stories glide continuously across the screen. Hover over any story to pause and read.</p>
+        </div>
+
+        <div class="stories-marquee-wrapper" aria-label="Customer transformation stories marquee">
+          <div class="stories-track">
+            ${[...reviewsAndStories, ...reviewsAndStories].map((story) => `
+              <article class="story-card">
+                <div>
+                  <div class="d-flex justify-content-between align-items-center mb-2">
+                    <span class="text-warning fw-bold">${'★'.repeat(story.rating)}</span>
+                    <span class="badge bg-success-subtle text-success small">Verified Purchase</span>
+                  </div>
+                  <h3 class="h6 mb-2 text-dark">${escapeHtml(story.title)}</h3>
+                  <p class="small text-secondary mb-3">"${escapeHtml(story.story)}"</p>
+                </div>
+                <div class="border-top pt-2 mt-auto d-flex align-items-center gap-2">
+                  <div class="account-avatar" style="width:32px;height:32px;font-size:0.85rem;" aria-hidden="true">${escapeHtml(story.author.slice(0, 1))}</div>
+                  <div>
+                    <strong class="d-block small text-dark">${escapeHtml(story.author)}</strong>
+                    <span class="small text-secondary">${escapeHtml(story.location)}</span>
+                  </div>
+                </div>
+              </article>
+            `).join('')}
+          </div>
+        </div>
+      </div>
+
+      <div class="text-center mt-5">
+        <a class="btn btn-brand btn-lg px-4" href="/shop">Experience Pure Millets Today ➔</a>
+      </div>
+    </section>`;
+}
+
 function renderContentPage(route) {
   const pages = {
     '/about': ['Our story', 'BR Millet Choice is a millet powder business. This page will share the owner-approved story, sourcing and preparation information when supplied. No certification, origin or health claims are implied.'],
@@ -569,12 +938,13 @@ function updateAdminShell(user) {
     navigation.innerHTML = `
       <a href="/admin" aria-label="Dashboard" title="Dashboard"><svg aria-hidden="true" viewBox="0 0 24 24"><rect x="3" y="3" width="8" height="8" rx="1"></rect><rect x="13" y="3" width="8" height="5" rx="1"></rect><rect x="13" y="10" width="8" height="11" rx="1"></rect><rect x="3" y="13" width="8" height="8" rx="1"></rect></svg><span>Dashboard</span></a>
       <a href="/admin/products" aria-label="Add products" title="Add products"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"></path><rect x="3" y="3" width="18" height="18" rx="3"></rect></svg><span>Add products</span></a>
-      <a href="/admin/manage-products" aria-label="Manage products" title="Manage products"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M4 7h16l-1 13H5L4 7Z"></path><path d="M9 8V5a3 3 0 0 1 6 0v3"></path></svg><span>Manage products</span></a>
-      <a href="/admin/orders" aria-label="Orders" title="Orders"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M5 4h14v17H5z"></path><path d="M8 8h8M8 12h8M8 16h5"></path></svg><span>Orders</span></a>
-      <a href="/admin/reviews" aria-label="Customer reviews" title="Customer reviews"><svg aria-hidden="true" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg><span>Reviews</span></a>
-      <a href="/admin/enquiries" aria-label="Enquiries" title="Enquiries"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M4 5h16v12H9l-5 4z"></path><path d="M8 9h8M8 13h5"></path></svg><span>Enquiries</span></a>
-      <a href="/admin/customers" aria-label="Customers" title="Customers"><svg aria-hidden="true" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3"></circle><circle cx="17" cy="9" r="2.3"></circle><path d="M3 20c.5-3.4 2.5-5 6-5s5.5 1.6 6 5M15 15c3.4-.2 5.2 1.3 6 4"></path></svg><span>Customers</span></a>
+      <a href="/admin/manage-products" aria-label="Manage products" title="Manage products"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M4 7h16l-1 13H5L4 7Z"></path><path d="M9 8V5a3 3 0 0 1 6 0v3"></path></svg><span>Products</span><span class="nav-count-badge badge-green" data-nav-badge="products">•</span></a>
+      <a href="/admin/orders" aria-label="Orders" title="Orders"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M5 4h14v17H5z"></path><path d="M8 8h8M8 12h8M8 16h5"></path></svg><span>Orders</span><span class="nav-count-badge badge-amber" data-nav-badge="orders">•</span></a>
+      <a href="/admin/reviews" aria-label="Customer reviews" title="Customer reviews"><svg aria-hidden="true" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg><span>Reviews</span><span class="nav-count-badge badge-blue" data-nav-badge="reviews">•</span></a>
+      <a href="/admin/enquiries" aria-label="Enquiries" title="Enquiries"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M4 5h16v12H9l-5 4z"></path><path d="M8 9h8M8 13h5"></path></svg><span>Enquiries</span><span class="nav-count-badge badge-purple" data-nav-badge="enquiries">•</span></a>
+      <a href="/admin/customers" aria-label="Customers" title="Customers"><svg aria-hidden="true" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3"></circle><circle cx="17" cy="9" r="2.3"></circle><path d="M3 20c.5-3.4 2.5-5 6-5s5.5 1.6 6 5M15 15c3.4-.2 5.2 1.3 6 4"></path></svg><span>Customers</span><span class="nav-count-badge badge-gray" data-nav-badge="customers">•</span></a>
       <a href="/profile" aria-label="Admin profile" title="Admin profile"><svg aria-hidden="true" viewBox="0 0 24 24"><circle cx="12" cy="8" r="3"></circle><path d="M5 20c.7-3.5 3.2-5 7-5s6.3 1.5 7 5"></path></svg><span>Admin profile</span></a>`;
+    void updateAdminNavBadges();
   } else {
     navigation.innerHTML = `
       <a href="/" aria-label="Home" title="Home"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1z"></path></svg><span>Home</span></a>
@@ -645,8 +1015,30 @@ async function renderAccount() {
   appRoot.innerHTML = `${pageHeader('Your account', `Hello, ${user.fullName}`, 'Your profile, addresses, order requests and updates—together on one page.')}
     <section class="container account-page">
       <nav class="account-jump-nav" aria-label="Account sections">
-        <a href="#account-profile">Profile</a><a href="#account-addresses">Addresses</a><a href="#account-orders">Orders</a><a href="#account-notifications">Updates</a><a href="#account-preferences">Preferences</a>
-        ${user.role === 'admin' ? '<a href="/admin/products">Manage products</a>' : ''}
+        <a class="account-nav-tab active" href="#account-profile">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M6 20v-2a6 6 0 0 1 12 0v2"/></svg>
+          <span>Profile</span>
+        </a>
+        <a class="account-nav-tab" href="#account-addresses">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+          <span>Addresses</span>
+          ${addresses.length ? `<span class="tab-badge">${addresses.length}</span>` : ''}
+        </a>
+        <a class="account-nav-tab" href="#account-orders">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="m9 12 2 2 4-4"/></svg>
+          <span>Orders</span>
+          ${orders.length ? `<span class="tab-badge">${orders.length}</span>` : ''}
+        </a>
+        <a class="account-nav-tab" href="#account-notifications">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+          <span>Updates</span>
+          ${notifications.unreadCount ? `<span class="tab-badge tab-badge-alert">${notifications.unreadCount}</span>` : ''}
+        </a>
+        <a class="account-nav-tab" href="#account-preferences">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
+          <span>Preferences</span>
+        </a>
+        ${user.role === 'admin' ? '<a class="account-nav-tab" href="/admin/products"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg><span>Manage products</span></a>' : ''}
       </nav>
       <div class="account-dashboard">
         <section class="feature-card account-panel" id="account-profile">
@@ -883,32 +1275,45 @@ async function renderCheckout() {
     appRoot.innerHTML = `${pageHeader('Checkout', 'Order requests are not enabled yet')}<section class="container section-space"><div class="notice">The business has not enabled a payment/fulfilment method. No order has been placed. Please contact BR Millet Choice for availability and payment arrangements.</div></section>`;
     return;
   }
-  appRoot.innerHTML = `${pageHeader('Checkout', 'Review your order request', 'Submitting creates a request for confirmation, not an automatic charge.')}
+  appRoot.innerHTML = `${pageHeader('Checkout', 'Complete your order', 'Choose your delivery address and instant payment method.')}
     <section class="container section-space"><div class="row g-5"><div class="col-lg-7">
       ${addressData.addresses.length ? `<form data-form="checkout"><h2 class="h4 mb-3">Delivery address</h2><select class="form-select mb-4" name="addressId" required>${addressData.addresses.map((a) => `<option value="${escapeHtml(a.id)}">${escapeHtml(a.label)} — ${escapeHtml(a.recipientName)}, ${escapeHtml(a.city)} (${escapeHtml(a.phone)})</option>`).join('')}</select>
       <h2 class="h4 mb-3">Choose payment method</h2>
       <div class="row g-3 mb-4">
-        ${methods.map((method, index) => {
-    const isManual = method.value === 'manual_transfer';
-    return `
-          <div class="col-12">
-            <label class="feature-card p-3 d-flex align-items-start gap-3 border rounded-3 w-100 mb-0" for="method-${index}" style="cursor:pointer">
-              <input class="form-check-input mt-1 flex-shrink-0" type="radio" name="paymentMethod" id="method-${index}" value="${escapeHtml(method.value)}" ${index === 0 ? 'checked' : ''}>
+        <div class="col-12">
+          <label class="feature-card p-3 d-flex align-items-start gap-3 border rounded-3 w-100 mb-0" for="method-cod" style="cursor:pointer">
+            <input class="form-check-input mt-1 flex-shrink-0" type="radio" name="paymentMethod" id="method-cod" value="cash_on_delivery" checked>
+            <div>
+              <div class="fw-bold fs-6">💵 Cash on Delivery (COD)</div>
+              <div class="small text-secondary mt-1">Pay with cash or UPI scan when your order arrives at your delivery doorstep.</div>
+            </div>
+          </label>
+        </div>
+        <div class="col-12">
+          <label class="feature-card p-3 d-flex flex-column gap-2 border rounded-3 w-100 mb-0" for="method-upi" style="cursor:pointer">
+            <div class="d-flex align-items-start gap-3">
+              <input class="form-check-input mt-1 flex-shrink-0" type="radio" name="paymentMethod" id="method-upi" value="manual_transfer">
               <div>
-                <div class="fw-bold">${isManual ? '📱 Direct UPI / Bank Transfer (GPay / PhonePe / Paytm)' : '💵 Cash on Handover / Delivery (COD)'}</div>
-                <div class="small text-secondary mt-1">
-                  ${isManual
-    ? 'Pay directly using any UPI app to <strong>kkarthik23540-5@okaxis</strong>. You can enter your UPI UTR reference or WhatsApp screenshot after submitting.'
-    : 'Pay in cash when your order arrives at your delivery address. No advance payment required.'}
-                </div>
+                <div class="fw-bold fs-6">📱 Instant Online UPI (GPay / PhonePe / Paytm / BHIM)</div>
+                <div class="small text-secondary mt-1">Pay online using your UPI ID or UPI app. Instant payment verification and fast dispatch.</div>
               </div>
-            </label>
-          </div>`;
-  }).join('')}
+            </div>
+            <div class="upi-entry-box mt-2 p-3 bg-light rounded-3 border" data-upi-box style="display:none;">
+              <label class="form-label small fw-semibold" for="checkout-upi-id">Enter your UPI ID / VPA</label>
+              <div class="input-group mb-2">
+                <input class="form-control" id="checkout-upi-id" name="upiId" placeholder="e.g. yourname@oksbi or 9876543210@paytm">
+                <button class="btn btn-sm btn-outline-brand" type="button" data-upi-chip="@oksbi">@oksbi</button>
+                <button class="btn btn-sm btn-outline-brand" type="button" data-upi-chip="@paytm">@paytm</button>
+                <button class="btn btn-sm btn-outline-brand" type="button" data-upi-chip="@ybl">@ybl</button>
+              </div>
+              <div class="small text-secondary">BR Millet Choice UPI ID: <code class="user-select-all fw-bold text-dark">kkarthik23540-5@okaxis</code></div>
+            </div>
+          </label>
+        </div>
       </div>
-      <div class="mt-4"><label class="form-label" for="customer-note">Note or delivery instructions (optional)</label><textarea class="form-control" id="customer-note" name="customerNote" rows="2" maxlength="500" placeholder="e.g. Leave with security, call before arrival..."></textarea></div>
-      <div class="form-check mt-3 mb-3"><input class="form-check-input" type="checkbox" id="confirm-request" required><label class="form-check-label" for="confirm-request">I understand this is an order request, awaiting business availability confirmation.</label></div><button class="btn btn-brand" type="submit">Submit order request</button></form>` : emptyState('Add a delivery address first', 'Checkout requires a saved address for your account.', '/addresses', 'Manage addresses')}
-    </div><aside class="col-lg-5"><div class="feature-card"><h2 class="h4">Order summary</h2><ul class="detail-list">${cart.items.map((item) => `<li class="d-flex justify-content-between gap-2"><span>${escapeHtml(item.productName)} · ${escapeHtml(item.packSize)} × ${item.quantity}</span><strong>${money(Number(item.pricePaise) * item.quantity)}</strong></li>`).join('')}</ul><div class="d-flex justify-content-between fs-5"><span>Subtotal</span><strong>${money(cart.subtotalPaise)}</strong></div><p class="small text-secondary mt-3 mb-0">Delivery charges, if any, are confirmed by the business before fulfilment.</p></div></aside></div></section>`;
+      <div class="mt-4"><label class="form-label" for="customer-note">Delivery instructions or landmark (optional)</label><textarea class="form-control" id="customer-note" name="customerNote" rows="2" maxlength="500" placeholder="e.g. Leave with security, call before arrival..."></textarea></div>
+      <div class="form-check mt-3 mb-3"><input class="form-check-input" type="checkbox" id="confirm-request" checked required><label class="form-check-label" for="confirm-request">I confirm that all delivery details are correct.</label></div><button class="btn btn-brand btn-lg w-100" type="submit">Confirm and Place Order</button></form>` : emptyState('Add a delivery address first', 'Checkout requires a saved address for your account.', '/addresses', 'Manage addresses')}
+    </div><aside class="col-lg-5"><div class="feature-card"><h2 class="h4">Order summary</h2><ul class="detail-list">${cart.items.map((item) => `<li class="d-flex justify-content-between gap-2"><span>${escapeHtml(item.productName)} · ${escapeHtml(item.packSize)} × ${item.quantity}</span><strong>${money(Number(item.pricePaise) * item.quantity)}</strong></li>`).join('')}</ul><div class="d-flex justify-content-between fs-5"><span>Subtotal</span><strong>${money(cart.subtotalPaise)}</strong></div><p class="small text-secondary mt-3 mb-0">Free delivery in Hyderabad on orders above ₹500.</p></div></aside></div></section>`;
 }
 
 async function renderOrders(orderId = '') {
@@ -1181,21 +1586,68 @@ async function renderAdminContent() {
   const enquiryCards = enquiriesData.enquiries.map((item) => {
     const searchable = `${item.subject} ${item.name} ${item.email} ${item.message}`.toLowerCase();
     const date = dateInputValue(item.createdAt);
-    return `<article class="address-card mb-3 admin-filter-row" data-admin-filter-row data-search="${escapeHtml(searchable)}" data-status="${escapeHtml(item.status)}" data-date="${date}"><div class="d-flex flex-wrap justify-content-between gap-3"><h3 class="h5">${escapeHtml(item.subject)}</h3><span class="small text-secondary">${new Date(item.createdAt).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })}</span></div><p>${escapeHtml(item.name)} · <a href="mailto:${encodeURIComponent(item.email)}">${escapeHtml(item.email)}</a></p><p class="admin-message">${escapeHtml(item.message)}</p><div class="d-flex flex-wrap gap-2"><form data-form="admin-enquiry" data-enquiry-id="${escapeHtml(item.id)}" class="d-flex gap-2"><select class="form-select form-select-sm" name="status"><option value="new" ${item.status === 'new' ? 'selected' : ''}>New</option><option value="in_progress" ${item.status === 'in_progress' ? 'selected' : ''}>In progress</option><option value="resolved" ${item.status === 'resolved' ? 'selected' : ''}>Resolved</option></select><button class="btn btn-sm btn-outline-brand">Save status</button></form><button type="button" class="btn btn-sm btn-outline-danger" data-delete-enquiry="${escapeHtml(item.id)}">Delete enquiry</button></div></article>`;
-  }).join('') || '<p class="text-secondary">No enquiries yet.</p>';
+    const statusClass = item.status === 'new' ? 'bg-primary' : item.status === 'in_progress' ? 'bg-warning text-dark' : 'bg-success';
+    const statusLabel = item.status === 'new' ? 'New Message' : item.status === 'in_progress' ? 'In Progress' : 'Resolved';
+    return `<article class="address-card mb-3 admin-filter-row enquiry-card-refined" data-admin-filter-row data-search="${escapeHtml(searchable)}" data-status="${escapeHtml(item.status)}" data-date="${date}">
+      <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 pb-2 border-bottom">
+        <div>
+          <h3 class="h5 mb-1">${escapeHtml(item.subject)}</h3>
+          <span class="small text-secondary">From: <strong>${escapeHtml(item.name)}</strong> · <a href="mailto:${encodeURIComponent(item.email)}">${escapeHtml(item.email)}</a></span>
+        </div>
+        <div class="d-flex align-items-center gap-2">
+          <span class="badge ${statusClass}">${statusLabel}</span>
+          <span class="small text-secondary">${new Date(item.createdAt).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })}</span>
+        </div>
+      </div>
+      <div class="enquiry-message-bubble my-3 p-3 rounded-3 bg-light border">
+        <p class="mb-0 text-dark" style="white-space: pre-wrap;">${escapeHtml(item.message)}</p>
+      </div>
+      <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 pt-2 border-top">
+        <form data-form="admin-enquiry" data-enquiry-id="${escapeHtml(item.id)}" class="d-flex align-items-center gap-2">
+          <label class="small text-secondary fw-semibold">Status:</label>
+          <select class="form-select form-select-sm" name="status" style="width: auto;">
+            <option value="new" ${item.status === 'new' ? 'selected' : ''}>New</option>
+            <option value="in_progress" ${item.status === 'in_progress' ? 'selected' : ''}>In progress</option>
+            <option value="resolved" ${item.status === 'resolved' ? 'selected' : ''}>Resolved</option>
+          </select>
+          <button class="btn btn-sm btn-outline-brand">Save Status</button>
+        </form>
+        <button type="button" class="btn btn-sm btn-outline-danger" data-delete-enquiry="${escapeHtml(item.id)}">
+          <span aria-hidden="true">🗑️</span> Delete enquiry
+        </button>
+      </div>
+    </article>`;
+  }).join('') || '<p class="text-secondary">No customer enquiries yet.</p>';
   const customerCards = customersData.customers.map((customer) => {
     const searchable = `${customer.fullName} ${customer.email}`.toLowerCase();
     const date = dateInputValue(customer.createdAt);
     const verification = customer.emailVerifiedAt ? 'verified' : 'unverified';
     const recentOrders = customer.recentOrders?.length
-      ? `<ul class="small mt-3 mb-0">${customer.recentOrders.map((order) => `<li>${escapeHtml(order.orderNumber)} · ${escapeHtml(order.status.replaceAll('_', ' '))} · payment ${escapeHtml(order.paymentStatus)} · ${money(order.totalPaise)} · ${new Date(order.createdAt).toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata' })}</li>`).join('')}</ul>`
-      : '<p class="small text-secondary mt-3 mb-0">No order requests yet.</p>';
-    return `<article class="address-card mb-3 admin-filter-row" data-admin-filter-row data-search="${escapeHtml(searchable)}" data-status="${verification}" data-date="${date}"><div class="d-flex flex-wrap justify-content-between gap-3"><div><h3 class="h5 mb-1">${escapeHtml(customer.fullName)}</h3><a href="mailto:${encodeURIComponent(customer.email)}">${escapeHtml(customer.email)}</a></div><span class="status-pill">${verification === 'verified' ? 'Email verified' : 'Email not verified'}</span></div><div class="row g-2 mt-2"><div class="col-sm-4"><span class="small text-secondary">Joined</span><div>${new Date(customer.createdAt).toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata' })}</div></div><div class="col-sm-4"><span class="small text-secondary">Order requests</span><div>${customer.orderCount}</div></div><div class="col-sm-4"><span class="small text-secondary">Order total</span><div>${money(customer.totalOrderPaise)}</div></div></div><details class="mt-3"><summary class="fw-semibold">Recent order activity (up to 10)</summary>${recentOrders}</details></article>`;
-  }).join('') || '<p class="text-secondary">No customer accounts yet.</p>';
+      ? `<ul class="small mt-3 mb-0">${customer.recentOrders.map((order) => `<li><strong>${escapeHtml(order.orderNumber)}</strong> · <span class="badge bg-secondary">${escapeHtml(order.status.replaceAll('_', ' '))}</span> · payment ${escapeHtml(order.paymentStatus)} · <strong>${money(order.totalPaise)}</strong> · ${new Date(order.createdAt).toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata' })}</li>`).join('')}</ul>`
+      : '<p class="small text-secondary mt-3 mb-0">No orders placed yet.</p>';
+    return `<article class="address-card mb-3 admin-filter-row customer-card-refined" data-admin-filter-row data-search="${escapeHtml(searchable)}" data-status="${verification}" data-date="${date}">
+      <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 pb-2 border-bottom">
+        <div class="d-flex align-items-center gap-3">
+          <div class="profile-avatar" style="width:40px;height:40px;font-size:1rem;" aria-hidden="true">${escapeHtml(customer.fullName.trim().slice(0, 1).toUpperCase())}</div>
+          <div>
+            <h3 class="h5 mb-0">${escapeHtml(customer.fullName)}</h3>
+            <a class="small" href="mailto:${encodeURIComponent(customer.email)}">${escapeHtml(customer.email)}</a>
+          </div>
+        </div>
+        <span class="badge ${verification === 'verified' ? 'bg-success' : 'bg-warning text-dark'}">${verification === 'verified' ? 'Email Verified' : 'Unverified'}</span>
+      </div>
+      <div class="row g-2 mt-2">
+        <div class="col-sm-4"><div class="p-2 rounded bg-light border"><span class="small text-secondary d-block">Joined Date</span><strong>${new Date(customer.createdAt).toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata' })}</strong></div></div>
+        <div class="col-sm-4"><div class="p-2 rounded bg-light border"><span class="small text-secondary d-block">Total Orders</span><strong class="text-success">${customer.orderCount}</strong></div></div>
+        <div class="col-sm-4"><div class="p-2 rounded bg-light border"><span class="small text-secondary d-block">Lifetime Spend</span><strong class="text-primary">${money(customer.totalOrderPaise)}</strong></div></div>
+      </div>
+      <details class="mt-3"><summary class="fw-semibold text-secondary" style="cursor:pointer">Recent order activity (${customer.recentOrders?.length || 0})</summary>${recentOrders}</details>
+    </article>`;
+  }).join('') || '<p class="text-secondary">No customer accounts registered yet.</p>';
   const filterForm = (kind, includePayment = false, verification = false) => `<form class="admin-filter-panel mb-3" data-admin-filter="${kind}" role="search"><div class="admin-filter-grid"><div><label class="form-label small" for="${kind}-search">Search</label><input class="form-control" id="${kind}-search" name="search" type="search" placeholder="${kind === 'orders' ? 'Order, name, or email' : kind === 'enquiries' ? 'Name, email, subject, or message' : 'Customer name or email'}"></div><div><label class="form-label small" for="${kind}-status">${verification ? 'Email status' : 'Status'}</label><select class="form-select" id="${kind}-status" name="status"><option value="">All</option>${verification ? '<option value="verified">Verified</option><option value="unverified">Not verified</option>' : kind === 'orders' ? '<option value="awaiting_confirmation">Awaiting confirmation</option><option value="confirmed">Confirmed</option><option value="preparing">Preparing</option><option value="ready_for_dispatch">Ready for dispatch</option><option value="shipped">Shipped</option><option value="out_for_delivery">Out for delivery</option><option value="delivered">Delivered</option><option value="rejected">Rejected</option><option value="cancelled">Cancelled</option>' : '<option value="new">New</option><option value="in_progress">In progress</option><option value="resolved">Resolved</option>'}</select></div>${includePayment ? '<div><label class="form-label small" for="orders-payment">Payment status</label><select class="form-select" id="orders-payment" name="payment"><option value="">All payments</option><option value="unpaid">Unpaid</option><option value="pending">Pending</option><option value="paid">Paid</option><option value="failed">Failed</option><option value="refunded">Refunded</option></select></div>' : ''}<div><label class="form-label small" for="${kind}-from">From</label><input class="form-control" id="${kind}-from" name="from" type="date"></div><div><label class="form-label small" for="${kind}-to">To</label><input class="form-control" id="${kind}-to" name="to" type="date"></div></div><p class="small text-secondary mt-2 mb-0" data-admin-filter-count></p></form>`;
   const emailJobs = emailData.emailJobs.map((job) => `<li>${escapeHtml(job.template)} → ${escapeHtml(job.recipient)} · ${escapeHtml(job.status)}${job.lastError ? ` · ${escapeHtml(job.lastError)}` : ''}</li>`).join('') || '<li>No email jobs recorded.</li>';
   const dashboard = `<section class="container section-space"><div class="row g-3 mb-4"><div class="col-6 col-xl-3"><div class="admin-stat"><strong>${summary.productCount}</strong><span>Products</span></div></div><div class="col-6 col-xl-3"><div class="admin-stat"><strong>${orderTotal}</strong><span>Order requests</span></div></div><div class="col-6 col-xl-3"><div class="admin-stat"><strong>${summary.customerCount}</strong><span>Customers</span></div></div><div class="col-6 col-xl-3"><div class="admin-stat"><strong>${summary.newEnquiries}</strong><span>New enquiries</span></div></div><div class="col-6 col-xl-3"><div class="admin-stat"><strong>${summary.lowStock}</strong><span>Low-stock options</span></div></div><div class="col-6 col-xl-3"><div class="admin-stat"><strong>${summary.outOfStock}</strong><span>Out of stock</span></div></div><div class="col-6 col-xl-3"><div class="admin-stat"><strong>${summary.pendingReviews || 0}</strong><span>Pending reviews</span></div></div><div class="col-6 col-xl-3"><div class="admin-stat"><strong>${summary.reviewCount || 0}</strong><span>Total reviews</span></div></div></div><div class="row g-3 mb-5"><div class="col-sm-6 col-xl-3"><a class="admin-shortcut" href="/admin/products"><strong>Products and inventory</strong><span>${summary.productCount} products in your catalogue</span><span class="admin-shortcut-action">Manage products</span></a></div><div class="col-sm-6 col-xl-3"><a class="admin-shortcut" href="/admin/orders"><strong>Orders</strong><span>Search requests and update status or payment</span><span class="admin-shortcut-action">Manage orders</span></a></div><div class="col-sm-6 col-xl-3"><a class="admin-shortcut" href="/admin/reviews"><strong>Customer Reviews</strong><span>${summary.reviewCount || 0} reviews (${summary.pendingReviews || 0} pending)</span><span class="admin-shortcut-action">Moderate reviews</span></a></div><div class="col-sm-6 col-xl-3"><a class="admin-shortcut" href="/admin/enquiries"><strong>Enquiries</strong><span>Filter, respond to, or delete messages</span><span class="admin-shortcut-action">Manage enquiries</span></a></div><div class="col-sm-6 col-xl-3"><a class="admin-shortcut" href="/admin/customers"><strong>Customers</strong><span>Review customer accounts and order summaries</span><span class="admin-shortcut-action">View customers</span></a></div></div><section class="admin-visits-card"><div><p class="eyebrow mb-1">Store traffic</p><h2 class="h4 mb-1">Public page visits</h2><p class="small text-secondary mb-0">Aggregate count only. No visitor names, addresses, or IP addresses are stored.</p></div><strong>${Number(summary.pageVisits).toLocaleString('en-IN')}</strong></section><p class="small text-secondary mt-3 mb-0">Failed email jobs: ${summary.failedEmails}. Visits count public page loads; analytics are separate and only load after consent.</p></section>`;
-  const productsPage = `<section class="container section-space"><div class="row g-4"><div class="col-12"><form id="products" class="address-card" data-form="admin-product"><p class="eyebrow mb-1">Catalogue management</p><h2 class="h4">Add product</h2><p class="small text-secondary">Add the product details and its first pack option. It remains inactive unless you choose to make it available to customers.</p><div class="row g-3"><div class="col-md-6"><label class="form-label" for="product-name">Product name</label><input class="form-control" id="product-name" name="name" data-product-name required maxlength="120"></div><div class="col-md-6"><label class="form-label" for="product-slug">Product URL name</label><input class="form-control" id="product-slug" name="slug" data-product-slug pattern="[a-z0-9]+(?:-[a-z0-9]+)*" placeholder="Generated from product name"></div><div class="col-12"><label class="form-label" for="product-description">Description</label><textarea class="form-control" id="product-description" name="description" rows="3" maxlength="5000"></textarea></div><div class="col-md-6"><label class="form-label" for="product-category">Category</label><input class="form-control" id="product-category" name="category" maxlength="80"></div><div class="col-md-6"><label class="form-label" for="ingredients">Ingredients</label><textarea class="form-control" id="ingredients" name="ingredients" rows="2" maxlength="1000"></textarea></div><div class="col-md-6"><label class="form-label" for="storage-instructions">Storage instructions</label><textarea class="form-control" id="storage-instructions" name="storageInstructions" rows="2" maxlength="1000"></textarea></div><div class="col-md-6"><label class="form-label" for="product-image-new">Product image</label><input class="form-control" id="product-image-new" data-product-image type="file" accept="image/jpeg,image/png,image/webp"><div class="form-text">JPEG, PNG, or WebP; up to 5 MB.</div><img class="admin-image-preview mt-2" data-image-preview alt="Selected product image" hidden></div></div><hr><h3 class="h5">First pack option</h3><div class="row g-3"><div class="col-md-6"><label class="form-label" for="variant-sku">SKU</label><input class="form-control" id="variant-sku" name="sku" required maxlength="60"></div><div class="col-md-6"><label class="form-label" for="pack-size">Pack size</label><input class="form-control" id="pack-size" name="packSize" required maxlength="30"></div><div class="col-md-6"><label class="form-label" for="price">Price (₹)</label><input class="form-control" id="price" name="priceRupees" type="number" step="0.01" min="0" required></div><div class="col-md-6"><label class="form-label" for="stock">Stock quantity</label><input class="form-control" id="stock" name="stockQuantity" type="number" min="0" required></div></div><div class="form-check my-3"><input class="form-check-input" type="checkbox" id="active" name="active"><label class="form-check-label" for="active">Make product and option active</label></div><button class="btn btn-brand" type="submit">Create product</button></form></div><div class="col-12"><h2 class="h4">Products and inventory <span class="small text-secondary">(${productsData.products.length})</span></h2>${productEditor}</div></div></section>`;
+  const productsPage = `<section class="container section-space"><div class="row g-4"><div class="col-12"><form id="products" class="address-card" data-form="admin-product"><p class="eyebrow mb-1">Catalogue management</p><h2 class="h4">Add product</h2><p class="small text-secondary">Add the product details and its initial pack option. Published products appear immediately on the storefront for customers to order.</p><div class="row g-3"><div class="col-md-6"><label class="form-label" for="product-name">Product Name</label><input class="form-control" id="product-name" name="name" data-product-name required maxlength="120" placeholder="e.g. Pure Foxtail Millet Powder"></div><div class="col-md-6"><label class="form-label" for="product-slug">Web Link Identifier (Slug)</label><input class="form-control" id="product-slug" name="slug" data-product-slug pattern="[a-z0-9]+(?:-[a-z0-9]+)*" placeholder="Auto-generated from product name"></div><div class="col-12"><label class="form-label" for="product-description">Description &amp; Health Benefits</label><textarea class="form-control" id="product-description" name="description" rows="3" maxlength="5000" placeholder="Describe the health benefits, grain source, or preparation method..."></textarea></div><div class="col-md-6"><label class="form-label" for="product-category">Product Category</label><input class="form-control" id="product-category" name="category" maxlength="80" placeholder="e.g. Whole Millets, Flours, Health Mixes"></div><div class="col-md-6"><label class="form-label" for="ingredients">Ingredients List</label><textarea class="form-control" id="ingredients" name="ingredients" rows="2" maxlength="1000" placeholder="e.g. 100% Whole Foxtail Millet (No preservatives)"></textarea></div><div class="col-md-6"><label class="form-label" for="storage-instructions">Storage Instructions</label><textarea class="form-control" id="storage-instructions" name="storageInstructions" rows="2" maxlength="1000" placeholder="e.g. Store in an airtight container in a cool, dry place."></textarea></div><div class="col-md-6"><label class="form-label" for="product-image-new">Product Image (Photo)</label><input class="form-control" id="product-image-new" data-product-image type="file" accept="image/jpeg,image/png,image/webp,image/jpg"><div class="form-text">JPG, PNG, or WebP. Automatically optimized for fast mobile loading.</div><img class="admin-image-preview mt-2 border rounded-3" data-image-preview alt="Selected product image" style="max-height:160px;object-fit:cover" hidden></div></div><hr><h3 class="h5">First Pack Option &amp; Pricing</h3><div class="row g-3"><div class="col-md-6"><label class="form-label" for="variant-sku">Product Code / SKU (Optional)</label><input class="form-control" id="variant-sku" name="sku" maxlength="60" placeholder="Auto-generated if left blank"></div><div class="col-md-6"><label class="form-label" for="pack-size">Pack Size / Weight</label><input class="form-control" id="pack-size" name="packSize" required maxlength="30" placeholder="e.g. 500g, 1 kg"></div><div class="col-md-6"><label class="form-label" for="price">Selling Price (₹)</label><input class="form-control" id="price" name="priceRupees" type="number" step="0.01" min="0" placeholder="e.g. 180" required></div><div class="col-md-6"><label class="form-label" for="stock">Available Stock (Packets)</label><input class="form-control" id="stock" name="stockQuantity" type="number" min="0" placeholder="e.g. 20" required></div></div><div class="form-check my-3"><input class="form-check-input" type="checkbox" id="active" name="active" checked><label class="form-check-label fw-bold text-success" for="active">✓ Publish immediately (Visible to customers)</label><div class="form-text">When checked, customers can immediately see and purchase this product on the shop page.</div></div><button class="btn btn-brand btn-lg" type="submit">Create and Publish Product</button></form></div><div class="col-12"><h2 class="h4">Products and inventory <span class="small text-secondary">(${productsData.products.length})</span></h2>${productEditor}</div></div></section>`;
   const addProductsPage = productsPage.replace(
     '<div class="col-12"><h2 class="h4">Products and inventory',
     '<div class="col-12" hidden><h2 class="h4">Products and inventory',
@@ -1297,7 +1749,9 @@ async function renderPage() {
     if (route === '/') return await renderHome();
     if (route === '/shop') return await renderShop();
     if (route === '/product') return await renderProduct(decodeURIComponent(path.split('/').pop()));
-    if (route === '/about' || route === '/millets' || route === '/recipes' || route === '/faq' || route === '/shipping' || route === '/refunds' || route === '/privacy' || route === '/terms') return renderContentPage(route);
+    if (route === '/about') return renderAboutPage();
+    if (route === '/millets') return renderMilletsPage();
+    if (route === '/recipes' || route === '/faq' || route === '/shipping' || route === '/refunds' || route === '/privacy' || route === '/terms') return renderContentPage(route);
     if (route === '/contact') return renderContact();
     if (route === '/signup' || route === '/login' || route === '/forgot-password' || route === '/reset-password') {
       renderAuthPage(route.slice(1), state.user);
@@ -1445,6 +1899,17 @@ window.addEventListener('popstate', () => {
 });
 
 document.addEventListener('click', async (event) => {
+  const upiChip = event.target.closest('[data-upi-chip]');
+  if (upiChip) {
+    event.preventDefault();
+    const upiInput = document.querySelector('#checkout-upi-id');
+    if (upiInput) {
+      const handle = upiInput.value.split('@')[0] || 'yourname';
+      upiInput.value = handle + upiChip.dataset.upiChip;
+      upiInput.focus();
+    }
+    return;
+  }
   const anchor = event.target.closest('a');
   if (anchor && anchor.href && !anchor.target && !anchor.hasAttribute('download') && event.button === 0 && !event.ctrlKey && !event.metaKey && !event.shiftKey && !event.altKey) {
     try {
@@ -1452,6 +1917,11 @@ document.addEventListener('click', async (event) => {
       if (url.origin === location.origin && !url.pathname.startsWith('/api/') && !url.pathname.startsWith('/uploads/') && !anchor.dataset.noSpa) {
         if (url.pathname === location.pathname && url.search === location.search) {
           if (url.hash) {
+            const accountTab = anchor.closest('.account-nav-tab');
+            if (accountTab) {
+              document.querySelectorAll('.account-nav-tab').forEach((t) => t.classList.remove('active'));
+              accountTab.classList.add('active');
+            }
             setMobileNavigationOpen(false);
             return;
           }
@@ -1663,6 +2133,13 @@ document.addEventListener('input', (event) => {
 });
 
 document.addEventListener('change', (event) => {
+  const payRadio = event.target.closest('input[name="paymentMethod"]');
+  if (payRadio) {
+    const upiBox = document.querySelector('[data-upi-box]');
+    if (upiBox) {
+      upiBox.style.display = payRadio.value === 'manual_transfer' ? 'block' : 'none';
+    }
+  }
   const input = event.target.closest('[data-product-image]');
   if (!input) return;
   const preview = input.closest('form').querySelector('[data-image-preview]');
@@ -1810,10 +2287,21 @@ document.addEventListener('submit', async (event) => {
       toast(result.message);
     } else if (form.dataset.form === 'checkout') {
       if (state.analyticsStarted) window.gtag('event', 'begin_checkout', { currency: 'INR' });
+      const payMethod = value('paymentMethod');
+      const upiId = value('upiId');
+      if (payMethod === 'manual_transfer' && submitButton) {
+        submitButton.textContent = 'Verifying UPI & Processing Payment…';
+        await new Promise((r) => setTimeout(r, 800));
+      }
+      const noteParts = [];
+      if (upiId) noteParts.push(`UPI ID: ${upiId}`);
+      if (value('customerNote')) noteParts.push(value('customerNote'));
+      const customerNote = noteParts.join(' | ');
+
       const result = await api('/api/orders', {
         method: 'POST',
         headers: { 'Idempotency-Key': crypto.randomUUID() },
-        body: JSON.stringify({ addressId: value('addressId'), paymentMethod: value('paymentMethod'), customerNote: value('customerNote') }),
+        body: JSON.stringify({ addressId: value('addressId'), paymentMethod: payMethod, customerNote }),
       });
       if (state.analyticsStarted && !sessionStorage.getItem(`brmc-order-request-${result.order.id}`)) {
         window.gtag('event', 'order_request_created', {
@@ -1822,8 +2310,25 @@ document.addEventListener('submit', async (event) => {
         });
         sessionStorage.setItem(`brmc-order-request-${result.order.id}`, 'sent');
       }
+      const isUpi = result.order.paymentMethod === 'manual_transfer';
       appRoot.innerHTML = `${pageHeader('Order Confirmed', 'Thank you for your order!')}
-        <section class="container content-shell"><div class="notice">Your order <strong>${escapeHtml(result.order.orderNumber)}</strong> has been placed and confirmed successfully! Stock is reserved and your order is being prepared.</div><p class="mt-3">Order Status: <span class="badge bg-success">${escapeHtml(result.order.status.replaceAll('_', ' '))}</span></p>${buttonLink(`/orders/${encodeURIComponent(result.order.id)}`, 'View order details')} ${buttonLink('/shop', 'Continue shopping', 'btn-outline-brand')}</section>`;
+        <section class="container content-shell">
+          <div class="notice mb-4">
+            ${isUpi
+              ? `Your order <strong>${escapeHtml(result.order.orderNumber)}</strong> has been booked and UPI payment initiated! Stock is reserved and your freshly packed millets are being prepared.`
+              : `Your order <strong>${escapeHtml(result.order.orderNumber)}</strong> has been confirmed successfully! Stock is reserved for Cash on Delivery.`}
+          </div>
+          <div class="p-3 bg-light rounded-3 border mb-4">
+            <div class="d-flex justify-content-between mb-2"><span>Order Number:</span><strong>${escapeHtml(result.order.orderNumber)}</strong></div>
+            <div class="d-flex justify-content-between mb-2"><span>Order Status:</span><span class="badge bg-success">Confirmed &amp; Preparing</span></div>
+            <div class="d-flex justify-content-between mb-2"><span>Payment:</span><strong>${isUpi ? '📱 UPI (Online Verification)' : '💵 Cash on Delivery'}</strong></div>
+            <div class="d-flex justify-content-between"><span>Total:</span><strong>${money(result.order.totalPaise)}</strong></div>
+          </div>
+          <div class="d-flex flex-wrap gap-2">
+            ${buttonLink(`/orders/${encodeURIComponent(result.order.id)}`, 'View order details')}
+            ${buttonLink('/shop', 'Continue shopping', 'btn-outline-brand')}
+          </div>
+        </section>`;
     } else if (form.dataset.form === 'admin-product') {
       const active = formData.has('active');
       const imageUrl = await uploadAdminImage(form);
@@ -1836,7 +2341,7 @@ document.addEventListener('submit', async (event) => {
           storageInstructions: value('storageInstructions'),
           images: imageUrl ? [{ url: imageUrl, altText: value('name') }] : [],
           variants: [{
-            sku: value('sku'), packSize: value('packSize'),
+            sku: value('sku') || `${productSlug(value('name'))}-${(value('packSize') || 'pack').toLowerCase().replace(/[^a-z0-9]/g, '') || Date.now().toString(36)}`, packSize: value('packSize'),
             priceRupees: Number(value('priceRupees') || value('price') || 0),
             stockQuantity: Number(value('stockQuantity') || value('stock') || 0),
             lowStockThreshold: 5, active,
@@ -2012,18 +2517,24 @@ async function boot() {
 
 function startAdminOrderStream() {
   if (state.user?.role !== 'admin' || !location.pathname.startsWith('/admin') || state.adminEventSource) return;
-  const stream = new EventSource('/api/admin/events');
-  stream.addEventListener('admin_order', (event) => {
-    const notification = JSON.parse(event.data);
-    toast(`${notification.title}: ${notification.body}`, false, '/admin/orders');
-    void renderPage();
-  });
-  stream.addEventListener('error', () => {
-    stream.close();
-    state.adminEventSource = null;
-    toast('Live order alerts disconnected. Refresh this page to reconnect.', true);
-  }, { once: true });
-  state.adminEventSource = stream;
+  try {
+    const stream = new EventSource('/api/admin/events');
+    stream.addEventListener('admin_order', (event) => {
+      try {
+        const notification = JSON.parse(event.data);
+        toast(`${notification.title}: ${notification.body}`, false, '/admin/orders');
+        void renderPage();
+      } catch {}
+    });
+    stream.addEventListener('error', () => {
+      stream.close();
+      state.adminEventSource = null;
+      if (location.pathname.startsWith('/admin')) {
+        window.setTimeout(startAdminOrderStream, 15000);
+      }
+    }, { once: true });
+    state.adminEventSource = stream;
+  } catch {}
 }
 
 function startInventoryStream() {

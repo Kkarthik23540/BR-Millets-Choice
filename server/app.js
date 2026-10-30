@@ -1552,7 +1552,7 @@ const variantInput = z.object({
   priceRupees: z.number().finite().min(0).max(1_000_000),
   stockQuantity: z.number().int().min(0).max(1_000_000),
   lowStockThreshold: z.number().int().min(0).max(1_000_000).default(5),
-  active: z.boolean().default(false),
+  active: z.boolean().default(true),
 });
 const productImageUrl = z.union([
   z.string().url().refine((value) => value.startsWith('https://'), 'Product image URLs must use HTTPS.'),
@@ -1568,7 +1568,7 @@ app.post('/api/admin/products', requireAdmin, asyncRoute(async (req, res) => {
     category: z.string().trim().max(80).default(''),
     ingredients: z.string().trim().max(1000).optional().default(''),
     storageInstructions: z.string().trim().max(1000).optional().default(''),
-    active: z.boolean().default(false),
+    active: z.boolean().default(true),
     images: z.array(z.object({
       url: productImageUrl,
       altText: z.string().trim().min(3).max(160),

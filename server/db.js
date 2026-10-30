@@ -62,6 +62,9 @@ export async function ensureDatabaseReady() {
           client.release();
         }
       }
+      try {
+        await pool.query('UPDATE products SET active = TRUE WHERE active = FALSE; UPDATE product_variants SET active = TRUE WHERE active = FALSE;');
+      } catch {}
     } catch (err) {
       console.warn('Auto-migration check skipped:', err.message);
     }
