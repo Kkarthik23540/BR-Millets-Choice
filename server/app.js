@@ -1311,6 +1311,10 @@ app.get('/api/notifications/events', requireVerifiedUser, asyncRoute(async (req,
   });
   res.flushHeaders();
   res.write('event: ready\ndata: {}\n\n');
+  if (process.env.VERCEL) {
+    res.end();
+    return;
+  }
   let closed = false;
   let lastCount = -1;
   const timer = setInterval(async () => {
@@ -1339,13 +1343,6 @@ app.get('/api/notifications/events', requireVerifiedUser, asyncRoute(async (req,
 }));
 
 app.get('/api/admin/events', requireAdmin, asyncRoute(async (req, res) => {
-  const latest = await pool.query(
-    `SELECT id FROM notifications
-     WHERE user_id = $1 AND kind = 'order'
-     ORDER BY created_at DESC LIMIT 1`,
-    [req.user.id],
-  );
-  let lastNotificationId = latest.rows[0]?.id ?? null;
   res.status(200);
   res.set({
     'Content-Type': 'text/event-stream',
@@ -1355,6 +1352,17 @@ app.get('/api/admin/events', requireAdmin, asyncRoute(async (req, res) => {
   });
   res.flushHeaders();
   res.write('event: ready\ndata: {}\n\n');
+  if (process.env.VERCEL) {
+    res.end();
+    return;
+  }
+  const latest = await pool.query(
+    `SELECT id FROM notifications
+     WHERE user_id = $1 AND kind = 'order'
+     ORDER BY created_at DESC LIMIT 1`,
+    [req.user.id],
+  );
+  let lastNotificationId = latest.rows[0]?.id ?? null;
   let closed = false;
   const timer = setInterval(async () => {
     if (closed) return;
@@ -1393,6 +1401,11 @@ app.get('/api/inventory/events', (req, res) => {
     'X-Accel-Buffering': 'no',
   });
   res.flushHeaders();
+  if (process.env.VERCEL) {
+    res.write('event: inventory\ndata: {"changed":false}\n\n');
+    res.end();
+    return;
+  }
   let closed = false;
   let lastSnapshot = '';
   const poll = async () => {
