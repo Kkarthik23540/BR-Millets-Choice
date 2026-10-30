@@ -8,13 +8,14 @@
     "node": ">=20"
   },
   "scripts": {
+    "build": "node -e \"import fs from 'node:fs'; fs.rmSync('dist', { recursive: true, force: true }); fs.cpSync('public', 'dist', { recursive: true }); console.log('Build completed: static assets prepared in dist.');\"",
     "start": "node server/index.js",
     "dev": "node --watch server/index.js",
     "db:migrate": "node server/migrate.js",
     "admin:create": "node server/create-admin.js",
     "admin:promote": "node server/promote-admin.js",
     "test": "node --test",
-    "check": "node --check server/index.js && node --check server/app.js && node --check server/promote-admin.js && node --check public/app.js"
+    "check": "node --check server/index.js && node --check server/app.js && node --check server/promote-admin.js && node --check public/app.js && node --check api/index.js"
   },
   "dependencies": {
     "bcryptjs": "2.4.3",
