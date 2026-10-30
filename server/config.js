@@ -3,9 +3,19 @@ import 'dotenv/config';
 const isProduction = process.env.NODE_ENV === 'production';
 const rawSessionSecret = process.env.SESSION_SECRET ?? '';
 const sessionSecret = rawSessionSecret || (process.env.VERCEL ? 'brmc_vercel_default_secure_session_secret_2026_millet_choice' : '');
-const vercelDomain = process.env.VERCEL_PROJECT_PRODUCTION_URL || process.env.VERCEL_URL;
-const defaultBaseUrl = vercelDomain ? `https://${vercelDomain}` : `http://localhost:${process.env.PORT ?? 3000}`;
-const baseUrl = (process.env.BASE_URL ?? defaultBaseUrl).replace(/\/+$/, '');
+const vercelDomain = process.env.VERCEL_PROJECT_PRODUCTION_URL || process.env.VERCEL_URL || 'br-millets-choice.vercel.app';
+const rawBaseUrl = process.env.BASE_URL ?? '';
+let baseUrl;
+if (process.env.VERCEL || isProduction) {
+  if (!rawBaseUrl || rawBaseUrl.includes('localhost')) {
+    baseUrl = `https://${vercelDomain}`;
+  } else {
+    baseUrl = rawBaseUrl.startsWith('https://') ? rawBaseUrl : `https://${rawBaseUrl}`;
+  }
+} else {
+  baseUrl = rawBaseUrl || `http://localhost:${process.env.PORT ?? 3000}`;
+}
+baseUrl = baseUrl.replace(/\/+$/, '');
 const smtpValues = ['SMTP_HOST', 'SMTP_FROM', 'SMTP_USER', 'SMTP_PASSWORD']
   .map((key) => process.env[key] ?? '');
 const smtpPartiallyConfigured = smtpValues.some(Boolean)

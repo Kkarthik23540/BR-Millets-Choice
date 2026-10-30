@@ -500,14 +500,22 @@ app.post('/api/auth/reset-password', authLimiter, asyncRoute(async (req, res) =>
 }));
 
 app.get('/api/auth/google', (req, res, next) => {
-  if (!config.googleClientId || !config.googleClientSecret || !config.googleCallbackUrl) {
+  if (!config.googleClientId || !config.googleClientSecret) {
     return next(new HttpError(503, 'Google sign-in is not configured.', 'OAUTH_UNAVAILABLE'));
   }
+  const host = req.get('host') || 'br-millets-choice.vercel.app';
+  const proto = req.get('x-forwarded-proto') || (req.secure ? 'https' : 'http');
+  const defaultCallback = `${proto}://${host}/api/auth/google/callback`;
+  const redirectUri = host.includes('localhost')
+    ? (config.googleCallbackUrl || defaultCallback)
+    : `https://${host}/api/auth/google/callback`;
+
   const state = randomToken();
   req.session.googleState = state;
+  req.session.googleRedirectUri = redirectUri;
   const params = new URLSearchParams({
     client_id: config.googleClientId,
-    redirect_uri: config.googleCallbackUrl,
+    redirect_uri: redirectUri,
     response_type: 'code',
     scope: 'openid email profile',
     state,
@@ -522,6 +530,12 @@ app.get('/api/auth/google/callback', asyncRoute(async (req, res) => {
     throw new HttpError(400, 'Google sign-in could not be verified.', 'OAUTH_STATE_INVALID');
   }
   delete req.session.googleState;
+  const host = req.get('host') || 'br-millets-choice.vercel.app';
+  const redirectUri = req.session.googleRedirectUri
+    || (host.includes('localhost') ? config.googleCallbackUrl : `https://${host}/api/auth/google/callback`)
+    || config.googleCallbackUrl;
+  delete req.session.googleRedirectUri;
+
   const code = parse(z.string().min(1).max(2000), req.query.code);
   const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {
     method: 'POST',
@@ -530,7 +544,7 @@ app.get('/api/auth/google/callback', asyncRoute(async (req, res) => {
       code,
       client_id: config.googleClientId,
       client_secret: config.googleClientSecret,
-      redirect_uri: config.googleCallbackUrl,
+      redirect_uri: redirectUri,
       grant_type: 'authorization_code',
     }),
     signal: AbortSignal.timeout(10_000),
@@ -1702,6 +1716,22 @@ app.patch('/api/admin/products/:id', requireAdmin, asyncRoute(async (req, res) =
   res.json({ message: 'Product updated.' });
 }));
 
+app.delete('/api/admin/products/:id', requireAdmin, asyncRoute(async (req, res) => {
+  const productId = uuidParam(req, 'id');
+  const result = await inTransaction(async (client) => {
+    const prod = await client.query('SELECT name FROM products WHERE id = $1', [productId]);
+    if (!prod.rowCount) throw new HttpError(404, 'Product not found.', 'NOT_FOUND');
+    await client.query('DELETE FROM products WHERE id = $1', [productId]);
+    await client.query(
+      `INSERT INTO audit_logs (admin_user_id, action, entity_type, entity_id, metadata)
+       VALUES ($1, 'product_deleted', 'product', $2, $3::jsonb)`,
+      [req.user.id, productId, JSON.stringify({ name: prod.rows[0].name })],
+    );
+    return prod.rows[0];
+  });
+  res.json({ message: `Product "${result.name}" deleted successfully.` });
+}));
+
 app.post('/api/admin/product-images', requireAdmin, productImageUpload.single('image'), asyncRoute(async (req, res) => {
   const image = req.file;
   if (!image) throw new HttpError(400, 'Choose an image to upload.', 'IMAGE_REQUIRED');
@@ -1792,6 +1822,22 @@ app.patch('/api/admin/variants/:id', requireAdmin, asyncRoute(async (req, res) =
     return { id: previous.id };
   });
   res.json({ variant: result });
+}));
+
+app.delete('/api/admin/variants/:id', requireAdmin, asyncRoute(async (req, res) => {
+  const variantId = uuidParam(req, 'id');
+  const result = await inTransaction(async (client) => {
+    const v = await client.query('SELECT sku, pack_size, product_id FROM product_variants WHERE id = $1', [variantId]);
+    if (!v.rowCount) throw new HttpError(404, 'Product option not found.', 'NOT_FOUND');
+    await client.query('DELETE FROM product_variants WHERE id = $1', [variantId]);
+    await client.query(
+      `INSERT INTO audit_logs (admin_user_id, action, entity_type, entity_id, metadata)
+       VALUES ($1, 'variant_deleted', 'variant', $2, $3::jsonb)`,
+      [req.user.id, variantId, JSON.stringify({ sku: v.rows[0].sku, packSize: v.rows[0].pack_size })],
+    );
+    return v.rows[0];
+  });
+  res.json({ message: `Pack option "${result.pack_size}" (${result.sku}) deleted successfully.` });
 }));
 
 app.get('/api/admin/orders', requireAdmin, asyncRoute(async (req, res) => {

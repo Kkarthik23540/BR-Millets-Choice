@@ -171,9 +171,9 @@ async function getConfig() {
       state.config = {
         businessName: 'BR Millet Choice',
         supportEmail: 'kkarthik23540@gmail.com',
-        supportPhone: '+91 7893176982',
-        whatsapp: '+91 7893176982',
-        supportAddress: 'Soverign Shelters , lakdi ka pul, hyderabad, Telangana 500004',
+        supportPhone: '',
+        whatsapp: '',
+        supportAddress: 'Hyderabad, Telangana, India',
         businessHours: '',
         businessLatitude: null,
         businessLongitude: null,
@@ -941,11 +941,12 @@ async function renderOrders(orderId = '') {
                 <span><strong>UPI ID:</strong> <code class="fs-6 text-dark user-select-all">kkarthik23540-5@okaxis</code></span>
                 <button class="btn btn-sm btn-outline-brand" type="button" data-copy-text="kkarthik23540-5@okaxis">Copy UPI ID</button>
               </div>
+              ${state.config?.supportPhone ? `
               <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
-                <span><strong>Phone / GPay / PhonePe:</strong> <code class="fs-6 text-dark user-select-all">+91 7893176982</code></span>
-                <button class="btn btn-sm btn-outline-brand" type="button" data-copy-text="+91 7893176982">Copy Number</button>
-              </div>
-              <div class="small text-secondary mt-2">Payee: Karthik Reddy / BR Millet Choice</div>
+                <span><strong>Phone / GPay / PhonePe:</strong> <code class="fs-6 text-dark user-select-all">${escapeHtml(state.config.supportPhone)}</code></span>
+                <button class="btn btn-sm btn-outline-brand" type="button" data-copy-text="${escapeHtml(state.config.supportPhone)}">Copy Number</button>
+              </div>` : ''}
+              <div class="small text-secondary mt-2">Payee: BR Millet Choice (Karthik Reddy)</div>
             </div>
             ${paymentsList.length ? `
               <div class="mb-3 p-2 bg-success-subtle text-success-emphasis rounded border border-success-subtle small">
@@ -962,12 +963,13 @@ async function renderOrders(orderId = '') {
                 <div class="form-text">Your UTR is found in your payment receipt details in GPay, PhonePe, or Paytm.</div>
               </form>
             `}
+            ${state.config?.whatsapp || state.config?.supportPhone ? `
             <div class="mt-3 pt-3 border-top d-flex flex-wrap gap-2 align-items-center">
               <span class="small text-secondary">Need quick verification?</span>
-              <a class="btn btn-sm btn-outline-success" target="_blank" rel="noopener noreferrer" href="https://wa.me/917893176982?text=${encodeURIComponent('Hello BR Millet Choice, I have submitted payment for Order ' + order.orderNumber + ' of amount ' + money(order.totalPaise) + '. Please check!')}">
+              <a class="btn btn-sm btn-outline-success" target="_blank" rel="noopener noreferrer" href="https://wa.me/${(state.config.whatsapp || state.config.supportPhone).replace(/\D/g, '')}?text=${encodeURIComponent('Hello BR Millet Choice, I have submitted payment for Order ' + order.orderNumber + ' of amount ' + money(order.totalPaise) + '. Please check!')}">
                 💬 Send Screenshot on WhatsApp
               </a>
-            </div>
+            </div>` : ''}
           </div>
         ` : order.paymentMethod === 'cash_on_handover' ? `
           <div class="alert alert-info d-flex align-items-center gap-2 mb-4">
@@ -1175,11 +1177,11 @@ async function renderAdminContent() {
   const productEditor = productsData.products.map((product) => `<article class="address-card mb-3">
     <form data-form="admin-product-edit" data-product-id="${escapeHtml(product.id)}">
       <div class="d-flex justify-content-between align-items-start gap-3"><div><h3 class="h5">${escapeHtml(product.name)}</h3><span class="small text-secondary">/${escapeHtml(product.slug)} · ${product.active ? 'Active' : 'Inactive'}</span></div><div class="form-check"><input class="form-check-input" type="checkbox" name="active" id="active-${escapeHtml(product.id)}" ${product.active ? 'checked' : ''}><label class="form-check-label" for="active-${escapeHtml(product.id)}">Active</label></div></div>
-      <div class="row g-2 mt-1"><div class="col-md-6"><label class="form-label">Product name</label><input class="form-control form-control-sm" name="name" value="${escapeHtml(product.name)}" required maxlength="120"></div><div class="col-md-6"><label class="form-label">Category</label><input class="form-control form-control-sm" name="category" value="${escapeHtml(product.category)}" maxlength="80"></div><div class="col-12"><label class="form-label">Description</label><textarea class="form-control form-control-sm" name="description" rows="2" maxlength="5000">${escapeHtml(product.description)}</textarea></div><div class="col-md-6"><label class="form-label">Ingredients</label><textarea class="form-control form-control-sm" name="ingredients" rows="2" maxlength="1000">${escapeHtml(product.ingredients ?? '')}</textarea></div><div class="col-md-6"><label class="form-label">Storage instructions</label><textarea class="form-control form-control-sm" name="storageInstructions" rows="2" maxlength="1000">${escapeHtml(product.storageInstructions ?? '')}</textarea></div><div class="col-12"><label class="form-label" for="edit-image-${escapeHtml(product.id)}">Product image</label><input class="form-control form-control-sm" id="edit-image-${escapeHtml(product.id)}" data-product-image type="file" accept="image/jpeg,image/png,image/webp"><div class="form-text">Choose a JPEG, PNG, or WebP image up to 5 MB. Leave empty to keep the current image.</div>${product.imageUrl ? `<img class="admin-image-preview mt-2" data-image-preview src="${escapeHtml(product.imageUrl)}" alt="Current image for ${escapeHtml(product.name)}">` : '<img class="admin-image-preview mt-2" data-image-preview alt="Selected product image" hidden>'}</div><div class="col-12"><button class="btn btn-sm btn-outline-brand">Save product details</button></div></div>
+      <div class="row g-2 mt-1"><div class="col-md-6"><label class="form-label">Product name</label><input class="form-control form-control-sm" name="name" value="${escapeHtml(product.name)}" required maxlength="120"></div><div class="col-md-6"><label class="form-label">Category</label><input class="form-control form-control-sm" name="category" value="${escapeHtml(product.category)}" maxlength="80"></div><div class="col-12"><label class="form-label">Description</label><textarea class="form-control form-control-sm" name="description" rows="2" maxlength="5000">${escapeHtml(product.description)}</textarea></div><div class="col-md-6"><label class="form-label">Ingredients</label><textarea class="form-control form-control-sm" name="ingredients" rows="2" maxlength="1000">${escapeHtml(product.ingredients ?? '')}</textarea></div><div class="col-md-6"><label class="form-label">Storage instructions</label><textarea class="form-control form-control-sm" name="storageInstructions" rows="2" maxlength="1000">${escapeHtml(product.storageInstructions ?? '')}</textarea></div><div class="col-12"><label class="form-label" for="edit-image-${escapeHtml(product.id)}">Product image</label><input class="form-control form-control-sm" id="edit-image-${escapeHtml(product.id)}" data-product-image type="file" accept="image/jpeg,image/png,image/webp"><div class="form-text">Choose a JPEG, PNG, or WebP image up to 5 MB. Leave empty to keep the current image.</div>${product.imageUrl ? `<img class="admin-image-preview mt-2" data-image-preview src="${escapeHtml(product.imageUrl)}" alt="Current image for ${escapeHtml(product.name)}">` : '<img class="admin-image-preview mt-2" data-image-preview alt="Selected product image" hidden>'}</div><div class="col-12 d-flex justify-content-between align-items-center mt-2 pt-2 border-top"><button class="btn btn-sm btn-outline-brand">Save product details</button><button type="button" class="btn btn-sm btn-outline-danger" data-delete-product="${escapeHtml(product.id)}" data-product-name="${escapeHtml(product.name)}">Delete product</button></div></div>
     </form>
     <h4 class="h6 mt-4">Pack options and inventory</h4>
-    ${product.variants.map((variant) => `<form data-form="admin-variant" data-variant-id="${escapeHtml(variant.id)}" class="admin-variant-form mb-3"><div><label class="form-label small">SKU</label><input class="form-control form-control-sm" name="sku" value="${escapeHtml(variant.sku)}" required maxlength="60"></div><div><label class="form-label small">Pack size</label><input class="form-control form-control-sm" name="packSize" value="${escapeHtml(variant.packSize)}" required maxlength="30"></div><div><label class="form-label small">Price (₹)</label><input class="form-control form-control-sm" name="priceRupees" type="number" step="0.01" min="0" value="${(Number(variant.pricePaise) / 100).toFixed(2)}" required></div><div><label class="form-label small">Stock</label><input class="form-control form-control-sm" name="stockQuantity" type="number" min="0" value="${variant.stockQuantity}" required></div><div><label class="form-label small">Low-stock alert</label><input class="form-control form-control-sm" name="lowStockThreshold" type="number" min="0" value="${variant.lowStockThreshold}" required></div><div class="admin-variant-active"><span class="form-label small">Availability</span><div class="form-check"><input class="form-check-input" name="active" type="checkbox" id="variant-${escapeHtml(variant.id)}" ${variant.active ? 'checked' : ''}><label class="form-check-label small" for="variant-${escapeHtml(variant.id)}">Active</label></div></div><div class="admin-variant-save"><span class="form-label small d-none d-sm-block">&nbsp;</span><button class="btn btn-sm btn-outline-brand">Save</button></div><div class="admin-variant-history"><button class="btn btn-link btn-sm p-0" type="button" data-inventory-history="${escapeHtml(variant.id)}">View inventory history</button><div class="small" data-movement-list="${escapeHtml(variant.id)}"></div></div></form>`).join('') || '<p class="small text-secondary">No pack options have been added.</p>'}
-    <form data-form="admin-add-variant" data-product-id="${escapeHtml(product.id)}" class="admin-variant-form border-top pt-3"><div><label class="form-label small">New SKU</label><input class="form-control form-control-sm" name="sku" required maxlength="60"></div><div><label class="form-label small">Pack size</label><input class="form-control form-control-sm" name="packSize" required maxlength="30"></div><div><label class="form-label small">Price (₹)</label><input class="form-control form-control-sm" name="priceRupees" type="number" step="0.01" min="0" required></div><div><label class="form-label small">Stock</label><input class="form-control form-control-sm" name="stockQuantity" type="number" min="0" required></div><div><label class="form-label small">Threshold</label><input class="form-control form-control-sm" name="lowStockThreshold" type="number" min="0" value="5" required></div><div class="admin-variant-active"><span class="form-label small">Availability</span><div class="form-check"><input class="form-check-input" name="active" type="checkbox" id="new-variant-${escapeHtml(product.id)}"><label class="form-check-label small" for="new-variant-${escapeHtml(product.id)}">Active</label></div></div><div class="admin-variant-save"><span class="form-label small d-none d-sm-block">&nbsp;</span><button class="btn btn-sm btn-outline-brand">Add</button></div></form>
+    ${product.variants.map((variant) => `<form data-form="admin-variant" data-variant-id="${escapeHtml(variant.id)}" class="admin-variant-form mb-3"><div><label class="form-label small">SKU</label><input class="form-control form-control-sm" name="sku" value="${escapeHtml(variant.sku)}" required maxlength="60"></div><div><label class="form-label small">Pack size</label><input class="form-control form-control-sm" name="packSize" value="${escapeHtml(variant.packSize)}" required maxlength="30"></div><div><label class="form-label small">Price (₹)</label><input class="form-control form-control-sm" name="priceRupees" type="number" step="0.01" min="0" value="${(Number(variant.pricePaise) / 100).toFixed(2)}" required></div><div><label class="form-label small">Stock</label><input class="form-control form-control-sm" name="stockQuantity" type="number" min="0" value="${variant.stockQuantity}" required></div><div><label class="form-label small">Low-stock alert</label><input class="form-control form-control-sm" name="lowStockThreshold" type="number" min="0" value="${variant.lowStockThreshold}" required></div><div class="admin-variant-active"><span class="form-label small">Availability</span><div class="form-check"><input class="form-check-input" name="active" type="checkbox" id="variant-${escapeHtml(variant.id)}" ${variant.active ? 'checked' : ''}><label class="form-check-label small" for="variant-${escapeHtml(variant.id)}">Active</label></div></div><div class="admin-variant-save"><span class="form-label small d-none d-sm-block">&nbsp;</span><div class="d-flex gap-1"><button class="btn btn-sm btn-outline-brand">Save</button><button type="button" class="btn btn-sm btn-outline-danger" data-delete-variant="${escapeHtml(variant.id)}" data-variant-name="${escapeHtml(variant.packSize)}">Delete</button></div></div><div class="admin-variant-history"><button class="btn btn-link btn-sm p-0" type="button" data-inventory-history="${escapeHtml(variant.id)}">View inventory history</button><div class="small" data-movement-list="${escapeHtml(variant.id)}"></div></div></form>`).join('') || '<p class="small text-secondary">No pack options have been added.</p>'}
+    <form data-form="admin-add-variant" data-product-id="${escapeHtml(product.id)}" class="admin-variant-form border-top pt-3"><div><label class="form-label small">New SKU</label><input class="form-control form-control-sm" name="sku" required maxlength="60"></div><div><label class="form-label small">Pack size</label><input class="form-control form-control-sm" name="packSize" required maxlength="30"></div><div><label class="form-label small">Price (₹)</label><input class="form-control form-control-sm" name="priceRupees" type="number" step="0.01" min="0" required></div><div><label class="form-label small">Stock</label><input class="form-control form-control-sm" name="stockQuantity" type="number" min="0" required></div><div><label class="form-label small">Threshold</label><input class="form-control form-control-sm" name="lowStockThreshold" type="number" min="0" value="5" required></div><div class="admin-variant-active"><span class="form-label small">Availability</span><div class="form-check"><input class="form-check-input" name="active" type="checkbox" id="new-variant-${escapeHtml(product.id)}" checked><label class="form-check-label small" for="new-variant-${escapeHtml(product.id)}">Active</label></div></div><div class="admin-variant-save"><span class="form-label small d-none d-sm-block">&nbsp;</span><button class="btn btn-sm btn-outline-brand">Add</button></div></form>
   </article>`).join('') || '<p class="text-secondary">No products in the catalogue.</p>';
   const enquiryCards = enquiriesData.enquiries.map((item) => {
     const searchable = `${item.subject} ${item.name} ${item.email} ${item.message}`.toLowerCase();
@@ -1447,7 +1449,7 @@ document.addEventListener('click', async (event) => {
     setMobileNavigationOpen(false, true);
     return;
   }
-  const actionButton = target.matches('[data-add-to-cart], [data-restock], [data-delete-address], [data-remove-restock], [data-inventory-history], [data-remove-cart], [data-logout], [data-read-notification], [data-read-all], [data-cancel-order], [data-delete-enquiry], [data-admin-review-toggle], [data-admin-review-delete], [data-quick-mark-paid]');
+  const actionButton = target.matches('[data-add-to-cart], [data-restock], [data-delete-address], [data-remove-restock], [data-inventory-history], [data-remove-cart], [data-logout], [data-read-notification], [data-read-all], [data-cancel-order], [data-delete-enquiry], [data-admin-review-toggle], [data-admin-review-delete], [data-quick-mark-paid], [data-delete-product], [data-delete-variant]');
   const previousButtonState = actionButton ? showButtonProgress(target) : null;
   try {
     if (target.matches('[data-sidebar-collapse]')) {
@@ -1534,6 +1536,18 @@ document.addEventListener('click', async (event) => {
       if (!confirm('Permanently delete this customer enquiry?')) return;
       await api(`/api/admin/enquiries/${encodeURIComponent(target.dataset.deleteEnquiry)}`, { method: 'DELETE' });
       toast('Enquiry deleted.');
+      await renderAdminContent();
+    } else if (target.matches('[data-delete-product]')) {
+      const prodName = target.dataset.productName || 'this product';
+      if (!confirm(`Are you sure you want to permanently delete "${prodName}" and all its pack options?`)) return;
+      await api(`/api/admin/products/${encodeURIComponent(target.dataset.deleteProduct)}`, { method: 'DELETE' });
+      toast(`Product "${prodName}" deleted.`);
+      await renderAdminContent();
+    } else if (target.matches('[data-delete-variant]')) {
+      const variantName = target.dataset.variantName || 'this option';
+      if (!confirm(`Are you sure you want to delete pack option "${variantName}"?`)) return;
+      await api(`/api/admin/variants/${encodeURIComponent(target.dataset.deleteVariant)}`, { method: 'DELETE' });
+      toast(`Pack option "${variantName}" deleted.`);
       await renderAdminContent();
     } else if (target.matches('[data-copy-text]')) {
       const text = target.dataset.copyText;
@@ -1774,8 +1788,10 @@ document.addEventListener('submit', async (event) => {
           storageInstructions: value('storageInstructions'),
           images: imageUrl ? [{ url: imageUrl, altText: value('name') }] : [],
           variants: [{
-            sku: value('sku'), packSize: value('packSize'), priceRupees: Number(value('price')),
-            stockQuantity: Number(value('stock')), lowStockThreshold: 5, active,
+            sku: value('sku'), packSize: value('packSize'),
+            priceRupees: Number(value('priceRupees') || value('price') || 0),
+            stockQuantity: Number(value('stockQuantity') || value('stock') || 0),
+            lowStockThreshold: 5, active,
           }],
         }),
       });
