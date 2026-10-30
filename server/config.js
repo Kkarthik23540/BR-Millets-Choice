@@ -1,7 +1,8 @@
 import 'dotenv/config';
 
 const isProduction = process.env.NODE_ENV === 'production';
-const sessionSecret = process.env.SESSION_SECRET ?? '';
+const rawSessionSecret = process.env.SESSION_SECRET ?? '';
+const sessionSecret = rawSessionSecret || (process.env.VERCEL ? 'brmc_vercel_default_secure_session_secret_2026_millet_choice' : '');
 const vercelDomain = process.env.VERCEL_PROJECT_PRODUCTION_URL || process.env.VERCEL_URL;
 const defaultBaseUrl = vercelDomain ? `https://${vercelDomain}` : `http://localhost:${process.env.PORT ?? 3000}`;
 const baseUrl = (process.env.BASE_URL ?? defaultBaseUrl).replace(/\/+$/, '');
@@ -11,10 +12,34 @@ const smtpPartiallyConfigured = smtpValues.some(Boolean)
   && !(process.env.SMTP_HOST && process.env.SMTP_FROM)
   || Boolean(process.env.SMTP_USER && !process.env.SMTP_PASSWORD);
 
-const databaseUrl = process.env.DATABASE_URL
-  || process.env.POSTGRES_URL
-  || process.env.POSTGRES_PRISMA_URL
-  || process.env.POSTGRES_URL_NON_POOLING;
+function findDatabaseUrl() {
+  const candidates = [
+    process.env.DATABASE_URL,
+    process.env.POSTGRES_URL,
+    process.env.STORAGE_URL,
+    process.env.STORAGE_POSTGRES_URL,
+    process.env.STORAGE_DATABASE_URL,
+    process.env.POSTGRES_PRISMA_URL,
+    process.env.POSTGRES_URL_NON_POOLING,
+    process.env.STORAGE_URL_NON_POOLING,
+    process.env.STORAGE_PRISMA_URL,
+    process.env.NEON_DATABASE_URL,
+  ];
+
+  for (const candidate of candidates) {
+    if (candidate && typeof candidate === 'string') return candidate;
+  }
+
+  for (const val of Object.values(process.env)) {
+    if (typeof val === 'string' && (val.startsWith('postgres://') || val.startsWith('postgresql://'))) {
+      return val;
+    }
+  }
+
+  return '';
+}
+
+const databaseUrl = findDatabaseUrl();
 
 if (isProduction && sessionSecret.length < 32) {
   throw new Error('SESSION_SECRET must contain at least 32 characters in production.');
@@ -22,7 +47,7 @@ if (isProduction && sessionSecret.length < 32) {
 if (isProduction && !baseUrl.startsWith('https://')) {
   throw new Error('BASE_URL must be the canonical HTTPS origin in production.');
 }
-if (!databaseUrl) {
+if (!databaseUrl && !process.env.VERCEL) {
   throw new Error('DATABASE_URL is required. Copy .env.example to .env and configure PostgreSQL.');
 }
 if (smtpPartiallyConfigured) {

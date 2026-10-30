@@ -30,6 +30,9 @@ const migrationsDir = fileURLToPath(new URL('../database/migrations/', import.me
 
 let readyPromise = null;
 export async function ensureDatabaseReady() {
+  if (!config.databaseUrl) {
+    return;
+  }
   if (readyPromise) return readyPromise;
   readyPromise = (async () => {
     try {

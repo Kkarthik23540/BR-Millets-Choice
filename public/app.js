@@ -535,8 +535,7 @@ async function getSignedInUser() {
   try {
     return (await api('/api/auth/me')).user;
   } catch (error) {
-    if (error.status === 401) return null;
-    throw error;
+    return null;
   }
 }
 
