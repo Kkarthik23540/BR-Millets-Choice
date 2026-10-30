@@ -11,7 +11,7 @@ import helmet from 'helmet';
 import { rateLimit } from 'express-rate-limit';
 import { z } from 'zod';
 import { config, emailConfigured } from './config.js';
-import { pool, inTransaction } from './db.js';
+import { pool, inTransaction, ensureDatabaseReady } from './db.js';
 import { canTransitionOrder, stockAvailability } from './domain.js';
 import { enqueueEmail } from './email.js';
 
@@ -278,6 +278,7 @@ async function getBusinessDetails() {
 }
 
 app.get('/api/config', asyncRoute(async (_req, res) => {
+  void ensureDatabaseReady();
   const businessDetails = await getBusinessDetails();
   res.json({
     businessName: config.businessName,
@@ -291,6 +292,7 @@ app.get('/api/config', asyncRoute(async (_req, res) => {
 }));
 
 app.post('/api/auth/register', authLimiter, asyncRoute(async (req, res) => {
+  await ensureDatabaseReady();
   if (!emailConfigured) {
     throw new HttpError(503, 'Email verification is unavailable until SMTP is configured.', 'EMAIL_UNAVAILABLE');
   }
@@ -335,6 +337,7 @@ app.post('/api/auth/register', authLimiter, asyncRoute(async (req, res) => {
 }));
 
 app.post('/api/auth/login', authLimiter, asyncRoute(async (req, res) => {
+  await ensureDatabaseReady();
   const data = parse(z.object({
     email: emailSchema,
     password: z.string().min(1).max(128),
