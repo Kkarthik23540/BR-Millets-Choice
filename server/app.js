@@ -285,7 +285,8 @@ app.get('/api/config', asyncRoute(async (_req, res) => {
     ...Object.fromEntries(Object.entries(businessDetails).map(([key, value]) => [key, value ?? null])),
     emailConfigured,
     googleConfigured: Boolean(config.googleClientId && config.googleClientSecret && config.googleCallbackUrl),
-    paymentsEnabled: false,
+    paymentsEnabled: Boolean(config.razorpayKeyId),
+    razorpayKeyId: config.razorpayKeyId || null,
     paymentMethods: config.paymentMethods,
     analyticsId: config.ga4MeasurementId || null,
   });

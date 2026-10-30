@@ -2311,17 +2311,86 @@ document.addEventListener('submit', async (event) => {
         sessionStorage.setItem(`brmc-order-request-${result.order.id}`, 'sent');
       }
       const isUpi = result.order.paymentMethod === 'manual_transfer';
+      const amountRupees = (Number(result.order.totalPaise) / 100).toFixed(2);
+      const payeeUpi = 'kkarthik23540-5@okaxis';
+      const upiUri = `upi://pay?pa=${payeeUpi}&pn=BR%20Millet%20Choice&am=${amountRupees}&cu=INR&tn=Order%20${encodeURIComponent(result.order.orderNumber)}`;
+      const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(upiUri)}`;
+
+      // On mobile devices, immediately trigger UPI app deep-link
+      const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+      if (isUpi && isMobile) {
+        window.location.href = upiUri;
+      }
+
       appRoot.innerHTML = `${pageHeader('Order Confirmed', 'Thank you for your order!')}
         <section class="container content-shell">
           <div class="notice mb-4">
             ${isUpi
-              ? `Your order <strong>${escapeHtml(result.order.orderNumber)}</strong> has been booked and UPI payment initiated! Stock is reserved and your freshly packed millets are being prepared.`
+              ? `Your order <strong>${escapeHtml(result.order.orderNumber)}</strong> has been booked! Complete your payment of <strong>₹${amountRupees}</strong> below using your preferred UPI app.`
               : `Your order <strong>${escapeHtml(result.order.orderNumber)}</strong> has been confirmed successfully! Stock is reserved for Cash on Delivery.`}
           </div>
+
+          ${isUpi ? `
+            <div class="p-4 bg-white rounded-4 border shadow-sm mb-4">
+              <div class="d-flex align-items-center gap-2 mb-3">
+                <span class="fs-3">📱</span>
+                <div>
+                  <h3 class="h5 mb-0 text-success">Pay with Any UPI App</h3>
+                  <span class="small text-secondary">Google Pay, PhonePe, Paytm, BHIM, or Axis Pay</span>
+                </div>
+              </div>
+
+              <!-- Quick Pay Button for Mobile & Direct Click -->
+              <div class="mb-4 text-center">
+                <a class="btn btn-success btn-lg px-4 py-3 fw-bold w-100 shadow-sm" href="${upiUri}">
+                  📱 Tap to Pay ₹${amountRupees} in GPay / PhonePe / Paytm
+                </a>
+                <span class="form-text small d-block mt-2">Tapping this opens your UPI payment app with the amount pre-filled.</span>
+              </div>
+
+              <!-- Dynamic QR Code for Desktop or Laptop -->
+              <div class="row align-items-center gy-3 p-3 bg-light rounded-3 border mb-4">
+                <div class="col-md-5 text-center">
+                  <img src="${qrCodeUrl}" alt="UPI QR Code for Order ${escapeHtml(result.order.orderNumber)}" class="img-fluid rounded border bg-white p-2 shadow-sm" style="max-width:180px;">
+                  <span class="d-block small text-secondary mt-1 fw-semibold">Scan with your phone to pay</span>
+                </div>
+                <div class="col-md-7">
+                  <h4 class="h6 mb-2">Or Pay Directly to UPI ID:</h4>
+                  <div class="d-flex align-items-center gap-2 mb-3">
+                    <code class="fs-6 bg-white p-2 border rounded user-select-all fw-bold text-dark">${payeeUpi}</code>
+                    <button class="btn btn-sm btn-outline-brand" type="button" data-copy-text="${payeeUpi}">Copy UPI</button>
+                  </div>
+                  <div class="small mb-1"><strong>Payee:</strong> BR Millet Choice (Karthik Reddy)</div>
+                  <div class="small mb-1"><strong>Amount:</strong> ₹${amountRupees}</div>
+                  <div class="small text-secondary"><strong>Remark / Note:</strong> Order ${escapeHtml(result.order.orderNumber)}</div>
+                </div>
+              </div>
+
+              <!-- Instant UTR Confirmation Form -->
+              <form data-form="submit-payment-reference" data-order-id="${escapeHtml(result.order.id)}" class="mt-3">
+                <label class="form-label small fw-bold" for="order-confirm-utr">Enter your 12-digit UPI UTR / Transaction Reference after paying:</label>
+                <div class="input-group">
+                  <input class="form-control" id="order-confirm-utr" name="reference" placeholder="e.g. 428910293847" required minlength="4" maxlength="100">
+                  <button class="btn btn-brand" type="submit">Submit UTR</button>
+                </div>
+                <div class="form-text small">Found in your payment receipt on Google Pay, PhonePe, or Paytm.</div>
+              </form>
+
+              ${(state.config?.whatsapp || state.config?.supportPhone) ? `
+                <div class="mt-4 pt-3 border-top d-flex flex-wrap align-items-center justify-content-between gap-2">
+                  <span class="small text-secondary">Need immediate verification?</span>
+                  <a class="btn btn-sm btn-outline-success" target="_blank" rel="noopener noreferrer" href="https://wa.me/${(state.config.whatsapp || state.config.supportPhone).replace(/\D/g, '')}?text=${encodeURIComponent('Hi BR Millet Choice, I placed order ' + result.order.orderNumber + ' for ₹' + amountRupees + '. Here is my UPI payment confirmation.')}">
+                    💬 Send Payment Screenshot on WhatsApp
+                  </a>
+                </div>
+              ` : ''}
+            </div>
+          ` : ''}
+
           <div class="p-3 bg-light rounded-3 border mb-4">
             <div class="d-flex justify-content-between mb-2"><span>Order Number:</span><strong>${escapeHtml(result.order.orderNumber)}</strong></div>
-            <div class="d-flex justify-content-between mb-2"><span>Order Status:</span><span class="badge bg-success">Confirmed &amp; Preparing</span></div>
-            <div class="d-flex justify-content-between mb-2"><span>Payment:</span><strong>${isUpi ? '📱 UPI (Online Verification)' : '💵 Cash on Delivery'}</strong></div>
+            <div class="d-flex justify-content-between mb-2"><span>Order Status:</span><span class="badge bg-success">Confirmed &amp; Stock Reserved</span></div>
+            <div class="d-flex justify-content-between mb-2"><span>Payment:</span><strong>${isUpi ? '📱 UPI (Online Payment)' : '💵 Cash on Delivery'}</strong></div>
             <div class="d-flex justify-content-between"><span>Total:</span><strong>${money(result.order.totalPaise)}</strong></div>
           </div>
           <div class="d-flex flex-wrap gap-2">
