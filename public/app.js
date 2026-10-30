@@ -932,6 +932,10 @@ function updateAdminShell(user) {
     brand.href = isAdmin ? '/admin' : '/';
     brand.setAttribute('aria-label', isAdmin ? 'BR Millet Choice admin dashboard' : 'BR Millet Choice home');
   }
+  const headerCart = document.querySelector('[data-header-cart]');
+  if (headerCart) {
+    headerCart.hidden = Boolean(isAdmin || (user && user.role === 'admin'));
+  }
 }
 
 async function renderAccount() {
@@ -2591,7 +2595,6 @@ async function boot() {
   }
   await renderPage();
   initNetworkWatcher();
-  initGlobalSearch();
   initScrollAnimations();
   startAdminOrderStream();
   const route = location.pathname;
@@ -2655,137 +2658,6 @@ function initNetworkWatcher() {
   });
   window.addEventListener('online', () => {
     toast('🟢 Internet connection restored.', false);
-  });
-}
-
-let searchProductsCache = null;
-let searchCacheTime = 0;
-
-async function getCachedProductsForSearch() {
-  const now = Date.now();
-  if (searchProductsCache && (now - searchCacheTime < 30000)) {
-    return searchProductsCache;
-  }
-  try {
-    const res = await api('/api/products');
-    searchProductsCache = res.products || [];
-    searchCacheTime = now;
-    return searchProductsCache;
-  } catch {
-    return searchProductsCache || [];
-  }
-}
-
-function initGlobalSearch() {
-  const searchInput = document.querySelector('[data-global-search-input]');
-  const searchDropdown = document.querySelector('[data-global-search-dropdown]');
-  const searchClear = document.querySelector('[data-global-search-clear]');
-  if (!searchInput || !searchDropdown) return;
-
-  let debounceTimer = null;
-
-  async function handleSearch(query) {
-    const q = query.trim().toLowerCase();
-    if (!q) {
-      searchDropdown.hidden = true;
-      searchDropdown.innerHTML = '';
-      if (searchClear) searchClear.hidden = true;
-      return;
-    }
-
-    if (searchClear) searchClear.hidden = false;
-
-    const products = await getCachedProductsForSearch();
-    const matches = products.filter((p) => {
-      const name = (p.name || '').toLowerCase();
-      const desc = (p.description || '').toLowerCase();
-      const cat = (p.category || '').toLowerCase();
-      return name.includes(q) || desc.includes(q) || cat.includes(q);
-    });
-
-    if (matches.length === 0) {
-      searchDropdown.innerHTML = `
-        <div class="search-empty-state">
-          <span class="search-empty-icon">🔍</span>
-          <p class="search-empty-text">No millets found matching "${escapeHtml(query)}"</p>
-          <span class="search-empty-sub">Try searching for ragi, jowar, foxtail, or browse all items below</span>
-          <a href="/shop" class="btn btn-sm btn-outline-brand mt-2" data-search-nav>Browse all millets</a>
-        </div>
-      `;
-      searchDropdown.hidden = false;
-      return;
-    }
-
-    const itemsHtml = matches.slice(0, 6).map((p) => {
-      const img = p.images?.[0];
-      const lowestPrice = p.variants?.length
-        ? Math.min(...p.variants.map((v) => v.pricePaise))
-        : null;
-      return `
-        <a href="/product/${encodeURIComponent(p.slug)}" class="search-dropdown-item" data-search-nav>
-          <div class="search-item-thumb">
-            ${img ? `<img src="${escapeHtml(img.url)}" alt="${escapeHtml(p.name)}">` : '<span>🌾</span>'}
-          </div>
-          <div class="search-item-info">
-            <span class="search-item-name">${escapeHtml(p.name)}</span>
-            <span class="search-item-category">${escapeHtml(p.category || 'Millet Powder')}</span>
-          </div>
-          <div class="search-item-price">
-            ${lowestPrice ? money(lowestPrice) : ''}
-          </div>
-        </a>
-      `;
-    }).join('');
-
-    searchDropdown.innerHTML = `
-      <div class="search-dropdown-header">Products matching "${escapeHtml(query)}" (${matches.length})</div>
-      <div class="search-dropdown-list">${itemsHtml}</div>
-      ${matches.length > 6 ? `<a href="/shop?q=${encodeURIComponent(query)}" class="search-dropdown-view-all" data-search-nav>View all ${matches.length} matching products →</a>` : ''}
-    `;
-    searchDropdown.hidden = false;
-  }
-
-  searchInput.addEventListener('input', (e) => {
-    clearTimeout(debounceTimer);
-    debounceTimer = setTimeout(() => {
-      handleSearch(e.target.value);
-    }, 180);
-  });
-
-  searchInput.addEventListener('focus', () => {
-    if (searchInput.value.trim()) {
-      handleSearch(searchInput.value);
-    }
-  });
-
-  if (searchClear) {
-    searchClear.addEventListener('click', () => {
-      searchInput.value = '';
-      searchDropdown.hidden = true;
-      searchDropdown.innerHTML = '';
-      searchClear.hidden = true;
-      searchInput.focus();
-    });
-  }
-
-  document.addEventListener('click', (e) => {
-    if (!e.target.closest('.header-search-box') && !e.target.closest('.header-search-dropdown')) {
-      searchDropdown.hidden = true;
-    }
-  });
-
-  document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape' && !searchDropdown.hidden) {
-      searchDropdown.hidden = true;
-    }
-  });
-
-  searchDropdown.addEventListener('click', (e) => {
-    if (e.target.closest('[data-search-nav]')) {
-      searchDropdown.hidden = true;
-      searchInput.value = '';
-      if (searchClear) searchClear.hidden = true;
-    }
   });
 }
 
