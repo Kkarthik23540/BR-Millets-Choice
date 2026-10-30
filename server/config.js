@@ -2,7 +2,9 @@ import 'dotenv/config';
 
 const isProduction = process.env.NODE_ENV === 'production';
 const sessionSecret = process.env.SESSION_SECRET ?? '';
-const baseUrl = (process.env.BASE_URL ?? `http://localhost:${process.env.PORT ?? 3000}`).replace(/\/+$/, '');
+const vercelDomain = process.env.VERCEL_PROJECT_PRODUCTION_URL || process.env.VERCEL_URL;
+const defaultBaseUrl = vercelDomain ? `https://${vercelDomain}` : `http://localhost:${process.env.PORT ?? 3000}`;
+const baseUrl = (process.env.BASE_URL ?? defaultBaseUrl).replace(/\/+$/, '');
 const smtpValues = ['SMTP_HOST', 'SMTP_FROM', 'SMTP_USER', 'SMTP_PASSWORD']
   .map((key) => process.env[key] ?? '');
 const smtpPartiallyConfigured = smtpValues.some(Boolean)
@@ -28,7 +30,7 @@ export const config = Object.freeze({
   isProduction,
   databaseUrl: process.env.DATABASE_URL,
   sessionSecret: sessionSecret || 'local-development-secret-change-before-deploy',
-  trustProxy: process.env.TRUST_PROXY === '1',
+  trustProxy: process.env.TRUST_PROXY === '1' || Boolean(process.env.VERCEL),
   baseUrl,
   businessName: 'BR Millet Choice',
   businessEmail: process.env.BUSINESS_EMAIL ?? '',

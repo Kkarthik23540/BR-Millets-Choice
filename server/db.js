@@ -3,9 +3,16 @@ import { config } from './config.js';
 
 const { Pool } = pg;
 
+const needsSsl = config.isProduction
+  || Boolean(config.databaseUrl?.includes('sslmode=')
+  || config.databaseUrl?.includes('neon.tech')
+  || config.databaseUrl?.includes('supabase')
+  || config.databaseUrl?.includes('render.com')
+  || process.env.VERCEL);
+
 export const pool = new Pool({
   connectionString: config.databaseUrl,
-  ssl: config.isProduction ? { rejectUnauthorized: true } : undefined,
+  ssl: needsSsl ? { rejectUnauthorized: false } : undefined,
   max: 10,
   idleTimeoutMillis: 30_000,
   connectionTimeoutMillis: 5_000,
