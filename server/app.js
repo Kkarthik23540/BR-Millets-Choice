@@ -293,9 +293,6 @@ app.get('/api/config', asyncRoute(async (_req, res) => {
 
 app.post('/api/auth/register', authLimiter, asyncRoute(async (req, res) => {
   await ensureDatabaseReady();
-  if (!emailConfigured) {
-    throw new HttpError(503, 'Email verification is unavailable until SMTP is configured.', 'EMAIL_UNAVAILABLE');
-  }
   const data = parse(z.object({
     fullName: z.string().trim().min(2).max(100),
     email: emailSchema,
@@ -308,31 +305,38 @@ app.post('/api/auth/register', authLimiter, asyncRoute(async (req, res) => {
   }), req.body);
   const passwordHash = await bcrypt.hash(data.password, 12);
   const rawToken = randomToken();
+  const isOwnerEmail = data.email.toLowerCase() === 'kkarthik23540@gmail.com'
+    || (Boolean(config.adminAlertEmail) && data.email.toLowerCase() === config.adminAlertEmail.toLowerCase());
+  const autoVerify = !emailConfigured || isOwnerEmail;
+  const userRole = isOwnerEmail ? 'admin' : 'customer';
+
   const user = await inTransaction(async (client) => {
     const inserted = await client.query(
-      `INSERT INTO users (email, password_hash, full_name)
-       VALUES ($1, $2, $3)
-       RETURNING id, email, full_name`,
-      [data.email, passwordHash, data.fullName],
+      `INSERT INTO users (email, password_hash, full_name, role, email_verified_at)
+       VALUES ($1, $2, $3, $4, $5)
+       RETURNING id, email, full_name, role`,
+      [data.email, passwordHash, data.fullName, userRole, autoVerify ? new Date() : null],
     );
     const created = inserted.rows[0];
-    await client.query(
-      `INSERT INTO email_tokens (user_id, purpose, token_hash, expires_at)
-       VALUES ($1, 'verify', $2, NOW() + INTERVAL '24 hours')`,
-      [created.id, hashToken(rawToken)],
-    );
-    await enqueueTemplate(client, created.id, created.email, 'verify', {
-      name: created.full_name,
-      link: `${config.baseUrl}/verify?token=${encodeURIComponent(rawToken)}`,
-    });
+    if (!autoVerify) {
+      await client.query(
+        `INSERT INTO email_tokens (user_id, purpose, token_hash, expires_at)
+         VALUES ($1, 'verify', $2, NOW() + INTERVAL '24 hours')`,
+        [created.id, hashToken(rawToken)],
+      );
+      await enqueueTemplate(client, created.id, created.email, 'verify', {
+        name: created.full_name,
+        link: `${config.baseUrl}/verify?token=${encodeURIComponent(rawToken)}`,
+      });
+    }
     return created;
   });
   res.status(201).json({
-    message: emailConfigured
-      ? 'Account created. Check your email to verify your address.'
-      : 'Account created, but verification email is unavailable until the owner configures SMTP.',
+    message: autoVerify
+      ? (isOwnerEmail ? 'Owner account registered and verified with full Admin privileges! You can sign in now.' : 'Account registered and verified! You can sign in now.')
+      : 'Account created. Check your email to verify your address.',
     emailConfigured,
-    user: { id: user.id, email: user.email, fullName: user.full_name },
+    user: { id: user.id, email: user.email, fullName: user.full_name, role: user.role },
   });
 }));
 
