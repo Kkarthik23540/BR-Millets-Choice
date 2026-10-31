@@ -1796,3 +1796,89 @@ body.admin-mode [data-header-cart] {
     padding-inline: 0.85rem !important;
   }
 }
+
+/* ==========================================================================
+   Live Pulse Badge, Orders Management & Mobile Optimizations
+   ========================================================================== */
+.live-pulse-dot {
+  width: 9px;
+  height: 9px;
+  background-color: #16a34a;
+  border-radius: 50%;
+  display: inline-block;
+  box-shadow: 0 0 0 rgba(22, 163, 74, 0.4);
+  animation: liveDotPulse 1.8s infinite ease-in-out;
+}
+
+@keyframes liveDotPulse {
+  0% {
+    transform: scale(0.92);
+    box-shadow: 0 0 0 0 rgba(22, 163, 74, 0.7);
+  }
+  70% {
+    transform: scale(1.05);
+    box-shadow: 0 0 0 7px rgba(22, 163, 74, 0);
+  }
+  100% {
+    transform: scale(0.92);
+    box-shadow: 0 0 0 0 rgba(22, 163, 74, 0);
+  }
+}
+
+.orders-toolbar {
+  transition: all 0.2s ease;
+}
+
+.order-select-chk {
+  cursor: pointer;
+  width: 1.15rem;
+  height: 1.15rem;
+}
+
+.recipe-card {
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+  border: 1px solid #e2e8f0;
+}
+
+.recipe-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08) !important;
+}
+
+@media (max-width: 576px) {
+  .recipe-card {
+    padding: 1.1rem !important;
+    border-radius: 14px !important;
+  }
+  .recipe-card h3 {
+    font-size: 1.05rem !important;
+  }
+  .recipe-card .recipe-meta-box {
+    padding: 0.65rem 0.8rem !important;
+    font-size: 0.82rem !important;
+  }
+  .recipe-card .recipe-steps {
+    font-size: 0.82rem !important;
+    line-height: 1.45 !important;
+  }
+  .admin-filter-panel {
+    padding: 0.65rem 0.75rem !important;
+  }
+  .admin-filter-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 0.4rem !important;
+  }
+  .admin-filter-grid > div:first-child {
+    grid-column: 1 / -1 !important;
+  }
+  .admin-filter-grid .form-control,
+  .admin-filter-grid .form-select {
+    height: 35px !important;
+    font-size: 0.82rem !important;
+    padding: 0.25rem 0.5rem !important;
+  }
+  .admin-filter-grid .form-label {
+    font-size: 0.75rem !important;
+    margin-bottom: 0.15rem !important;
+  }
+}

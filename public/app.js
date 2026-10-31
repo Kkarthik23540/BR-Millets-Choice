@@ -246,7 +246,7 @@ async function api(url, options = {}) {
 
 
 
-function confirmAction({ title = 'Confirmation', message = 'Are you sure you want to proceed?', confirmText = 'Confirm', cancelText = 'Cancel', isDanger = false } = {}) {
+function confirmAction({ title = 'Confirmation', message = 'Are you sure you want to proceed?', confirmText = 'Yes, Proceed', cancelText = 'No, Cancel', isDanger = false } = {}) {
   return new Promise((resolve) => {
     const backdrop = document.createElement('div');
     backdrop.className = 'brmc-modal-backdrop';
@@ -706,7 +706,7 @@ async function renderProduct(slug) {
             <div class="p-3 bg-light rounded-3 border mb-4">
               <div class="d-flex align-items-center gap-2 mb-1">
                 <span class="fs-5">🚚</span>
-                <strong class="small text-dark">Free Hyderabad Delivery on orders over ₹500</strong>
+                <strong class="small text-dark">Free Doorstep Delivery on orders over ₹500</strong>
               </div>
               <div class="d-flex align-items-center gap-2">
                 <span class="fs-5">💵</span>
@@ -983,116 +983,98 @@ function renderIdeas() {
               <div class="fw-bold text-dark mb-1">🛒 Key Ingredients:</div>
               <p class="text-secondary mb-0">2 tbsp Finger Millet (Ragi) Powder, 1.5 cups water, fresh buttermilk, crushed shallots, roasted cumin powder &amp; pinch of rock salt.</p>
             </div>
-            <div class="recipe-steps small mb-4 text-secondary">
+            <div class="recipe-steps small text-secondary">
               <strong>Quick Steps:</strong> Mix Ragi flour in cold water without lumps. Simmer on low flame for 4 mins until glossy. Let cool, whisk in churned buttermilk, crushed cumin &amp; salt. Serve fresh!
-            </div>
-            <div class="mt-auto">
-              <a href="/shop" class="btn btn-sm btn-outline-brand w-100">Shop Stone-Ground Ragi Flour →</a>
             </div>
           </div>
         </div>
 
         <div class="col-md-6 col-lg-4">
-          <div class="feature-card recipe-card h-100 p-4 border rounded-4 shadow-sm bg-white d-flex flex-column">
-            <div class="d-flex justify-content-between align-items-start mb-3">
+          <div class="feature-card recipe-card h-100 p-3 p-md-4 border rounded-4 shadow-sm bg-white d-flex flex-column">
+            <div class="d-flex justify-content-between align-items-start mb-2">
               <span class="badge bg-warning-subtle text-warning border border-warning-subtle rounded-pill px-3 py-1 fw-semibold">Lunch / Tiffin • 20 mins</span>
               <span class="fs-4">🥞</span>
             </div>
-            <h3 class="h5 fw-bold text-forest mb-2">Foxtail Millet Idli &amp; Crispy Dosa</h3>
-            <p class="small text-secondary mb-3">Golden, light, and digestible dosas and idlis without white rice. High dietary fiber with low glycemic index for diabetic wellness.</p>
-            <div class="recipe-meta-box p-3 bg-light rounded-3 mb-3 small">
+            <h3 class="h6 fw-bold text-forest mb-2">Foxtail Millet Idli &amp; Crispy Dosa</h3>
+            <p class="small text-secondary mb-2">Golden, light, and digestible dosas and idlis without white rice. High dietary fiber with low glycemic index for diabetic wellness.</p>
+            <div class="recipe-meta-box p-2 p-md-3 bg-light rounded-3 mb-2 small">
               <div class="fw-bold text-dark mb-1">🛒 Key Ingredients:</div>
               <p class="text-secondary mb-0">2 cups Foxtail Millet (Kangni) Flour, 1/2 cup Urad dal, 1 tsp fenugreek seeds, salt to taste, pure sesame oil.</p>
             </div>
-            <div class="recipe-steps small mb-4 text-secondary">
+            <div class="recipe-steps small text-secondary">
               <strong>Quick Steps:</strong> Combine foxtail flour with fermented urad batter. Steam for 10 minutes in idli molds for fluffy idlis, or pour thin onto a hot cast-iron tawa for golden crispy dosas.
-            </div>
-            <div class="mt-auto">
-              <a href="/shop" class="btn btn-sm btn-outline-brand w-100">Shop Foxtail Millet Flour →</a>
             </div>
           </div>
         </div>
 
         <div class="col-md-6 col-lg-4">
-          <div class="feature-card recipe-card h-100 p-4 border rounded-4 shadow-sm bg-white d-flex flex-column">
-            <div class="d-flex justify-content-between align-items-start mb-3">
+          <div class="feature-card recipe-card h-100 p-3 p-md-4 border rounded-4 shadow-sm bg-white d-flex flex-column">
+            <div class="d-flex justify-content-between align-items-start mb-2">
               <span class="badge bg-info-subtle text-info border border-info-subtle rounded-pill px-3 py-1 fw-semibold">Dinner • 25 mins</span>
               <span class="fs-4">🍲</span>
             </div>
-            <h3 class="h5 fw-bold text-forest mb-2">Wholesome Little Millet Pongal</h3>
-            <p class="small text-secondary mb-3">Fragrant, gut-soothing comfort meal tempered with pure desi ghee, black peppercorns, crushed ginger, and roasted cashews.</p>
-            <div class="recipe-meta-box p-3 bg-light rounded-3 mb-3 small">
+            <h3 class="h6 fw-bold text-forest mb-2">Wholesome Little Millet Pongal</h3>
+            <p class="small text-secondary mb-2">Fragrant, gut-soothing comfort meal tempered with pure desi ghee, black peppercorns, crushed ginger, and roasted cashews.</p>
+            <div class="recipe-meta-box p-2 p-md-3 bg-light rounded-3 mb-2 small">
               <div class="fw-bold text-dark mb-1">🛒 Key Ingredients:</div>
               <p class="text-secondary mb-0">1 cup Little Millet (Samai), 1/2 cup yellow moong dal, 2 tbsp pure cow ghee, whole peppercorns, curry leaves, ginger, cashews.</p>
             </div>
-            <div class="recipe-steps small mb-4 text-secondary">
+            <div class="recipe-steps small text-secondary">
               <strong>Quick Steps:</strong> Pressure cook little millet &amp; moong dal with 4 cups water. Temper cumin, black pepper, ginger, and cashews in ghee; pour sizzling hot over pongal and mix well.
-            </div>
-            <div class="mt-auto">
-              <a href="/shop" class="btn btn-sm btn-outline-brand w-100">Shop Little Millet Flour →</a>
             </div>
           </div>
         </div>
 
         <div class="col-md-6 col-lg-4">
-          <div class="feature-card recipe-card h-100 p-4 border rounded-4 shadow-sm bg-white d-flex flex-column">
-            <div class="d-flex justify-content-between align-items-start mb-3">
+          <div class="feature-card recipe-card h-100 p-3 p-md-4 border rounded-4 shadow-sm bg-white d-flex flex-column">
+            <div class="d-flex justify-content-between align-items-start mb-2">
               <span class="badge bg-danger-subtle text-danger border border-danger-subtle rounded-pill px-3 py-1 fw-semibold">Gluten-Free • 15 mins</span>
               <span class="fs-4">🫓</span>
             </div>
-            <h3 class="h5 fw-bold text-forest mb-2">Authentic Jowar Bhakri (Rotla)</h3>
-            <p class="small text-secondary mb-3">Traditional sorghum flatbread. Naturally 100% gluten-free, light on digestion, and keeps hunger satiated for hours.</p>
-            <div class="recipe-meta-box p-3 bg-light rounded-3 mb-3 small">
+            <h3 class="h6 fw-bold text-forest mb-2">Authentic Jowar Bhakri (Rotla)</h3>
+            <p class="small text-secondary mb-2">Traditional sorghum flatbread. Naturally 100% gluten-free, light on digestion, and keeps hunger satiated for hours.</p>
+            <div class="recipe-meta-box p-2 p-md-3 bg-light rounded-3 mb-2 small">
               <div class="fw-bold text-dark mb-1">🛒 Key Ingredients:</div>
               <p class="text-secondary mb-0">2 cups stone-ground Jowar Flour, 1 cup hot boiling water, pinch of sea salt.</p>
             </div>
-            <div class="recipe-steps small mb-4 text-secondary">
+            <div class="recipe-steps small text-secondary">
               <strong>Quick Steps:</strong> Knead jowar flour with boiling water into a smooth, pliable dough. Hand-pat into circles, transfer to hot tawa, smear water on top, flip and roast both sides till puffed.
-            </div>
-            <div class="mt-auto">
-              <a href="/shop" class="btn btn-sm btn-outline-brand w-100">Shop Pure Jowar Flour →</a>
             </div>
           </div>
         </div>
 
         <div class="col-md-6 col-lg-4">
-          <div class="feature-card recipe-card h-100 p-4 border rounded-4 shadow-sm bg-white d-flex flex-column">
-            <div class="d-flex justify-content-between align-items-start mb-3">
+          <div class="feature-card recipe-card h-100 p-3 p-md-4 border rounded-4 shadow-sm bg-white d-flex flex-column">
+            <div class="d-flex justify-content-between align-items-start mb-2">
               <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill px-3 py-1 fw-semibold">Winter Superfood • 20 mins</span>
               <span class="fs-4">🌾</span>
             </div>
-            <h3 class="h5 fw-bold text-forest mb-2">Bajra (Pearl Millet) Methi Poori / Roti</h3>
-            <p class="small text-secondary mb-3">Iron-loaded flatbreads flavored with fresh fenugreek leaves, crushed green chili, and roasted sesame seeds. Natural winter warmth.</p>
-            <div class="recipe-meta-box p-3 bg-light rounded-3 mb-3 small">
+            <h3 class="h6 fw-bold text-forest mb-2">Bajra (Pearl Millet) Methi Poori / Roti</h3>
+            <p class="small text-secondary mb-2">Iron-loaded flatbreads flavored with fresh fenugreek leaves, crushed green chili, and roasted sesame seeds. Natural winter warmth.</p>
+            <div class="recipe-meta-box p-2 p-md-3 bg-light rounded-3 mb-2 small">
               <div class="fw-bold text-dark mb-1">🛒 Key Ingredients:</div>
               <p class="text-secondary mb-0">1.5 cups Bajra Flour, 1/2 cup fresh methi leaves, 1 tsp carom seeds (ajwain), 1 tbsp white sesame seeds, warm water.</p>
             </div>
-            <div class="recipe-steps small mb-4 text-secondary">
+            <div class="recipe-steps small text-secondary">
               <strong>Quick Steps:</strong> Mix ingredients and knead soft. Roll gently with dry flour dusting. Roast on tawa with a drizzle of cold-pressed oil or ghee until speckled golden brown.
-            </div>
-            <div class="mt-auto">
-              <a href="/shop" class="btn btn-sm btn-outline-brand w-100">Shop Pearl Millet (Bajra) →</a>
             </div>
           </div>
         </div>
 
         <div class="col-md-6 col-lg-4">
-          <div class="feature-card recipe-card h-100 p-4 border rounded-4 shadow-sm bg-white d-flex flex-column">
-            <div class="d-flex justify-content-between align-items-start mb-3">
+          <div class="feature-card recipe-card h-100 p-3 p-md-4 border rounded-4 shadow-sm bg-white d-flex flex-column">
+            <div class="d-flex justify-content-between align-items-start mb-2">
               <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-3 py-1 fw-semibold">Healthy Sweet • 15 mins</span>
               <span class="fs-4">🍬</span>
             </div>
-            <h3 class="h5 fw-bold text-forest mb-2">Millet Dry-Fruit Power Ladoos</h3>
-            <p class="small text-secondary mb-3">No refined sugar, no additives. Made with slow-roasted mixed millets, organic jaggery, pure ghee, and roasted almonds &amp; walnuts.</p>
-            <div class="recipe-meta-box p-3 bg-light rounded-3 mb-3 small">
+            <h3 class="h6 fw-bold text-forest mb-2">Millet Dry-Fruit Power Ladoos</h3>
+            <p class="small text-secondary mb-2">No refined sugar, no additives. Made with slow-roasted mixed millets, organic jaggery, pure ghee, and roasted almonds &amp; walnuts.</p>
+            <div class="recipe-meta-box p-2 p-md-3 bg-light rounded-3 mb-2 small">
               <div class="fw-bold text-dark mb-1">🛒 Key Ingredients:</div>
               <p class="text-secondary mb-0">1 cup Ragi or Multi-millet flour, 1/2 cup grated organic jaggery, 1/4 cup pure cow ghee, cardamom powder, chopped almonds &amp; cashews.</p>
             </div>
-            <div class="recipe-steps small mb-4 text-secondary">
+            <div class="recipe-steps small text-secondary">
               <strong>Quick Steps:</strong> Roast millet flour in ghee on low heat for 8 mins till aromatic. Add warm melted jaggery, cardamom and nuts. Shape into round bite-sized ladoos while warm!
-            </div>
-            <div class="mt-auto">
-              <a href="/shop" class="btn btn-sm btn-outline-brand w-100">Shop All Pure Millets →</a>
             </div>
           </div>
         </div>
@@ -1297,25 +1279,25 @@ function updateAdminShell(user) {
   if (!navigation) return;
   if (isAdmin) {
     navigation.innerHTML = `
-      <a href="/admin" aria-label="Dashboard" title="Dashboard"><svg aria-hidden="true" viewBox="0 0 24 24"><rect x="3" y="3" width="8" height="8" rx="1"></rect><rect x="13" y="3" width="8" height="5" rx="1"></rect><rect x="13" y="10" width="8" height="11" rx="1"></rect><rect x="3" y="13" width="8" height="8" rx="1"></rect></svg><span>Dashboard</span></a>
-      <a href="/admin/products" aria-label="Add products" title="Add products"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"></path><rect x="3" y="3" width="18" height="18" rx="3"></rect></svg><span>Add products</span></a>
-      <a href="/admin/manage-products" aria-label="Manage products" title="Manage products"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M4 7h16l-1 13H5L4 7Z"></path><path d="M9 8V5a3 3 0 0 1 6 0v3"></path></svg><span>Products</span></a>
-      <a href="/admin/orders" aria-label="Orders" title="Orders"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M5 4h14v17H5z"></path><path d="M8 8h8M8 12h8M8 16h5"></path></svg><span>Orders</span></a>
-      <a href="/admin/reviews" aria-label="Customer reviews" title="Customer reviews"><svg aria-hidden="true" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg><span>Reviews</span></a>
-      <a href="/admin/enquiries" aria-label="Enquiries" title="Enquiries"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M4 5h16v12H9l-5 4z"></path><path d="M8 9h8M8 13h5"></path></svg><span>Enquiries</span></a>
-      <a href="/admin/customers" aria-label="Customers" title="Customers"><svg aria-hidden="true" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3"></circle><circle cx="17" cy="9" r="2.3"></circle><path d="M3 20c.5-3.4 2.5-5 6-5s5.5 1.6 6 5M15 15c3.4-.2 5.2 1.3 6 4"></path></svg><span>Customers</span></a>
-      <a href="/profile" aria-label="Admin profile" title="Admin profile"><svg aria-hidden="true" viewBox="0 0 24 24"><circle cx="12" cy="8" r="3"></circle><path d="M5 20c.7-3.5 3.2-5 7-5s6.3 1.5 7 5"></path></svg><span>Admin profile</span></a>`;
+      <a href="/admin" aria-label="Dashboard" title="Dashboard"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="9" rx="1"></rect><rect x="14" y="3" width="7" height="5" rx="1"></rect><rect x="14" y="12" width="7" height="9" rx="1"></rect><rect x="3" y="16" width="7" height="5" rx="1"></rect></svg><span>Dashboard</span></a>
+      <a href="/admin/products" aria-label="Add products" title="Add products"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"></rect><line x1="12" y1="8" x2="12" y2="16"></line><line x1="8" y1="12" x2="16" y2="12"></line></svg><span>Add products</span></a>
+      <a href="/admin/manage-products" aria-label="Manage products" title="Manage products"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"></path><line x1="3" y1="6" x2="21" y2="6"></line><path d="M16 10a4 4 0 0 1-8 0"></path></svg><span>Products</span></a>
+      <a href="/admin/orders" aria-label="Orders" title="Orders"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m16.5 9.4-9-5.19M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.29 7 12 12 20.71 7"></polyline><line x1="12" y1="22" x2="12" y2="12"></line></svg><span>Orders</span></a>
+      <a href="/admin/reviews" aria-label="Customer reviews" title="Customer reviews"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg><span>Reviews</span></a>
+      <a href="/admin/enquiries" aria-label="Enquiries" title="Enquiries"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg><span>Enquiries</span></a>
+      <a href="/admin/customers" aria-label="Customers" title="Customers"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M22 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg><span>Customers</span></a>
+      <a href="/profile" aria-label="Admin profile" title="Admin profile"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg><span>Admin profile</span></a>`;
   } else {
     navigation.innerHTML = `
-      <a href="/" aria-label="Home" title="Home"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1z"></path></svg><span>Home</span></a>
-      <a href="/shop" aria-label="Products" title="Products"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M4 7h16l-1 13H5L4 7Z"></path><path d="M9 8V5a3 3 0 0 1 6 0v3"></path></svg><span>Products</span></a>
-      <a href="/about" aria-label="Our story" title="Our story"><svg aria-hidden="true" viewBox="0 0 24 24"><circle cx="12" cy="8" r="3"></circle><path d="M5 20c.7-3.5 3.2-5 7-5s6.3 1.5 7 5"></path></svg><span>Our story</span></a>
-      <a href="/millets" aria-label="Millets" title="Millets"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M12 21V4m0 7c-4 0-6-2-7-5 4 0 6 2 7 5Zm0 4c4 0 6-2 7-5-4 0-6 2-7 5Z"></path></svg><span>Millets</span></a>
-      <a href="/recipes" aria-label="Ideas" title="Ideas"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M4 4h16v16H4z"></path><path d="M8 8h8M8 12h8M8 16h5"></path></svg><span>Ideas</span></a>
-      <a href="/orders" aria-label="My Orders" title="My Orders"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M5 4h14v17H5z"></path><path d="M8 8h8M8 12h8M8 16h5"></path></svg><span>My Orders</span></a>
-      <a href="/contact" aria-label="Contact" title="Contact"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M4 5h16v12H9l-5 4z"></path><path d="M8 9h8M8 13h5"></path></svg><span>Contact</span></a>
-      <a class="site-nav-cart" href="/cart" aria-label="Cart" title="Cart"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M3 4h2l2.2 11h11.5l2-8H6"></path><circle cx="9" cy="19" r="1"></circle><circle cx="18" cy="19" r="1"></circle></svg><span>Cart</span><span class="cart-count" data-cart-count>0</span></a>
-      ${user?.role === 'admin' ? '<a class="site-nav-cart" href="/admin" aria-label="Admin Console" title="Admin Console" style="border-top:1px dashed var(--earth);color:var(--forest)"><svg aria-hidden="true" viewBox="0 0 24 24"><rect x="3" y="3" width="8" height="8" rx="1"></rect><rect x="13" y="3" width="8" height="5" rx="1"></rect><rect x="13" y="10" width="8" height="11" rx="1"></rect><rect x="3" y="13" width="8" height="8" rx="1"></rect></svg><span class="fw-bold">⚙️ Admin Console</span></a>' : ''}`;
+      <a href="/" aria-label="Home" title="Home"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg><span>Home</span></a>
+      <a href="/shop" aria-label="Products" title="Products"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"></path><line x1="3" y1="6" x2="21" y2="6"></line><path d="M16 10a4 4 0 0 1-8 0"></path></svg><span>Products</span></a>
+      <a href="/about" aria-label="Our story" title="Our story"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path></svg><span>Our story</span></a>
+      <a href="/millets" aria-label="Millets" title="Millets"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 22 12 12"></path><path d="M9 3a3 3 0 0 0-3 3v2a3 3 0 0 0 3 3 3 3 0 0 0 3-3V6a3 3 0 0 0-3-3Z"></path><path d="M15 9a3 3 0 0 0-3 3v2a3 3 0 0 0 3 3 3 3 0 0 0 3-3v-2a3 3 0 0 0-3-3Z"></path><path d="M18 15a3 3 0 0 0-3 3v2a3 3 0 0 0 3 3 3 3 0 0 0 3-3v-2a3 3 0 0 0-3-3Z"></path></svg><span>Millets</span></a>
+      <a href="/recipes" aria-label="Ideas" title="Ideas"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-1 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5"></path><path d="M9 18h6"></path><path d="M10 22h4"></path></svg><span>Ideas</span></a>
+      <a href="/orders" aria-label="My Orders" title="My Orders"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m16.5 9.4-9-5.19M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.29 7 12 12 20.71 7"></polyline><line x1="12" y1="22" x2="12" y2="12"></line></svg><span>My Orders</span></a>
+      <a href="/contact" aria-label="Contact" title="Contact"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg><span>Contact</span></a>
+      <a class="site-nav-cart" href="/cart" aria-label="Cart" title="Cart"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="8" cy="21" r="1"></circle><circle cx="19" cy="21" r="1"></circle><path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"></path></svg><span>Cart</span><span class="cart-count" data-cart-count>0</span></a>
+      ${user?.role === 'admin' ? '<a class="site-nav-cart" href="/admin" aria-label="Admin Console" title="Admin Console" style="border-top:1px dashed var(--earth);color:var(--forest)"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="9" rx="1"></rect><rect x="14" y="3" width="7" height="5" rx="1"></rect><rect x="14" y="12" width="7" height="9" rx="1"></rect><rect x="3" y="16" width="7" height="5" rx="1"></rect></svg><span class="fw-bold">⚙️ Admin Console</span></a>' : ''}`;
   }
   const brand = document.querySelector('.brand-wordmark');
   if (brand) {
@@ -1708,7 +1690,7 @@ async function renderCart() {
               </div>
               <div class="d-flex justify-content-between align-items-center mb-2 small text-secondary">
                 <span>Doorstep Delivery</span>
-                <span class="text-success fw-bold">FREE (Hyderabad)</span>
+                <span class="text-success fw-bold">FREE</span>
               </div>
               <div class="d-flex justify-content-between align-items-center mb-3 small text-secondary">
                 <span>Payment Mode</span>
@@ -1757,7 +1739,7 @@ async function renderCheckout() {
       </div>
       <div class="mt-4"><label class="form-label" for="customer-note">Delivery instructions or landmark (optional)</label><textarea class="form-control" id="customer-note" name="customerNote" rows="2" maxlength="500" placeholder="e.g. Leave with security, call before arrival..."></textarea></div>
       <div class="form-check mt-3 mb-3"><input class="form-check-input" type="checkbox" id="confirm-request" checked required><label class="form-check-label" for="confirm-request">I confirm that all delivery details are correct.</label></div><button class="btn btn-brand btn-lg w-100" type="submit">Place Cash on Delivery Order</button></form>` : emptyState('Add a delivery address first', 'Checkout requires a saved address for your account.', '/addresses', 'Manage addresses')}
-    </div><aside class="col-lg-5"><div class="feature-card"><h2 class="h4">Order summary</h2><ul class="detail-list">${cart.items.map((item) => `<li class="d-flex justify-content-between gap-2"><span>${escapeHtml(item.productName)} · ${escapeHtml(item.packSize)} × ${item.quantity}</span><strong>${money(Number(item.pricePaise) * item.quantity)}</strong></li>`).join('')}</ul><div class="d-flex justify-content-between fs-5"><span>Total to pay (COD)</span><strong>${money(cart.subtotalPaise)}</strong></div><p class="small text-secondary mt-3 mb-0">Free delivery in Hyderabad on orders above ₹500.</p></div></aside></div></section>`;
+    </div><aside class="col-lg-5"><div class="feature-card"><h2 class="h4">Order summary</h2><ul class="detail-list">${cart.items.map((item) => `<li class="d-flex justify-content-between gap-2"><span>${escapeHtml(item.productName)} · ${escapeHtml(item.packSize)} × ${item.quantity}</span><strong>${money(Number(item.pricePaise) * item.quantity)}</strong></li>`).join('')}</ul><div class="d-flex justify-content-between fs-5"><span>Total to pay (COD)</span><strong>${money(cart.subtotalPaise)}</strong></div><p class="small text-secondary mt-3 mb-0">Free doorstep delivery on orders above ₹500.</p></div></aside></div></section>`;
 }
 
 async function renderOrders(orderId = '') {
@@ -1780,13 +1762,65 @@ async function renderOrders(orderId = '') {
         </div>
 
         <div class="row g-4"><div class="col-lg-7"><div class="feature-card"><h2 class="h4">Items</h2><ul class="detail-list">${order.items.map((item) => `<li class="d-flex justify-content-between"><span>${escapeHtml(item.productName)} · ${escapeHtml(item.packSize)} × ${item.quantity}</span><strong>${money(item.lineTotalPaise)}</strong></li>`).join('')}</ul><div class="d-flex justify-content-between"><span>Total</span><strong>${money(order.totalPaise)}</strong></div><p class="small text-secondary mt-2 mb-0">Payment status: <span class="badge ${isPaid ? 'bg-success' : 'bg-warning-subtle text-dark'}">${escapeHtml(order.paymentStatus.replaceAll('_', ' '))}</span> · Method: Cash on Delivery</p></div></div>
-        <div class="col-lg-5"><div class="feature-card"><h2 class="h4">Delivery details</h2><p>${escapeHtml(order.address.recipient_name)} · ${escapeHtml(order.address.phone)}<br>${escapeHtml(order.address.line1)} ${escapeHtml(order.address.line2)}<br>${escapeHtml(order.address.city)}, ${escapeHtml(order.address.state)} ${escapeHtml(order.address.postal_code)}</p><h3 class="h5">Status history</h3><ul class="detail-list">${order.history.map((item) => `<li><strong>${escapeHtml(item.status.replaceAll('_', ' '))}</strong><br><span class="small text-secondary">${new Date(item.createdAt).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })} · ${escapeHtml(item.note || 'Status updated')}</span></li>`).join('')}</ul>${['awaiting_confirmation', 'confirmed'].includes(order.status) ? `<button class="btn btn-outline-danger" data-cancel-order="${escapeHtml(order.id)}">Cancel order</button>` : ''}</div></div></div>
+        <div class="col-lg-5"><div class="feature-card"><h2 class="h4">Delivery details</h2><p>${escapeHtml(order.address.recipient_name)} · ${escapeHtml(order.address.phone)}<br>${escapeHtml(order.address.line1)} ${escapeHtml(order.address.line2)}<br>${escapeHtml(order.address.city)}, ${escapeHtml(order.address.state)} ${escapeHtml(order.address.postal_code)}</p><h3 class="h5">Status history</h3><ul class="detail-list">${order.history.map((item) => `<li><strong>${escapeHtml(item.status.replaceAll('_', ' '))}</strong><br><span class="small text-secondary">${new Date(item.createdAt).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })} · ${escapeHtml(item.note || 'Status updated')}</span></li>`).join('')}</ul>
+        <div class="d-flex flex-wrap gap-2 mt-4 pt-3 border-top">
+          ${['awaiting_confirmation', 'confirmed'].includes(order.status) ? `<button class="btn btn-outline-warning" data-cancel-order="${escapeHtml(order.id)}">Cancel order</button>` : ''}
+          <button class="btn btn-outline-danger" data-delete-order="${escapeHtml(order.id)}">Delete order</button>
+          <a class="btn btn-outline-secondary" href="/orders">← Back to all orders</a>
+        </div>
+        </div></div></div>
       </section>`;
     return;
   }
   const data = await api('/api/orders');
-  appRoot.innerHTML = `${pageHeader('Your account', 'My orders', 'View your order details and track delivery progress.')}
-    <section class="container section-space">${data.orders.length ? `<div class="table-responsive"><table class="table align-middle"><thead><tr><th>Order</th><th>Date</th><th>Status</th><th>Amount</th><th></th></tr></thead><tbody>${data.orders.map((order) => `<tr><td>${escapeHtml(order.orderNumber)}</td><td>${new Date(order.createdAt).toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata' })}</td><td><span class="status-pill">${escapeHtml(order.status.replaceAll('_', ' '))}</span></td><td>${money(order.totalPaise)}</td><td><a href="/orders/${encodeURIComponent(order.id)}">View details</a></td></tr>`).join('')}</tbody></table></div>` : emptyState('No orders yet', 'Your orders will appear here.', '/shop', 'Explore products')}</section>`;
+  appRoot.innerHTML = `${pageHeader('Your account', 'My orders', 'View your order details, manage or delete past orders.')}
+    <section class="container section-space">
+      ${data.orders.length ? `
+        <div class="orders-toolbar d-flex flex-wrap justify-content-between align-items-center gap-3 mb-3 p-3 bg-white border rounded-3 shadow-sm">
+          <div class="form-check d-flex align-items-center mb-0">
+            <input class="form-check-input" type="checkbox" id="orders-select-all" aria-label="Select all orders">
+            <label class="form-check-label small fw-bold ms-2 text-dark" for="orders-select-all" style="cursor:pointer">Select all (${data.orders.length} orders)</label>
+          </div>
+          <div>
+            <button class="btn btn-sm btn-outline-danger d-inline-flex align-items-center gap-1" id="orders-delete-selected" type="button" disabled data-delete-selected-orders>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+              <span>Delete selected (<span data-selected-orders-count>0</span>)</span>
+            </button>
+          </div>
+        </div>
+        <div class="table-responsive bg-white border rounded-3 shadow-sm">
+          <table class="table align-middle mb-0">
+            <thead class="table-light">
+              <tr>
+                <th style="width: 44px;" class="text-center"></th>
+                <th>Order</th>
+                <th>Date</th>
+                <th>Status</th>
+                <th>Amount</th>
+                <th class="text-end">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${data.orders.map((order) => `
+                <tr data-order-row="${escapeHtml(order.id)}">
+                  <td class="text-center">
+                    <input class="form-check-input order-select-chk" type="checkbox" value="${escapeHtml(order.id)}" data-order-chk="${escapeHtml(order.id)}" aria-label="Select order ${escapeHtml(order.orderNumber)}">
+                  </td>
+                  <td><strong>${escapeHtml(order.orderNumber)}</strong></td>
+                  <td>${new Date(order.createdAt).toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata' })}</td>
+                  <td><span class="status-pill">${escapeHtml(order.status.replaceAll('_', ' '))}</span></td>
+                  <td><strong>${money(order.totalPaise)}</strong></td>
+                  <td class="text-end">
+                    <a class="btn btn-sm btn-outline-brand me-1" href="/orders/${encodeURIComponent(order.id)}">Details</a>
+                    <button class="btn btn-sm btn-outline-danger" type="button" data-delete-order="${escapeHtml(order.id)}" title="Delete order">Delete</button>
+                  </td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        </div>
+      ` : emptyState('No orders yet', 'Your orders will appear here.', '/shop', 'Explore products')}
+    </section>`;
 }
 
 async function renderNotifications() {
@@ -2051,7 +2085,15 @@ async function renderAdminContent() {
   }).join('') || '<p class="text-secondary">No customer accounts registered yet.</p>';
   const filterForm = (kind, includePayment = false, verification = false) => `<form class="admin-filter-panel mb-3" data-admin-filter="${kind}" role="search"><div class="admin-filter-grid"><div><label class="form-label small" for="${kind}-search">Search</label><input class="form-control" id="${kind}-search" name="search" type="search" placeholder="${kind === 'orders' ? 'Order, name, or email' : kind === 'enquiries' ? 'Name, email, subject, or message' : 'Customer name or email'}"></div><div><label class="form-label small" for="${kind}-status">${verification ? 'Email status' : 'Status'}</label><select class="form-select" id="${kind}-status" name="status"><option value="">All</option>${verification ? '<option value="verified">Verified</option><option value="unverified">Not verified</option>' : kind === 'orders' ? '<option value="awaiting_confirmation">Awaiting confirmation</option><option value="confirmed">Confirmed</option><option value="preparing">Preparing</option><option value="ready_for_dispatch">Ready for dispatch</option><option value="shipped">Shipped</option><option value="out_for_delivery">Out for delivery</option><option value="delivered">Delivered</option><option value="rejected">Rejected</option><option value="cancelled">Cancelled</option>' : '<option value="new">New</option><option value="in_progress">In progress</option><option value="resolved">Resolved</option>'}</select></div>${includePayment ? '<div><label class="form-label small" for="orders-payment">Payment status</label><select class="form-select" id="orders-payment" name="payment"><option value="">All payments</option><option value="unpaid">Unpaid</option><option value="pending">Pending</option><option value="paid">Paid</option><option value="failed">Failed</option><option value="refunded">Refunded</option></select></div>' : ''}<div><label class="form-label small" for="${kind}-from">From</label><input class="form-control" id="${kind}-from" name="from" type="date"></div><div><label class="form-label small" for="${kind}-to">To</label><input class="form-control" id="${kind}-to" name="to" type="date"></div></div><p class="small text-secondary mt-2 mb-0" data-admin-filter-count></p></form>`;
   const emailJobs = emailData.emailJobs.map((job) => `<li>${escapeHtml(job.template)} → ${escapeHtml(job.recipient)} · ${escapeHtml(job.status)}${job.lastError ? ` · ${escapeHtml(job.lastError)}` : ''}</li>`).join('') || '<li>No email jobs recorded.</li>';
-  const dashboard = `<section class="container section-space"><div class="row g-3 mb-4"><div class="col-6 col-xl-3"><div class="admin-stat"><strong>${summary.productCount}</strong><span>Products</span></div></div><div class="col-6 col-xl-3"><div class="admin-stat"><strong>${orderTotal}</strong><span>Order requests</span></div></div><div class="col-6 col-xl-3"><div class="admin-stat"><strong>${summary.customerCount}</strong><span>Customers</span></div></div><div class="col-6 col-xl-3"><div class="admin-stat"><strong>${summary.newEnquiries}</strong><span>New enquiries</span></div></div><div class="col-6 col-xl-3"><div class="admin-stat"><strong>${summary.lowStock}</strong><span>Low-stock options</span></div></div><div class="col-6 col-xl-3"><div class="admin-stat"><strong>${summary.outOfStock}</strong><span>Out of stock</span></div></div><div class="col-6 col-xl-3"><div class="admin-stat"><strong>${summary.pendingReviews || 0}</strong><span>Pending reviews</span></div></div><div class="col-6 col-xl-3"><div class="admin-stat"><strong>${summary.reviewCount || 0}</strong><span>Total reviews</span></div></div></div><div class="row g-3 mb-5"><div class="col-sm-6 col-xl-3"><a class="admin-shortcut" href="/admin/products"><strong>Products and inventory</strong><span>${summary.productCount} products in your catalogue</span><span class="admin-shortcut-action">Manage products</span></a></div><div class="col-sm-6 col-xl-3"><a class="admin-shortcut" href="/admin/orders"><strong>Orders</strong><span>Search requests and update status or payment</span><span class="admin-shortcut-action">Manage orders</span></a></div><div class="col-sm-6 col-xl-3"><a class="admin-shortcut" href="/admin/reviews"><strong>Customer Reviews</strong><span>${summary.reviewCount || 0} reviews (${summary.pendingReviews || 0} pending)</span><span class="admin-shortcut-action">Moderate reviews</span></a></div><div class="col-sm-6 col-xl-3"><a class="admin-shortcut" href="/admin/enquiries"><strong>Enquiries</strong><span>Filter, respond to, or delete messages</span><span class="admin-shortcut-action">Manage enquiries</span></a></div><div class="col-sm-6 col-xl-3"><a class="admin-shortcut" href="/admin/customers"><strong>Customers</strong><span>Review customer accounts and order summaries</span><span class="admin-shortcut-action">View customers</span></a></div></div><section class="admin-visits-card"><div><p class="eyebrow mb-1">Store traffic</p><h2 class="h4 mb-1">Public page visits</h2><p class="small text-secondary mb-0">Aggregate count only. No visitor names, addresses, or IP addresses are stored.</p></div><strong>${Number(summary.pageVisits).toLocaleString('en-IN')}</strong></section><p class="small text-secondary mt-3 mb-0">Failed email jobs: ${summary.failedEmails}. Visits count public page loads; analytics are separate and only load after consent.</p></section>`;
+  const dashboard = `<section class="container section-space">
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4 p-3 bg-white border rounded-3 shadow-sm">
+      <div class="d-inline-flex align-items-center gap-2 px-3 py-1 rounded-pill bg-success-subtle text-success border border-success-subtle fw-bold small">
+        <span class="live-pulse-dot"></span>
+        <span>● LIVE SYSTEM ACTIVE</span>
+      </div>
+      <div class="small text-secondary">Real-time inventory &amp; order updates active</div>
+    </div>
+    <div class="row g-3 mb-4"><div class="col-6 col-xl-3"><div class="admin-stat"><strong>${summary.productCount}</strong><span>Products</span></div></div><div class="col-6 col-xl-3"><div class="admin-stat"><strong>${orderTotal}</strong><span>Order requests</span></div></div><div class="col-6 col-xl-3"><div class="admin-stat"><strong>${summary.customerCount}</strong><span>Customers</span></div></div><div class="col-6 col-xl-3"><div class="admin-stat"><strong>${summary.newEnquiries}</strong><span>New enquiries</span></div></div><div class="col-6 col-xl-3"><div class="admin-stat"><strong>${summary.lowStock}</strong><span>Low-stock options</span></div></div><div class="col-6 col-xl-3"><div class="admin-stat"><strong>${summary.outOfStock}</strong><span>Out of stock</span></div></div><div class="col-6 col-xl-3"><div class="admin-stat"><strong>${summary.pendingReviews || 0}</strong><span>Pending reviews</span></div></div><div class="col-6 col-xl-3"><div class="admin-stat"><strong>${summary.reviewCount || 0}</strong><span>Total reviews</span></div></div></div><div class="row g-3 mb-5"><div class="col-sm-6 col-xl-3"><a class="admin-shortcut" href="/admin/products"><strong>Products and inventory</strong><span>${summary.productCount} products in your catalogue</span><span class="admin-shortcut-action">Manage products</span></a></div><div class="col-sm-6 col-xl-3"><a class="admin-shortcut" href="/admin/orders"><strong>Orders</strong><span>Search requests and update status or payment</span><span class="admin-shortcut-action">Manage orders</span></a></div><div class="col-sm-6 col-xl-3"><a class="admin-shortcut" href="/admin/reviews"><strong>Customer Reviews</strong><span>${summary.reviewCount || 0} reviews (${summary.pendingReviews || 0} pending)</span><span class="admin-shortcut-action">Moderate reviews</span></a></div><div class="col-sm-6 col-xl-3"><a class="admin-shortcut" href="/admin/enquiries"><strong>Enquiries</strong><span>Filter, respond to, or delete messages</span><span class="admin-shortcut-action">Manage enquiries</span></a></div><div class="col-sm-6 col-xl-3"><a class="admin-shortcut" href="/admin/customers"><strong>Customers</strong><span>Review customer accounts and order summaries</span><span class="admin-shortcut-action">View customers</span></a></div></div><section class="admin-visits-card"><div><p class="eyebrow mb-1">Store traffic</p><h2 class="h4 mb-1">Public page visits</h2><p class="small text-secondary mb-0">Aggregate count only. No visitor names, addresses, or IP addresses are stored.</p></div><strong>${Number(summary.pageVisits).toLocaleString('en-IN')}</strong></section><p class="small text-secondary mt-3 mb-0">Failed email jobs: ${summary.failedEmails}. Visits count public page loads; analytics are separate and only load after consent.</p></section>`;
   const productsPage = `<section class="container section-space"><div class="row g-4"><div class="col-12"><form id="products" class="address-card" data-form="admin-product"><p class="eyebrow mb-1">Catalogue management</p><h2 class="h4">Add product</h2><p class="small text-secondary">Add the product details and its initial pack option. Published products appear immediately on the storefront for customers to order.</p><div class="row g-3"><div class="col-md-6"><label class="form-label" for="product-name">Product Name</label><input class="form-control" id="product-name" name="name" data-product-name required maxlength="120" placeholder="e.g. Pure Foxtail Millet Powder"></div><div class="col-md-6"><label class="form-label" for="product-slug">Web Link Identifier (Slug)</label><input class="form-control" id="product-slug" name="slug" data-product-slug pattern="[a-z0-9]+(?:-[a-z0-9]+)*" placeholder="Auto-generated from product name"></div><div class="col-12"><label class="form-label" for="product-description">Description &amp; Health Benefits</label><textarea class="form-control" id="product-description" name="description" rows="3" maxlength="5000" placeholder="Describe the health benefits, grain source, or preparation method..."></textarea></div><div class="col-md-6"><label class="form-label" for="product-category">Product Category</label><input class="form-control" id="product-category" name="category" maxlength="80" placeholder="e.g. Whole Millets, Flours, Health Mixes"></div><div class="col-md-6"><label class="form-label" for="ingredients">Ingredients List</label><textarea class="form-control" id="ingredients" name="ingredients" rows="2" maxlength="1000" placeholder="e.g. 100% Whole Foxtail Millet (No preservatives)"></textarea></div><div class="col-md-6"><label class="form-label" for="storage-instructions">Storage Instructions</label><textarea class="form-control" id="storage-instructions" name="storageInstructions" rows="2" maxlength="1000" placeholder="e.g. Store in an airtight container in a cool, dry place."></textarea></div><div class="col-md-6"><label class="form-label" for="product-image-new">Product Image (Photo)</label><input class="form-control" id="product-image-new" data-product-image type="file" accept="image/jpeg,image/png,image/webp,image/jpg"><div class="form-text">JPG, PNG, or WebP. Automatically optimized for fast mobile loading.</div><img class="admin-image-preview mt-2 border rounded-3" data-image-preview alt="Selected product image" style="max-height:160px;object-fit:cover" hidden></div></div><hr><h3 class="h5">First Pack Option &amp; Pricing</h3><div class="row g-3"><div class="col-md-6"><label class="form-label" for="variant-sku">Product Code / SKU (Optional)</label><input class="form-control" id="variant-sku" name="sku" maxlength="60" placeholder="Auto-generated if left blank"></div><div class="col-md-6"><label class="form-label" for="pack-size">Pack Size / Weight</label><input class="form-control" id="pack-size" name="packSize" required maxlength="30" placeholder="e.g. 500g, 1 kg"></div><div class="col-md-6"><label class="form-label" for="price">Selling Price (₹)</label><input class="form-control" id="price" name="priceRupees" type="number" step="0.01" min="0" placeholder="e.g. 180" required></div><div class="col-md-6"><label class="form-label" for="stock">Available Stock (Packets)</label><input class="form-control" id="stock" name="stockQuantity" type="number" min="0" placeholder="e.g. 20" required></div></div><div class="form-check my-3"><input class="form-check-input" type="checkbox" id="active" name="active" checked><label class="form-check-label fw-bold text-success" for="active">✓ Publish immediately (Visible to customers)</label><div class="form-text">When checked, customers can immediately see and purchase this product on the shop page.</div></div><button class="btn btn-brand btn-lg" type="submit">Create and Publish Product</button></form></div><div class="col-12"><h2 class="h4">Products and inventory <span class="small text-secondary">(${productsData.products.length})</span></h2>${productEditor}</div></div></section>`;
   const addProductsPage = productsPage.replace(
     '<div class="col-12"><h2 class="h4">Products and inventory',
@@ -2306,6 +2348,13 @@ window.addEventListener('popstate', () => {
 });
 
 document.addEventListener('click', async (event) => {
+  const accountMenu = document.querySelector('[data-account-menu]');
+  if (accountMenu?.hasAttribute('open') && !accountMenu.contains(event.target)) {
+    accountMenu.removeAttribute('open');
+  }
+  if (event.target.closest('.account-menu-panel a, .account-menu-panel button')) {
+    accountMenu?.removeAttribute('open');
+  }
   const upiChip = event.target.closest('[data-upi-chip]');
   if (upiChip) {
     event.preventDefault();
@@ -2367,7 +2416,7 @@ document.addEventListener('click', async (event) => {
     setMobileNavigationOpen(false, true);
     return;
   }
-  const actionButton = target.matches('[data-add-to-cart], [data-buy-now], [data-restock], [data-delete-address], [data-remove-restock], [data-inventory-history], [data-remove-cart], [data-logout], [data-read-notification], [data-read-all], [data-cancel-order], [data-delete-enquiry], [data-admin-review-toggle], [data-admin-review-delete], [data-quick-mark-paid], [data-delete-product], [data-delete-variant], [data-test-email]');
+  const actionButton = target.matches('[data-add-to-cart], [data-buy-now], [data-restock], [data-delete-address], [data-remove-restock], [data-inventory-history], [data-remove-cart], [data-logout], [data-read-notification], [data-read-all], [data-cancel-order], [data-delete-enquiry], [data-admin-review-toggle], [data-admin-review-delete], [data-quick-mark-paid], [data-delete-product], [data-delete-variant], [data-test-email], [data-delete-order], [data-delete-selected-orders]');
   const previousButtonState = actionButton ? showButtonProgress(target) : null;
   try {
     if (target.matches('[data-sidebar-collapse]')) {
@@ -2538,8 +2587,8 @@ document.addEventListener('click', async (event) => {
       const confirmed = await confirmAction({
         title: 'Delete Delivery Address',
         message: 'Are you sure you want to remove this delivery address from your account?',
-        confirmText: 'Delete Address',
-        cancelText: 'Cancel',
+        confirmText: 'Yes, Delete Address',
+        cancelText: 'No, Keep Address',
         isDanger: true,
       });
       if (!confirmed) return;
@@ -2566,8 +2615,8 @@ document.addEventListener('click', async (event) => {
       const confirmed = await confirmAction({
         title: 'Remove Item',
         message: 'Are you sure you want to remove this item from your cart?',
-        confirmText: 'Remove',
-        cancelText: 'Cancel',
+        confirmText: 'Yes, Remove Item',
+        cancelText: 'No, Keep Item',
         isDanger: true,
       });
       if (!confirmed) return;
@@ -2589,6 +2638,13 @@ document.addEventListener('click', async (event) => {
         }
       }
     } else if (target.matches('[data-logout]')) {
+      const confirmed = await confirmAction({
+        title: 'Sign Out',
+        message: 'Are you sure you want to sign out of your account?',
+        confirmText: 'Yes, Sign Out',
+        cancelText: 'No, Stay Signed In',
+      });
+      if (!confirmed) return;
       await api('/api/auth/logout', { method: 'POST' });
       csrfToken = '';
       location.assign('/');
@@ -2604,8 +2660,8 @@ document.addEventListener('click', async (event) => {
       const confirmed = await confirmAction({
         title: 'Cancel Order Request',
         message: 'Are you sure you want to cancel this order request? Stock will be restored to inventory.',
-        confirmText: 'Cancel Order',
-        cancelText: 'Keep Order',
+        confirmText: 'Yes, Cancel Order',
+        cancelText: 'No, Keep Order',
         isDanger: true,
       });
       if (!confirmed) return;
@@ -2613,12 +2669,44 @@ document.addEventListener('click', async (event) => {
       toast('Order request cancelled.');
       if (location.pathname === '/account') await renderAccount();
       else await renderOrders(target.dataset.cancelOrder);
+    } else if (target.matches('[data-delete-order]')) {
+      const orderId = target.dataset.deleteOrder;
+      const confirmed = await confirmAction({
+        title: 'Delete Order Record',
+        message: 'Are you sure you want to permanently delete this order record? This action cannot be undone.',
+        confirmText: 'Yes, Delete Order',
+        cancelText: 'No, Keep Order',
+        isDanger: true,
+      });
+      if (!confirmed) return;
+      await api(`/api/orders/${encodeURIComponent(orderId)}`, { method: 'DELETE' });
+      toast('Order deleted successfully.');
+      if (location.pathname === '/account') await renderAccount();
+      else await renderOrders();
+    } else if (target.matches('[data-delete-selected-orders]')) {
+      const checkedBoxes = Array.from(document.querySelectorAll('.order-select-chk:checked'));
+      const orderIds = checkedBoxes.map((chk) => chk.value || chk.dataset.orderChk).filter(Boolean);
+      if (!orderIds.length) return;
+      const confirmed = await confirmAction({
+        title: 'Delete Selected Orders',
+        message: `Are you sure you want to permanently delete ${orderIds.length} selected order(s)? This action cannot be undone.`,
+        confirmText: `Yes, Delete Orders (${orderIds.length})`,
+        cancelText: 'No, Cancel',
+        isDanger: true,
+      });
+      if (!confirmed) return;
+      await api('/api/orders/bulk-delete', {
+        method: 'POST',
+        body: JSON.stringify({ orderIds, ids: orderIds }),
+      });
+      toast(`${orderIds.length} order(s) deleted successfully.`);
+      await renderOrders();
     } else if (target.matches('[data-delete-enquiry]')) {
       const confirmed = await confirmAction({
         title: 'Delete Customer Enquiry',
         message: 'Are you sure you want to permanently delete this customer enquiry message?',
-        confirmText: 'Delete Enquiry',
-        cancelText: 'Cancel',
+        confirmText: 'Yes, Delete Enquiry',
+        cancelText: 'No, Keep Enquiry',
         isDanger: true,
       });
       if (!confirmed) return;
@@ -2630,8 +2718,8 @@ document.addEventListener('click', async (event) => {
       const confirmed = await confirmAction({
         title: 'Delete Product',
         message: `Are you sure you want to permanently delete "${prodName}" and all its pack options?`,
-        confirmText: 'Delete Product',
-        cancelText: 'Cancel',
+        confirmText: 'Yes, Delete Product',
+        cancelText: 'No, Keep Product',
         isDanger: true,
       });
       if (!confirmed) return;
@@ -2643,8 +2731,8 @@ document.addEventListener('click', async (event) => {
       const confirmed = await confirmAction({
         title: 'Delete Pack Option',
         message: `Are you sure you want to delete pack option "${variantName}"?`,
-        confirmText: 'Delete Option',
-        cancelText: 'Cancel',
+        confirmText: 'Yes, Delete Option',
+        cancelText: 'No, Keep Option',
         isDanger: true,
       });
       if (!confirmed) return;
@@ -2676,7 +2764,14 @@ document.addEventListener('click', async (event) => {
       toast(isApproved ? 'Review approved and published.' : 'Review hidden from public.');
       await renderAdminContent();
     } else if (target.matches('[data-admin-review-delete]')) {
-      if (!confirm('Are you sure you want to permanently delete this customer review?')) return;
+      const confirmed = await confirmAction({
+        title: 'Delete Customer Review',
+        message: 'Are you sure you want to permanently delete this customer review?',
+        confirmText: 'Yes, Delete Review',
+        cancelText: 'No, Keep Review',
+        isDanger: true,
+      });
+      if (!confirmed) return;
       const reviewId = target.dataset.adminReviewDelete;
       await api(`/api/admin/reviews/${encodeURIComponent(reviewId)}`, { method: 'DELETE' });
       toast('Review deleted.');
@@ -2700,6 +2795,31 @@ document.addEventListener('keydown', (event) => {
 });
 
 document.addEventListener('change', async (event) => {
+  if (event.target.matches('#orders-select-all')) {
+    const master = event.target;
+    const checkboxes = Array.from(document.querySelectorAll('.order-select-chk'));
+    checkboxes.forEach((cb) => { cb.checked = master.checked; });
+    const count = master.checked ? checkboxes.length : 0;
+    const delBtn = document.querySelector('#orders-delete-selected');
+    const countSpan = document.querySelector('[data-selected-orders-count]');
+    if (delBtn) delBtn.disabled = count === 0;
+    if (countSpan) countSpan.textContent = String(count);
+    return;
+  }
+  if (event.target.matches('.order-select-chk')) {
+    const checkboxes = Array.from(document.querySelectorAll('.order-select-chk'));
+    const checkedCount = checkboxes.filter((cb) => cb.checked).length;
+    const master = document.querySelector('#orders-select-all');
+    if (master) {
+      master.checked = checkedCount === checkboxes.length && checkboxes.length > 0;
+      master.indeterminate = checkedCount > 0 && checkedCount < checkboxes.length;
+    }
+    const delBtn = document.querySelector('#orders-delete-selected');
+    const countSpan = document.querySelector('[data-selected-orders-count]');
+    if (delBtn) delBtn.disabled = checkedCount === 0;
+    if (countSpan) countSpan.textContent = String(checkedCount);
+    return;
+  }
   const input = event.target.closest('[data-cart-quantity]');
   if (!input) return;
   try {
@@ -3191,6 +3311,10 @@ function initScrollAnimations() {
   function observeElements() {
     document.querySelectorAll('.scroll-reveal-item:not([data-observed])').forEach((el) => {
       el.dataset.observed = 'true';
+      const rect = el.getBoundingClientRect();
+      if (rect.top < window.innerHeight && rect.bottom > 0) {
+        el.classList.add('is-revealed');
+      }
       observer.observe(el);
     });
   }

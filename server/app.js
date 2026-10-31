@@ -1293,6 +1293,53 @@ app.post('/api/orders/:id/cancel', requireVerifiedUser, asyncRoute(async (req, r
   res.json({ message: 'Order cancelled.' });
 }));
 
+app.delete('/api/orders/:id', requireUser, asyncRoute(async (req, res) => {
+  const orderId = uuidParam(req, 'id');
+  await inTransaction(async (client) => {
+    const isAdm = req.user.role === 'admin';
+    const result = await client.query(
+      `SELECT id, order_number, status FROM orders WHERE id = $1 AND (${isAdm ? 'TRUE' : 'user_id = $2'}) FOR UPDATE`,
+      isAdm ? [orderId] : [orderId, req.user.id],
+    );
+    if (!result.rowCount) throw new HttpError(404, 'Order not found.', 'NOT_FOUND');
+    const order = result.rows[0];
+    if (['awaiting_confirmation', 'confirmed', 'preparing'].includes(order.status)) {
+      await releaseOrderStock(client, order.id);
+    }
+    await client.query('DELETE FROM orders WHERE id = $1', [order.id]);
+  });
+  res.json({ message: 'Order deleted successfully.' });
+}));
+
+app.post('/api/orders/bulk-delete', requireUser, asyncRoute(async (req, res) => {
+  const data = parse(z.object({
+    ids: z.array(z.string().uuid()).min(1).max(100).optional(),
+    orderIds: z.array(z.string().uuid()).min(1).max(100).optional(),
+  }).refine((val) => (val.ids && val.ids.length > 0) || (val.orderIds && val.orderIds.length > 0), {
+    message: 'Either ids or orderIds is required',
+  }), req.body);
+  const targetIds = data.orderIds || data.ids;
+  const isAdm = req.user.role === 'admin';
+  let deletedCount = 0;
+  await inTransaction(async (client) => {
+    for (const orderId of targetIds) {
+      const result = await client.query(
+        `SELECT id, status FROM orders WHERE id = $1 AND (${isAdm ? 'TRUE' : 'user_id = $2'}) FOR UPDATE`,
+        isAdm ? [orderId] : [orderId, req.user.id],
+      );
+      if (result.rowCount) {
+        const order = result.rows[0];
+        if (['awaiting_confirmation', 'confirmed', 'preparing'].includes(order.status)) {
+          await releaseOrderStock(client, order.id);
+        }
+        await client.query('DELETE FROM orders WHERE id = $1', [order.id]);
+        deletedCount++;
+      }
+    }
+  });
+  res.json({ message: `${deletedCount} order(s) deleted.` });
+}));
+
 app.post(['/api/orders/:id/payment-reference', '/api/orders/:id/payments'], requireUser, asyncRoute(async (req, res) => {
   const orderId = uuidParam(req, 'id');
   const data = parse(z.object({
@@ -2164,6 +2211,45 @@ app.patch('/api/admin/orders/:id/payment', requireAdmin, asyncRoute(async (req, 
     );
   });
   res.json({ message: 'Payment status recorded.' });
+}));
+
+app.delete('/api/admin/orders/:id', requireAdmin, asyncRoute(async (req, res) => {
+  const orderId = uuidParam(req, 'id');
+  await inTransaction(async (client) => {
+    const result = await client.query('SELECT id, status FROM orders WHERE id = $1 FOR UPDATE', [orderId]);
+    if (!result.rowCount) throw new HttpError(404, 'Order not found.', 'NOT_FOUND');
+    const order = result.rows[0];
+    if (['awaiting_confirmation', 'confirmed', 'preparing'].includes(order.status)) {
+      await releaseOrderStock(client, order.id);
+    }
+    await client.query('DELETE FROM orders WHERE id = $1', [order.id]);
+  });
+  res.json({ message: 'Order deleted by admin.' });
+}));
+
+app.post('/api/admin/orders/bulk-delete', requireAdmin, asyncRoute(async (req, res) => {
+  const data = parse(z.object({
+    ids: z.array(z.string().uuid()).min(1).max(100).optional(),
+    orderIds: z.array(z.string().uuid()).min(1).max(100).optional(),
+  }).refine((val) => (val.ids && val.ids.length > 0) || (val.orderIds && val.orderIds.length > 0), {
+    message: 'Either ids or orderIds is required',
+  }), req.body);
+  const targetIds = data.orderIds || data.ids;
+  let deletedCount = 0;
+  await inTransaction(async (client) => {
+    for (const orderId of targetIds) {
+      const result = await client.query('SELECT id, status FROM orders WHERE id = $1 FOR UPDATE', [orderId]);
+      if (result.rowCount) {
+        const order = result.rows[0];
+        if (['awaiting_confirmation', 'confirmed', 'preparing'].includes(order.status)) {
+          await releaseOrderStock(client, order.id);
+        }
+        await client.query('DELETE FROM orders WHERE id = $1', [order.id]);
+        deletedCount++;
+      }
+    }
+  });
+  res.json({ message: `${deletedCount} order(s) deleted.` });
 }));
 
 app.get('/api/admin/enquiries', requireAdmin, asyncRoute(async (_req, res) => {
