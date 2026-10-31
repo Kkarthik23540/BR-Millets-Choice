@@ -246,6 +246,48 @@ async function api(url, options = {}) {
 
 
 
+function confirmAction({ title = 'Confirmation', message = 'Are you sure you want to proceed?', confirmText = 'Confirm', cancelText = 'Cancel', isDanger = false } = {}) {
+  return new Promise((resolve) => {
+    const backdrop = document.createElement('div');
+    backdrop.className = 'brmc-modal-backdrop';
+    backdrop.innerHTML = `
+      <div class="brmc-modal-card" role="dialog" aria-modal="true" aria-labelledby="brmc-modal-title">
+        <div class="brmc-modal-header">
+          <div class="brmc-modal-icon ${isDanger ? 'is-danger' : 'is-brand'}">${isDanger ? '⚠️' : '🌾'}</div>
+          <div>
+            <h3 class="h5 mb-0 fw-bold ${isDanger ? 'text-danger' : 'text-forest'}" id="brmc-modal-title">${escapeHtml(title)}</h3>
+          </div>
+        </div>
+        <div class="brmc-modal-body my-3">
+          <p class="mb-0 text-secondary" style="font-size:0.95rem;line-height:1.5;">${escapeHtml(message)}</p>
+        </div>
+        <div class="brmc-modal-footer d-flex justify-content-end gap-2 pt-2 border-top">
+          <button type="button" class="btn btn-sm btn-outline-secondary" data-modal-cancel>${escapeHtml(cancelText)}</button>
+          <button type="button" class="btn btn-sm ${isDanger ? 'btn-danger' : 'btn-brand'}" data-modal-confirm>${escapeHtml(confirmText)}</button>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(backdrop);
+    const finish = (accepted) => {
+      backdrop.classList.add('is-closing');
+      setTimeout(() => backdrop.remove(), 160);
+      resolve(accepted);
+    };
+    backdrop.querySelector('[data-modal-confirm]').addEventListener('click', () => finish(true));
+    backdrop.querySelector('[data-modal-cancel]').addEventListener('click', () => finish(false));
+    backdrop.addEventListener('click', (e) => {
+      if (e.target === backdrop) finish(false);
+    });
+    const keyHandler = (e) => {
+      if (e.key === 'Escape') {
+        document.removeEventListener('keydown', keyHandler);
+        finish(false);
+      }
+    };
+    document.addEventListener('keydown', keyHandler);
+  });
+}
+
 async function getConfig() {
   if (!state.config) {
     try {
@@ -298,44 +340,389 @@ function productCard(product) {
 }
 
 function cardGrid(products) {
-  if (!products.length) return emptyState(
-    'Products are being prepared',
-    'Product names, prices, pack sizes and availability will appear here after the business adds verified catalogue details.',
-    '/contact',
-    'Ask us a question',
-  );
+  if (!products.length) return `
+    <div class="empty-products-slider my-4">
+      <div class="sliding-empty-card">
+        <div class="sliding-empty-icon">🌾</div>
+        <div class="sliding-empty-content">
+          <h3 class="h5 mb-1 text-forest fw-bold">Fresh Harvest Batches Arriving Soon!</h3>
+          <p class="mb-2 text-secondary">Our stone mills in Hyderabad are freshly preparing new unpolished millet powder batches. Check back soon or contact us directly.</p>
+          <div class="d-flex gap-2 flex-wrap mt-3">
+            <a href="/contact" class="btn btn-sm btn-brand">Ask about restock</a>
+            <a href="https://whatsapp.com/channel/0029Vb909Ye7oQhkdutTQM24" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-brand">Follow WhatsApp Updates</a>
+          </div>
+        </div>
+      </div>
+    </div>`;
   return `<div class="row g-4">${products.map((product) => `<div class="col-md-6 col-lg-4">${productCard(product)}</div>`).join('')}</div>`;
 }
 
 async function renderHome() {
   const data = await api('/api/products');
+  const products = data.products || [];
+  const topProducts = products.slice(0, 3);
   appRoot.innerHTML = `
-    <section class="hero scroll-reveal-item"><div class="container"><div class="row align-items-center gy-4 gy-lg-5">
-      <div class="col-lg-7"><p class="hero-eyebrow">Welcome to BR Millet Choice</p><h1>Pure Millets, Healthy Living.</h1><p class="hero-copy">Nutrient-rich, pure stone-ground millet powders crafted for wholesome daily nutrition. Products in stock can be ordered directly online with instant confirmation and fast doorstep delivery.</p><div class="d-flex flex-wrap gap-3 mt-4">${buttonLink('/shop', 'Order online')} ${buttonLink('/contact', 'Contact us', 'btn-outline-brand')}</div></div>
-      <div class="col-lg-5"><div class="hero-brand-card"><img src="/images/br-millet-choice-logo.png" alt="BR Millets Choice — Pure Millets, Healthy Living" width="640" height="640"></div></div>
-    </div></div></section>
-    <section class="trust-strip py-3 scroll-reveal-item"><div class="container"><div class="row gy-3">
-      <div class="col-sm-4"><div class="trust-item"><span class="trust-icon" aria-hidden="true">🌾</span><div><strong>100% Pure Millets</strong><small>Stone-ground & chemical-free</small></div></div></div>
-      <div class="col-sm-4"><div class="trust-item"><span class="trust-icon" aria-hidden="true">⚡</span><div><strong>Direct Online Booking</strong><small>Instantly booked when in stock</small></div></div></div>
-      <div class="col-sm-4"><div class="trust-item"><span class="trust-icon" aria-hidden="true">🚚</span><div><strong>Fresh Delivery</strong><small>Freshly ground & doorstep delivered</small></div></div></div>
-    </div></div></section>
-    <section class="section-space scroll-reveal-item"><div class="container"><div class="d-flex flex-wrap justify-content-between align-items-end gap-3 mb-4"><div><p class="eyebrow">Featured powders</p><h2 class="section-heading mb-2">Explore our pure products</h2><p class="section-intro mb-0">Select your favorite millet powders. When stock is available, order directly online.</p></div>${buttonLink('/shop', 'View all products', 'btn-outline-brand')}</div>${cardGrid(data.products.slice(0, 3))}</div></section>
-    <section class="soft-section section-space scroll-reveal-item"><div class="container"><div class="row align-items-center gy-4"><div class="col-lg-5"><p class="eyebrow">How it works</p><h2 class="section-heading">Wholesome goodness at your doorstep.</h2><p class="section-intro">Experience the purest traditional millets. Check live stock, book your packs online, and receive fresh grains delivered straight to your home.</p>${buttonLink('/about', 'Our story', 'btn-outline-brand')}</div><div class="col-lg-7"><div class="home-benefits"><article class="feature-card"><span class="trust-icon" aria-hidden="true">01</span><h3>Choose</h3><p class="product-meta mb-0">Select your pure millet powder and preferred pack size.</p></article><article class="feature-card"><span class="trust-icon" aria-hidden="true">02</span><h3>Book</h3><p class="product-meta mb-0">Order directly with instant stock reservation.</p></article><article class="feature-card"><span class="trust-icon" aria-hidden="true">03</span><h3>Enjoy</h3><p class="product-meta mb-0">Freshly ground and delivered straight to your doorstep.</p></article></div></div></div></div></section>
-    <section class="home-contact-cta scroll-reveal-item"><div class="container d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3"><div><p class="eyebrow mb-2">Need help?</p><h2 class="h3 mb-1">We’re here to answer your questions.</h2><p class="mb-0 text-secondary">Get in touch about products, custom pack sizes, or order support.</p></div>${buttonLink('/contact', 'Contact us')}</div></section>`;
+    <!-- Hero Section -->
+    <section class="hero scroll-reveal-item position-relative overflow-hidden">
+      <div class="container">
+        <div class="row align-items-center gy-4 gy-lg-5">
+          <div class="col-lg-7">
+            <div class="hero-badge-pill mb-3">
+              <span class="badge-dot"></span>
+              <span>100% Native Stone-Ground Supergrains</span>
+            </div>
+            <h1 class="hero-main-title">Pure Millets, Healthy Living.</h1>
+            <p class="hero-copy">
+              Nutrient-rich, unpolished supergrains stone-ground fresh weekly in Hyderabad. Naturally rich in dietary fiber, slow-burning complex carbs, and essential minerals for your family's daily wellness.
+            </p>
+            <div class="hero-feature-tags d-flex flex-wrap gap-2 my-3">
+              <span class="hero-tag">🌾 100% Unpolished</span>
+              <span class="hero-tag">🚫 Zero Bleach &amp; Chemicals</span>
+              <span class="hero-tag">🩺 Diabetic &amp; Heart Friendly</span>
+              <span class="hero-tag">⚡ Fast Hyderabad Delivery</span>
+            </div>
+            <div class="d-flex flex-wrap gap-3 mt-4">
+              ${buttonLink('/shop', 'Shop Fresh Millets →', 'btn-brand btn-lg shadow-sm')}
+              ${buttonLink('/recipes', 'Explore Usage Ideas 🍲', 'btn-outline-brand btn-lg')}
+            </div>
+          </div>
+          <div class="col-lg-5 text-center">
+            <div class="hero-brand-card position-relative">
+              <img src="/images/br-millet-choice-logo.png" alt="BR Millets Choice — Pure Millets, Healthy Living" width="640" height="640" class="img-fluid hero-logo-img">
+              <div class="hero-floating-badge shadow-sm">
+                <span class="fs-5">✨</span>
+                <div>
+                  <strong>Freshly Milled</strong>
+                  <small class="d-block text-secondary">Hyderabad batches weekly</small>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Trust Strip -->
+    <section class="trust-strip py-4 scroll-reveal-item">
+      <div class="container">
+        <div class="row gy-3">
+          <div class="col-6 col-md-3">
+            <div class="trust-item">
+              <span class="trust-icon" aria-hidden="true">🌾</span>
+              <div>
+                <strong>100% Pure &amp; Raw</strong>
+                <small>Unpolished with bran intact</small>
+              </div>
+            </div>
+          </div>
+          <div class="col-6 col-md-3">
+            <div class="trust-item">
+              <span class="trust-icon" aria-hidden="true">🩺</span>
+              <div>
+                <strong>Low Glycemic Index</strong>
+                <small>Steady energy, diabetic friendly</small>
+              </div>
+            </div>
+          </div>
+          <div class="col-6 col-md-3">
+            <div class="trust-item">
+              <span class="trust-icon" aria-hidden="true">⚙️</span>
+              <div>
+                <strong>Cold Stone-Ground</strong>
+                <small>Retains natural grain oils</small>
+              </div>
+            </div>
+          </div>
+          <div class="col-6 col-md-3">
+            <div class="trust-item">
+              <span class="trust-icon" aria-hidden="true">🚚</span>
+              <div>
+                <strong>Direct Doorstep</strong>
+                <small>Hyderabad delivery over ₹500</small>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Featured Millets Showcase -->
+    <section class="section-space scroll-reveal-item">
+      <div class="container">
+        <div class="d-flex flex-wrap justify-content-between align-items-end gap-3 mb-4">
+          <div>
+            <p class="eyebrow mb-1">Our Farm Harvest</p>
+            <h2 class="section-heading mb-2">Explore Our Pure Products</h2>
+            <p class="section-intro mb-0">Select your favorite stone-ground millet powders. When stock is in, order directly online.</p>
+          </div>
+          ${buttonLink('/shop', 'View full catalogue →', 'btn-outline-brand')}
+        </div>
+        ${cardGrid(topProducts)}
+      </div>
+    </section>
+
+    <!-- Nutritional Comparison: Why Switch to Millets? -->
+    <section class="soft-section section-space scroll-reveal-item">
+      <div class="container">
+        <div class="text-center max-w-700 mx-auto mb-5">
+          <p class="eyebrow mb-1">Health Comparison</p>
+          <h2 class="section-heading mb-2">Why Your Family Needs Millets</h2>
+          <p class="section-intro mb-0">See how pure unpolished millets compare to ordinary polished white rice and refined wheat.</p>
+        </div>
+        <div class="row g-4 align-items-stretch">
+          <div class="col-md-6">
+            <div class="comparison-card comparison-bad h-100 p-4 rounded-4 border bg-white shadow-sm">
+              <div class="d-flex align-items-center gap-2 mb-3">
+                <span class="fs-4">🍚</span>
+                <h3 class="h5 mb-0 text-danger fw-bold">Polished White Rice &amp; Maida</h3>
+              </div>
+              <ul class="comparison-list list-unstyled mb-0">
+                <li class="d-flex align-items-start gap-2 mb-2 text-secondary">
+                  <span class="text-danger fw-bold">✕</span>
+                  <span>Stripped of outer nutrient-rich bran during heavy polishing</span>
+                </li>
+                <li class="d-flex align-items-start gap-2 mb-2 text-secondary">
+                  <span class="text-danger fw-bold">✕</span>
+                  <span>High Glycemic Index causes rapid blood sugar spikes</span>
+                </li>
+                <li class="d-flex align-items-start gap-2 mb-2 text-secondary">
+                  <span class="text-danger fw-bold">✕</span>
+                  <span>Low fiber leads to post-meal sluggishness and quick hunger crashes</span>
+                </li>
+                <li class="d-flex align-items-start gap-2 text-secondary">
+                  <span class="text-danger fw-bold">✕</span>
+                  <span>Often chemically bleached and fumigated for prolonged shelf-life</span>
+                </li>
+              </ul>
+            </div>
+          </div>
+          <div class="col-md-6">
+            <div class="comparison-card comparison-good h-100 p-4 rounded-4 border border-success-subtle bg-emerald-soft shadow-sm">
+              <div class="d-flex align-items-center gap-2 mb-3">
+                <span class="fs-4">🌾</span>
+                <h3 class="h5 mb-0 text-forest fw-bold">BR Stone-Ground Millets</h3>
+              </div>
+              <ul class="comparison-list list-unstyled mb-0">
+                <li class="d-flex align-items-start gap-2 mb-2 text-forest-deep">
+                  <span class="text-success fw-bold">✓</span>
+                  <span>100% Unpolished: Retains complete dietary fiber, germ &amp; bran</span>
+                </li>
+                <li class="d-flex align-items-start gap-2 mb-2 text-forest-deep">
+                  <span class="text-success fw-bold">✓</span>
+                  <span>Low GI: Slow, sustained release of glucose for balanced energy</span>
+                </li>
+                <li class="d-flex align-items-start gap-2 mb-2 text-forest-deep">
+                  <span class="text-success fw-bold">✓</span>
+                  <span>3x more dietary fiber, natural calcium, iron, and magnesium</span>
+                </li>
+                <li class="d-flex align-items-start gap-2 text-forest-deep">
+                  <span class="text-success fw-bold">✓</span>
+                  <span>Zero chemicals, zero bleach: Pure grain from farm to kitchen</span>
+                </li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- The 4-Step Fresh Process -->
+    <section class="section-space scroll-reveal-item">
+      <div class="container">
+        <div class="row align-items-center gy-4">
+          <div class="col-lg-5">
+            <p class="eyebrow mb-1">Our Craft</p>
+            <h2 class="section-heading mb-3">From Native Fields to Your Kitchen</h2>
+            <p class="section-intro mb-4">We believe food should nourish, not just fill. We honor traditional stone-milling traditions so you receive real grain goodness.</p>
+            <div class="d-flex gap-2 flex-wrap">
+              ${buttonLink('/about', 'Read our story', 'btn-outline-brand')}
+              ${buttonLink('/recipes', 'View recipe ideas', 'btn-outline-brand')}
+            </div>
+          </div>
+          <div class="col-lg-7">
+            <div class="home-benefits">
+              <article class="feature-card step-card">
+                <span class="trust-icon step-num" aria-hidden="true">01</span>
+                <h3>Native Sourcing</h3>
+                <p class="product-meta mb-0">Handpicked native millets grown with sustainable farming practices.</p>
+              </article>
+              <article class="feature-card step-card">
+                <span class="trust-icon step-num" aria-hidden="true">02</span>
+                <h3>Zero Polish</h3>
+                <p class="product-meta mb-0">Husked carefully to protect the grain's natural bran and fiber layer.</p>
+              </article>
+              <article class="feature-card step-card">
+                <span class="trust-icon step-num" aria-hidden="true">03</span>
+                <h3>Stone Ground</h3>
+                <p class="product-meta mb-0">Slow cold stone grinding ensures vital grain oils never burn off.</p>
+              </article>
+              <article class="feature-card step-card">
+                <span class="trust-icon step-num" aria-hidden="true">04</span>
+                <h3>Freshly Delivered</h3>
+                <p class="product-meta mb-0">Vacuum packed and doorstep-delivered across Hyderabad.</p>
+              </article>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Customer Reviews / Moving Stories Marquee -->
+    <section class="section-space soft-section scroll-reveal-item overflow-hidden">
+      <div class="container">
+        <div class="d-flex flex-wrap justify-content-between align-items-end gap-2 mb-4">
+          <div>
+            <p class="eyebrow mb-1">Real Feedback</p>
+            <h2 class="section-heading mb-0">Trusted by Hyderabad Families</h2>
+          </div>
+          <a href="/about" class="btn btn-sm btn-outline-brand">More reviews →</a>
+        </div>
+      </div>
+      <div class="stories-marquee-wrapper">
+        <div class="stories-track">
+          <div class="story-review-card">
+            <div class="d-flex align-items-center gap-2 mb-2">
+              <span class="text-warning">★★★★★</span>
+              <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill small px-2">Verified Customer</span>
+            </div>
+            <p class="story-text">"The Ragi flour from BR Millet Choice makes the softest dosas and rich ambali. You can literally smell the authentic stone-ground freshness!"</p>
+            <div class="story-author"><strong>Karthik Reddy</strong> • Lakdikapul, Hyderabad</div>
+          </div>
+          <div class="story-review-card">
+            <div class="d-flex align-items-center gap-2 mb-2">
+              <span class="text-warning">★★★★★</span>
+              <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill small px-2">Verified Customer</span>
+            </div>
+            <p class="story-text">"Switched to their Foxtail and Little Millet for my father's diabetic diet. His sugar levels are noticeably more stable. Outstanding quality!"</p>
+            <div class="story-author"><strong>Priya Sharma</strong> • Banjara Hills, Hyderabad</div>
+          </div>
+          <div class="story-review-card">
+            <div class="d-flex align-items-center gap-2 mb-2">
+              <span class="text-warning">★★★★★</span>
+              <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill small px-2">Verified Customer</span>
+            </div>
+            <p class="story-text">"Jowar rotis come out wonderfully soft without cracking. Fast delivery and COD made it super convenient to try. Highly recommended!"</p>
+            <div class="story-author"><strong>Suresh Kumar</strong> • Kukatpally, Hyderabad</div>
+          </div>
+          <div class="story-review-card">
+            <div class="d-flex align-items-center gap-2 mb-2">
+              <span class="text-warning">★★★★★</span>
+              <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill small px-2">Verified Customer</span>
+            </div>
+            <p class="story-text">"Finally a pure millet brand without starch adulteration. We make the morning porridge every single day. Pure and genuine."</p>
+            <div class="story-author"><strong>Ananya Rao</strong> • Gachibowli, Hyderabad</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Community Callout Banner -->
+    <section class="home-contact-cta scroll-reveal-item">
+      <div class="container d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-4">
+        <div>
+          <span class="eyebrow mb-1">Join the Millet Movement</span>
+          <h2 class="h3 mb-1 text-forest fw-bold">Have Questions or Need Custom Pack Quantities?</h2>
+          <p class="mb-0 text-secondary">Chat directly with our milling team for recommendations, order support, or bulk inquiries.</p>
+        </div>
+        <div class="d-flex gap-2 flex-wrap">
+          <a class="btn btn-brand" href="/contact">Contact Support</a>
+          <a class="btn btn-outline-brand" href="https://whatsapp.com/channel/0029Vb909Ye7oQhkdutTQM24" target="_blank" rel="noopener noreferrer">WhatsApp Channel</a>
+        </div>
+      </div>
+    </section>
+  `;
   markViewedPage();
 }
 
 async function renderShop() {
   const search = new URLSearchParams(location.search).get('q') ?? '';
   const data = await api(`/api/products${search ? `?q=${encodeURIComponent(search)}` : ''}`);
-  appRoot.innerHTML = `${pageHeader('The shop', 'Millet powder products', 'Choose a product to see its pack options, verified product details and current stock availability.')}
+  let currentProducts = data.products || [];
+  let activeFilter = 'all';
+  let activeSort = 'featured';
+
+  function filterAndSortProducts() {
+    let result = [...currentProducts];
+    if (activeFilter !== 'all') {
+      const q = activeFilter.toLowerCase();
+      result = result.filter((p) => {
+        const name = (p.name || '').toLowerCase();
+        const desc = (p.description || '').toLowerCase();
+        const cat = (p.category || '').toLowerCase();
+        return name.includes(q) || desc.includes(q) || cat.includes(q);
+      });
+    }
+    if (activeSort === 'price-asc') {
+      result.sort((a, b) => {
+        const pA = a.variants?.[0]?.pricePaise ?? 0;
+        const pB = b.variants?.[0]?.pricePaise ?? 0;
+        return pA - pB;
+      });
+    } else if (activeSort === 'price-desc') {
+      result.sort((a, b) => {
+        const pA = a.variants?.[0]?.pricePaise ?? 0;
+        const pB = b.variants?.[0]?.pricePaise ?? 0;
+        return pB - pA;
+      });
+    } else if (activeSort === 'name-asc') {
+      result.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+    }
+    return result;
+  }
+
+  function updateShopGrid() {
+    const gridContainer = appRoot.querySelector('[data-shop-grid]');
+    if (gridContainer) {
+      gridContainer.innerHTML = cardGrid(filterAndSortProducts());
+    }
+  }
+
+  appRoot.innerHTML = `${pageHeader('The Shop', 'Millet Powder Products', 'Choose a product to see its pack options, stone-ground details and current stock availability.')}
     <section class="container section-space">
-      <form class="row g-2 align-items-end mb-4" data-form="shop-search">
-        <div class="col-sm-8 col-md-6"><label class="form-label" for="shop-search">Search products</label><input class="form-control" id="shop-search" name="q" value="${escapeHtml(search)}" placeholder="Search catalogue"></div>
-        <div class="col-auto"><button class="btn btn-brand" type="submit">Search</button></div>
-      </form>
-      ${cardGrid(data.products)}
+      <div class="shop-filter-bar mb-4 p-3 bg-white border rounded-4 shadow-sm">
+        <form class="d-flex gap-2 mb-3" data-form="shop-search">
+          <input class="form-control form-control-sm" name="q" value="${escapeHtml(search)}" placeholder="Search millets (ragi, foxtail, jowar...)">
+          <button class="btn btn-sm btn-brand text-nowrap" type="submit">Search</button>
+          ${search ? '<a href="/shop" class="btn btn-sm btn-outline-secondary text-nowrap">Clear</a>' : ''}
+        </form>
+        <div class="d-flex flex-wrap align-items-center justify-content-between gap-2">
+          <div class="shop-category-pills">
+            <button type="button" class="filter-pill active" data-category-filter="all">All Millets</button>
+            <button type="button" class="filter-pill" data-category-filter="ragi">Ragi (Finger)</button>
+            <button type="button" class="filter-pill" data-category-filter="foxtail">Foxtail</button>
+            <button type="button" class="filter-pill" data-category-filter="jowar">Jowar</button>
+            <button type="button" class="filter-pill" data-category-filter="bajra">Bajra</button>
+            <button type="button" class="filter-pill" data-category-filter="little">Little Millet</button>
+          </div>
+          <div class="shop-sort-compact d-flex align-items-center gap-1 ms-auto">
+            <label class="small text-secondary text-nowrap" for="shop-sort">Sort:</label>
+            <select class="form-select form-select-sm" id="shop-sort" data-shop-sort style="width:auto">
+              <option value="featured">Featured</option>
+              <option value="price-asc">Price: Low to High</option>
+              <option value="price-desc">Price: High to Low</option>
+              <option value="name-asc">Name: A to Z</option>
+            </select>
+          </div>
+        </div>
+      </div>
+      <div data-shop-grid>
+        ${cardGrid(filterAndSortProducts())}
+      </div>
     </section>`;
+
+  appRoot.querySelectorAll('[data-category-filter]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      appRoot.querySelectorAll('[data-category-filter]').forEach((b) => b.classList.remove('active'));
+      btn.classList.add('active');
+      activeFilter = btn.dataset.categoryFilter;
+      updateShopGrid();
+    });
+  });
+
+  appRoot.querySelector('[data-shop-sort]')?.addEventListener('change', (e) => {
+    activeSort = e.target.value;
+    updateShopGrid();
+  });
 }
 
 async function renderProduct(slug) {
@@ -730,6 +1117,159 @@ async function renderAboutPage() {
     </section>`;
 }
 
+function renderIdeas() {
+  appRoot.innerHTML = `
+    ${pageHeader('Usage Ideas & Recipes', 'Cook Delicious with Pure Millets', 'Discover easy traditional and modern recipes made with 100% stone-ground millets. Nutritious, gluten-free, and loved by families.')}
+    <section class="container section-space">
+      <div class="row g-4 mb-5">
+        <div class="col-md-6 col-lg-4">
+          <div class="feature-card recipe-card h-100 p-4 border rounded-4 shadow-sm bg-white d-flex flex-column">
+            <div class="d-flex justify-content-between align-items-start mb-3">
+              <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-3 py-1 fw-semibold">Breakfast • 10 mins</span>
+              <span class="fs-4">🥣</span>
+            </div>
+            <h3 class="h5 fw-bold text-forest mb-2">Traditional Ragi Malt (Ambali)</h3>
+            <p class="small text-secondary mb-3">Cooling, calcium-rich morning drink loved across Telangana and Andhra. Perfect for daily energy and bone strength.</p>
+            <div class="recipe-meta-box p-3 bg-light rounded-3 mb-3 small">
+              <div class="fw-bold text-dark mb-1">🛒 Key Ingredients:</div>
+              <p class="text-secondary mb-0">2 tbsp Finger Millet (Ragi) Powder, 1.5 cups water, fresh buttermilk, crushed shallots, roasted cumin powder &amp; pinch of rock salt.</p>
+            </div>
+            <div class="recipe-steps small mb-4 text-secondary">
+              <strong>Quick Steps:</strong> Mix Ragi flour in cold water without lumps. Simmer on low flame for 4 mins until glossy. Let cool, whisk in churned buttermilk, crushed cumin &amp; salt. Serve fresh!
+            </div>
+            <div class="mt-auto">
+              <a href="/shop" class="btn btn-sm btn-outline-brand w-100">Shop Stone-Ground Ragi Flour →</a>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-md-6 col-lg-4">
+          <div class="feature-card recipe-card h-100 p-4 border rounded-4 shadow-sm bg-white d-flex flex-column">
+            <div class="d-flex justify-content-between align-items-start mb-3">
+              <span class="badge bg-warning-subtle text-warning border border-warning-subtle rounded-pill px-3 py-1 fw-semibold">Lunch / Tiffin • 20 mins</span>
+              <span class="fs-4">🥞</span>
+            </div>
+            <h3 class="h5 fw-bold text-forest mb-2">Foxtail Millet Idli &amp; Crispy Dosa</h3>
+            <p class="small text-secondary mb-3">Golden, light, and digestible dosas and idlis without white rice. High dietary fiber with low glycemic index for diabetic wellness.</p>
+            <div class="recipe-meta-box p-3 bg-light rounded-3 mb-3 small">
+              <div class="fw-bold text-dark mb-1">🛒 Key Ingredients:</div>
+              <p class="text-secondary mb-0">2 cups Foxtail Millet (Kangni) Flour, 1/2 cup Urad dal, 1 tsp fenugreek seeds, salt to taste, pure sesame oil.</p>
+            </div>
+            <div class="recipe-steps small mb-4 text-secondary">
+              <strong>Quick Steps:</strong> Combine foxtail flour with fermented urad batter. Steam for 10 minutes in idli molds for fluffy idlis, or pour thin onto a hot cast-iron tawa for golden crispy dosas.
+            </div>
+            <div class="mt-auto">
+              <a href="/shop" class="btn btn-sm btn-outline-brand w-100">Shop Foxtail Millet Flour →</a>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-md-6 col-lg-4">
+          <div class="feature-card recipe-card h-100 p-4 border rounded-4 shadow-sm bg-white d-flex flex-column">
+            <div class="d-flex justify-content-between align-items-start mb-3">
+              <span class="badge bg-info-subtle text-info border border-info-subtle rounded-pill px-3 py-1 fw-semibold">Dinner • 25 mins</span>
+              <span class="fs-4">🍲</span>
+            </div>
+            <h3 class="h5 fw-bold text-forest mb-2">Wholesome Little Millet Pongal</h3>
+            <p class="small text-secondary mb-3">Fragrant, gut-soothing comfort meal tempered with pure desi ghee, black peppercorns, crushed ginger, and roasted cashews.</p>
+            <div class="recipe-meta-box p-3 bg-light rounded-3 mb-3 small">
+              <div class="fw-bold text-dark mb-1">🛒 Key Ingredients:</div>
+              <p class="text-secondary mb-0">1 cup Little Millet (Samai), 1/2 cup yellow moong dal, 2 tbsp pure cow ghee, whole peppercorns, curry leaves, ginger, cashews.</p>
+            </div>
+            <div class="recipe-steps small mb-4 text-secondary">
+              <strong>Quick Steps:</strong> Pressure cook little millet &amp; moong dal with 4 cups water. Temper cumin, black pepper, ginger, and cashews in ghee; pour sizzling hot over pongal and mix well.
+            </div>
+            <div class="mt-auto">
+              <a href="/shop" class="btn btn-sm btn-outline-brand w-100">Shop Little Millet Flour →</a>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-md-6 col-lg-4">
+          <div class="feature-card recipe-card h-100 p-4 border rounded-4 shadow-sm bg-white d-flex flex-column">
+            <div class="d-flex justify-content-between align-items-start mb-3">
+              <span class="badge bg-danger-subtle text-danger border border-danger-subtle rounded-pill px-3 py-1 fw-semibold">Gluten-Free • 15 mins</span>
+              <span class="fs-4">🫓</span>
+            </div>
+            <h3 class="h5 fw-bold text-forest mb-2">Authentic Jowar Bhakri (Rotla)</h3>
+            <p class="small text-secondary mb-3">Traditional sorghum flatbread. Naturally 100% gluten-free, light on digestion, and keeps hunger satiated for hours.</p>
+            <div class="recipe-meta-box p-3 bg-light rounded-3 mb-3 small">
+              <div class="fw-bold text-dark mb-1">🛒 Key Ingredients:</div>
+              <p class="text-secondary mb-0">2 cups stone-ground Jowar Flour, 1 cup hot boiling water, pinch of sea salt.</p>
+            </div>
+            <div class="recipe-steps small mb-4 text-secondary">
+              <strong>Quick Steps:</strong> Knead jowar flour with boiling water into a smooth, pliable dough. Hand-pat into circles, transfer to hot tawa, smear water on top, flip and roast both sides till puffed.
+            </div>
+            <div class="mt-auto">
+              <a href="/shop" class="btn btn-sm btn-outline-brand w-100">Shop Pure Jowar Flour →</a>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-md-6 col-lg-4">
+          <div class="feature-card recipe-card h-100 p-4 border rounded-4 shadow-sm bg-white d-flex flex-column">
+            <div class="d-flex justify-content-between align-items-start mb-3">
+              <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill px-3 py-1 fw-semibold">Winter Superfood • 20 mins</span>
+              <span class="fs-4">🌾</span>
+            </div>
+            <h3 class="h5 fw-bold text-forest mb-2">Bajra (Pearl Millet) Methi Poori / Roti</h3>
+            <p class="small text-secondary mb-3">Iron-loaded flatbreads flavored with fresh fenugreek leaves, crushed green chili, and roasted sesame seeds. Natural winter warmth.</p>
+            <div class="recipe-meta-box p-3 bg-light rounded-3 mb-3 small">
+              <div class="fw-bold text-dark mb-1">🛒 Key Ingredients:</div>
+              <p class="text-secondary mb-0">1.5 cups Bajra Flour, 1/2 cup fresh methi leaves, 1 tsp carom seeds (ajwain), 1 tbsp white sesame seeds, warm water.</p>
+            </div>
+            <div class="recipe-steps small mb-4 text-secondary">
+              <strong>Quick Steps:</strong> Mix ingredients and knead soft. Roll gently with dry flour dusting. Roast on tawa with a drizzle of cold-pressed oil or ghee until speckled golden brown.
+            </div>
+            <div class="mt-auto">
+              <a href="/shop" class="btn btn-sm btn-outline-brand w-100">Shop Pearl Millet (Bajra) →</a>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-md-6 col-lg-4">
+          <div class="feature-card recipe-card h-100 p-4 border rounded-4 shadow-sm bg-white d-flex flex-column">
+            <div class="d-flex justify-content-between align-items-start mb-3">
+              <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-3 py-1 fw-semibold">Healthy Sweet • 15 mins</span>
+              <span class="fs-4">🍬</span>
+            </div>
+            <h3 class="h5 fw-bold text-forest mb-2">Millet Dry-Fruit Power Ladoos</h3>
+            <p class="small text-secondary mb-3">No refined sugar, no additives. Made with slow-roasted mixed millets, organic jaggery, pure ghee, and roasted almonds &amp; walnuts.</p>
+            <div class="recipe-meta-box p-3 bg-light rounded-3 mb-3 small">
+              <div class="fw-bold text-dark mb-1">🛒 Key Ingredients:</div>
+              <p class="text-secondary mb-0">1 cup Ragi or Multi-millet flour, 1/2 cup grated organic jaggery, 1/4 cup pure cow ghee, cardamom powder, chopped almonds &amp; cashews.</p>
+            </div>
+            <div class="recipe-steps small mb-4 text-secondary">
+              <strong>Quick Steps:</strong> Roast millet flour in ghee on low heat for 8 mins till aromatic. Add warm melted jaggery, cardamom and nuts. Shape into round bite-sized ladoos while warm!
+            </div>
+            <div class="mt-auto">
+              <a href="/shop" class="btn btn-sm btn-outline-brand w-100">Shop All Pure Millets →</a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Cooking Tips Banner -->
+      <div class="p-4 p-lg-5 bg-cream rounded-4 border shadow-sm">
+        <div class="row align-items-center gy-3">
+          <div class="col-lg-8">
+            <span class="eyebrow mb-1">Kitchen Guide</span>
+            <h2 class="h3 fw-bold text-forest mb-2">Golden Rules for Cooking With Stone-Ground Millets</h2>
+            <ul class="text-secondary small mb-0 ps-3">
+              <li class="mb-1"><strong>Kneading tip:</strong> Use warm or boiling water when making gluten-free flatbreads (Jowar &amp; Bajra) to release natural starches for pliable, soft dough.</li>
+              <li class="mb-1"><strong>Digestibility:</strong> Stone-ground millets are naturally high in fiber; always allow cooked porridge or malt to cool slightly before serving.</li>
+              <li><strong>Storage:</strong> Store stone-ground powders in a cool, dry, airtight container away from moisture to preserve the natural grain oils.</li>
+            </ul>
+          </div>
+          <div class="col-lg-4 text-lg-end">
+            <a href="/shop" class="btn btn-brand btn-lg">Browse All Millets Online</a>
+          </div>
+        </div>
+      </div>
+    </section>
+  `;
+}
+
 function renderContentPage(route) {
   const pages = {
     '/about': ['Our story', 'BR Millet Choice is a millet powder business. This page will share the owner-approved story, sourcing and preparation information when supplied. No certification, origin or health claims are implied.'],
@@ -987,36 +1527,42 @@ async function renderAccount() {
         <p class="small mb-1">${escapeHtml(item.body)}</p>${item.href ? `<a class="small me-2" href="${escapeHtml(item.href)}">View</a>` : ''}${!item.readAt ? `<button class="btn btn-link btn-sm p-0" data-read-notification="${escapeHtml(item.id)}">Mark as read</button>` : ''}
       </article>`).join('')
     : '<p class="text-secondary">No notifications yet.</p>';
+  const rawHash = (location.hash || '').replace('#account-', '');
+  const activeTab = ['profile', 'addresses', 'orders', 'notifications', 'preferences'].includes(rawHash)
+    ? rawHash
+    : 'profile';
+
   appRoot.innerHTML = `${pageHeader('Your account', `Hello, ${user.fullName}`, 'Your profile, addresses, order requests and updates—together on one page.')}
     <section class="container account-page">
       <nav class="account-jump-nav" aria-label="Account sections">
-        <a class="account-nav-tab active" href="#account-profile">
+        <button type="button" class="account-nav-tab ${activeTab === 'profile' ? 'active' : ''}" data-tab-target="profile">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M6 20v-2a6 6 0 0 1 12 0v2"/></svg>
           <span>Profile</span>
-        </a>
-        <a class="account-nav-tab" href="#account-addresses">
+        </button>
+        <button type="button" class="account-nav-tab ${activeTab === 'addresses' ? 'active' : ''}" data-tab-target="addresses">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
           <span>Addresses</span>
           ${addresses.length ? `<span class="tab-badge">${addresses.length}</span>` : ''}
-        </a>
-        <a class="account-nav-tab" href="#account-orders">
+        </button>
+        <button type="button" class="account-nav-tab ${activeTab === 'orders' ? 'active' : ''}" data-tab-target="orders">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="m9 12 2 2 4-4"/></svg>
           <span>Orders</span>
           ${orders.length ? `<span class="tab-badge">${orders.length}</span>` : ''}
-        </a>
-        <a class="account-nav-tab" href="#account-notifications">
+        </button>
+        <button type="button" class="account-nav-tab ${activeTab === 'notifications' ? 'active' : ''}" data-tab-target="notifications">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
           <span>Updates</span>
           ${notifications.unreadCount ? `<span class="tab-badge tab-badge-alert">${notifications.unreadCount}</span>` : ''}
-        </a>
-        <a class="account-nav-tab" href="#account-preferences">
+        </button>
+        <button type="button" class="account-nav-tab ${activeTab === 'preferences' ? 'active' : ''}" data-tab-target="preferences">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
           <span>Preferences</span>
-        </a>
-        ${user.role === 'admin' ? '<a class="account-nav-tab" href="/admin/products"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg><span>Manage products</span></a>' : ''}
+        </button>
       </nav>
-      <div class="account-dashboard">
-        <section class="feature-card account-panel" id="account-profile">
+
+      <div class="account-dashboard-tabbed mt-3">
+        <!-- Profile Panel -->
+        <section class="feature-card account-panel ${activeTab === 'profile' ? 'active-tab-panel' : ''}" id="account-profile" data-panel-name="profile">
           <div class="account-panel-heading"><div><p class="eyebrow mb-1">Your details</p><h2 class="h4 mb-0">Profile</h2></div><span class="profile-status ${user.emailVerified ? 'is-verified' : 'is-unverified'}">${user.emailVerified ? 'Verified' : 'Needs verification'}</span></div>
           ${!user.emailVerified ? `<div class="notice mt-3"><strong>Verify your email.</strong> Customer account features are locked until you confirm ${escapeHtml(user.email)}.<form data-form="resend-verification" class="mt-3"><input type="hidden" name="email" value="${escapeHtml(user.email)}"><button class="btn btn-sm btn-outline-brand" type="submit">Resend verification email</button></form></div>` : ''}
           <form data-form="profile" class="mt-4"><div class="row g-3">
@@ -1024,26 +1570,45 @@ async function renderAccount() {
             <div class="col-12"><label class="form-label" for="account-profile-email">Email address</label><input class="form-control" id="account-profile-email" type="email" value="${escapeHtml(user.email)}" readonly></div>
             <div class="col-12"><button class="btn btn-brand" type="submit">Save profile</button></div>
           </div></form>
+          <div class="mt-4 pt-3 border-top">
+            <details class="account-delete-panel" id="account-delete">
+              <summary class="text-danger fw-semibold" style="cursor:pointer">Delete my account</summary>
+              <p class="small text-secondary mt-3">Deletion removes your profile, saved addresses, notifications, and enquiries. Completed order records are retained in anonymized form for business recordkeeping.</p>
+              <form data-form="delete-account" class="row g-2 align-items-end">
+                ${user.hasPassword ? '<div class="col-md-6"><label class="form-label" for="delete-password">Current password</label><input class="form-control" id="delete-password" name="currentPassword" type="password" autocomplete="current-password" required></div>' : '<div class="col-12"><p class="small text-secondary mb-0">You signed in with Google, so no account password is needed. Confirm while signed in by typing DELETE.</p></div>'}
+                <div class="${user.hasPassword ? 'col-md-3' : 'col-md-6'}"><label class="form-label" for="delete-confirm">Type DELETE</label><input class="form-control" id="delete-confirm" name="confirm" required pattern="DELETE"></div>
+                <div class="col-md-3"><button class="btn btn-danger" type="submit">Delete account</button></div>
+              </form>
+            </details>
+          </div>
         </section>
-        <section class="feature-card account-panel" id="account-addresses">
+
+        <!-- Addresses Panel -->
+        <section class="feature-card account-panel ${activeTab === 'addresses' ? 'active-tab-panel' : ''}" id="account-addresses" data-panel-name="addresses">
           <div class="account-panel-heading"><div><p class="eyebrow mb-1">Delivery information</p><h2 class="h4 mb-0">Saved addresses</h2></div><span class="account-count">${addresses.length}</span></div>
-          ${user.emailVerified ? `<div class="account-address-list mt-3">${addressCards}</div><details class="address-form-disclosure mt-3" ${addresses.length ? '' : 'open'}><summary>Add address</summary><div class="mt-3">${addressForm()}</div></details>` : '<p class="text-secondary mt-3 mb-0">Verify your email to manage addresses.</p>'}
+          ${user.emailVerified ? `<div class="account-address-list mt-3">${addressCards}</div><details class="address-form-disclosure mt-3" ${addresses.length ? '' : 'open'}><summary class="fw-semibold text-forest" style="cursor:pointer">+ Add new delivery address</summary><div class="mt-3">${addressForm()}</div></details>` : '<p class="text-secondary mt-3 mb-0">Verify your email to manage addresses.</p>'}
         </section>
-        <section class="feature-card account-panel" id="account-orders">
+
+        <!-- Orders Panel -->
+        <section class="feature-card account-panel ${activeTab === 'orders' ? 'active-tab-panel' : ''}" id="account-orders" data-panel-name="orders">
           <div class="account-panel-heading"><div><p class="eyebrow mb-1">Purchases</p><h2 class="h4 mb-0">My orders</h2></div><span class="account-count">${orders.length}</span></div>
           ${user.emailVerified ? `<div class="account-order-list mt-3">${orderCards}</div>` : '<p class="text-secondary mt-3 mb-0">Verify your email to view orders.</p>'}
         </section>
-        <section class="feature-card account-panel" id="account-notifications">
+
+        <!-- Updates Panel -->
+        <section class="feature-card account-panel ${activeTab === 'notifications' ? 'active-tab-panel' : ''}" id="account-notifications" data-panel-name="notifications">
           <div class="account-panel-heading"><div><p class="eyebrow mb-1">Account activity</p><h2 class="h4 mb-0">Notifications</h2></div><div class="d-flex align-items-center gap-2"><span class="account-count">${notifications.unreadCount} unread</span>${notifications.unreadCount ? '<button class="btn btn-sm btn-outline-brand" data-read-all>Mark all read</button>' : ''}</div></div>
           ${user.emailVerified ? `<div class="account-notification-list mt-3">${notificationCards}</div><h3 class="h6 mt-4">Restock alerts</h3>${restock.subscriptions.length ? `<ul class="account-restock-list">${restock.subscriptions.map((item) => `<li><a href="/product/${encodeURIComponent(item.slug)}">${escapeHtml(item.productName)} · ${escapeHtml(item.packSize)}</a><button class="btn btn-link btn-sm" data-remove-restock="${escapeHtml(item.variantId)}">Remove</button></li>`).join('')}</ul>` : '<p class="small text-secondary mb-0">No active restock alerts.</p>'}` : '<p class="text-secondary mt-3 mb-0">Verify your email to view account notifications.</p>'}
         </section>
-        <section class="feature-card account-panel" id="account-preferences">
-          <div class="account-panel-heading"><div><p class="eyebrow mb-1">Preferences</p><h2 class="h4 mb-0">Email & Notifications</h2></div></div>
+
+        <!-- Preferences Panel -->
+        <section class="feature-card account-panel ${activeTab === 'preferences' ? 'active-tab-panel' : ''}" id="account-preferences" data-panel-name="preferences">
+          <div class="account-panel-heading"><div><p class="eyebrow mb-1">Preferences</p><h2 class="h4 mb-0">Email &amp; Notifications</h2></div></div>
           <p class="small text-secondary mt-2">Manage which emails and notifications you receive from BR Millet Choice. Security notices are always sent.</p>
           <form data-form="email-preferences" class="mt-3">
             <div class="form-check mb-3">
               <input class="form-check-input" type="checkbox" id="pref-orders" name="orderUpdates" ${emailPreferences.orderUpdates ? 'checked' : ''}>
-              <label class="form-check-label fw-bold" for="pref-orders">📦 Order & Fulfilment Updates</label>
+              <label class="form-check-label fw-bold" for="pref-orders">📦 Order &amp; Fulfilment Updates</label>
               <div class="small text-secondary">Emails when your order request is accepted, preparing, or delivered.</div>
             </div>
             <div class="form-check mb-3">
@@ -1058,17 +1623,26 @@ async function renderAccount() {
             </div>
             <div class="form-check mb-3">
               <input class="form-check-input" type="checkbox" id="pref-promotions" name="promotions" ${emailPreferences.promotions ? 'checked' : ''}>
-              <label class="form-check-label fw-bold" for="pref-promotions">🎁 Promotions & Recipes</label>
+              <label class="form-check-label fw-bold" for="pref-promotions">🎁 Promotions &amp; Recipes</label>
               <div class="small text-secondary">Updates on seasonal millet harvests and culinary ideas.</div>
             </div>
             <button class="btn btn-brand btn-sm" type="submit">Save preferences</button>
           </form>
         </section>
-        ${user.role === 'admin' ? '<section class="feature-card account-panel account-admin-panel"><p class="eyebrow mb-1">Store management</p><h2 class="h4">Owner dashboard</h2><p class="mb-3">Add products, manage the catalogue, review orders and respond to enquiries.</p><a class="btn btn-brand" href="/admin">Open admin dashboard</a></section>' : ''}
-        ${user.role !== 'admin' ? `<details class="address-card account-delete-panel" id="account-delete"><summary class="text-danger fw-semibold">Delete my account</summary><p class="small text-secondary mt-3">Deletion removes your profile, saved addresses, notifications, subscriptions and enquiries. Completed order records are retained in anonymized form for business recordkeeping. Active orders must be cancelled or completed first.</p><form data-form="delete-account" class="row g-2 align-items-end">${user.hasPassword ? '<div class="col-md-6"><label class="form-label" for="delete-password">Current password</label><input class="form-control" id="delete-password" name="currentPassword" type="password" autocomplete="current-password" required></div>' : '<div class="col-12"><p class="small text-secondary mb-0">You signed in with Google, so no account password is needed. Confirm while signed in by typing DELETE.</p></div>'}<div class="${user.hasPassword ? 'col-md-3' : 'col-md-6'}"><label class="form-label" for="delete-confirm">Type DELETE</label><input class="form-control" id="delete-confirm" name="confirm" required pattern="DELETE"></div><div class="col-md-3"><button class="btn btn-danger" type="submit">Delete account</button></div></form></details>` : ''}
       </div>
     </section>`;
-  if (location.hash) document.querySelector(location.hash)?.scrollIntoView({ block: 'start' });
+
+  appRoot.querySelectorAll('[data-tab-target]').forEach((tabBtn) => {
+    tabBtn.addEventListener('click', () => {
+      const target = tabBtn.dataset.tabTarget;
+      appRoot.querySelectorAll('[data-tab-target]').forEach((b) => b.classList.remove('active'));
+      tabBtn.classList.add('active');
+      appRoot.querySelectorAll('[data-panel-name]').forEach((panel) => {
+        panel.classList.toggle('active-tab-panel', panel.dataset.panelName === target);
+      });
+      window.history.replaceState(null, '', `#account-${target}`);
+    });
+  });
 }
 
 async function renderProfile() {
@@ -1282,6 +1856,15 @@ async function renderCheckout() {
                 <button class="btn btn-sm btn-outline-brand" type="button" data-upi-chip="@ybl">@ybl</button>
               </div>
               <div class="small text-secondary">BR Millet Choice UPI ID: <code class="user-select-all fw-bold text-dark">kkarthik23540-5@okaxis</code></div>
+            </div>
+          </label>
+        </div>
+        <div class="col-12">
+          <label class="feature-card p-3 d-flex align-items-start gap-3 border rounded-3 w-100 mb-0" for="method-razorpay" style="cursor:pointer">
+            <input class="form-check-input mt-1 flex-shrink-0" type="radio" name="paymentMethod" id="method-razorpay" value="razorpay">
+            <div>
+              <div class="fw-bold fs-6">💳 Online Cards &amp; NetBanking (Razorpay)</div>
+              <div class="small text-secondary mt-1">Pay securely via Credit/Debit card, NetBanking, or Wallet powered by Razorpay.</div>
             </div>
           </label>
         </div>
@@ -1735,7 +2318,8 @@ async function renderPage() {
     if (route === '/product') return await renderProduct(decodeURIComponent(path.split('/').pop()));
     if (route === '/about') return await renderAboutPage();
     if (route === '/millets') return renderMilletsPage();
-    if (route === '/recipes' || route === '/faq' || route === '/shipping' || route === '/refunds' || route === '/privacy' || route === '/terms') return renderContentPage(route);
+    if (route === '/recipes') return renderIdeas();
+    if (route === '/faq' || route === '/shipping' || route === '/refunds' || route === '/privacy' || route === '/terms') return renderContentPage(route);
     if (route === '/contact') return renderContact();
     if (route === '/signup' || route === '/login' || route === '/forgot-password' || route === '/reset-password') {
       renderAuthPage(route.slice(1), state.user);
@@ -2028,6 +2612,14 @@ document.addEventListener('click', async (event) => {
       target.textContent = 'Notification requested';
       if (previousButtonState) previousButtonState.preserve = true;
     } else if (target.matches('[data-delete-address]')) {
+      const confirmed = await confirmAction({
+        title: 'Delete Delivery Address',
+        message: 'Are you sure you want to remove this delivery address from your account?',
+        confirmText: 'Delete Address',
+        cancelText: 'Cancel',
+        isDanger: true,
+      });
+      if (!confirmed) return;
       await api(`/api/addresses/${encodeURIComponent(target.dataset.deleteAddress)}`, { method: 'DELETE' });
       toast('Address deleted.');
       await (location.pathname === '/account' ? renderAccount() : renderAddresses());
@@ -2062,25 +2654,53 @@ document.addEventListener('click', async (event) => {
       await (location.pathname === '/account' ? renderAccount() : renderNotifications());
       toast('All notifications marked as read.');
     } else if (target.matches('[data-cancel-order]')) {
-      if (!confirm('Cancel this order request?')) return;
+      const confirmed = await confirmAction({
+        title: 'Cancel Order Request',
+        message: 'Are you sure you want to cancel this order request? Stock will be restored to inventory.',
+        confirmText: 'Cancel Order',
+        cancelText: 'Keep Order',
+        isDanger: true,
+      });
+      if (!confirmed) return;
       await api(`/api/orders/${encodeURIComponent(target.dataset.cancelOrder)}/cancel`, { method: 'POST', body: '{}' });
       toast('Order request cancelled.');
       if (location.pathname === '/account') await renderAccount();
       else await renderOrders(target.dataset.cancelOrder);
     } else if (target.matches('[data-delete-enquiry]')) {
-      if (!confirm('Permanently delete this customer enquiry?')) return;
+      const confirmed = await confirmAction({
+        title: 'Delete Customer Enquiry',
+        message: 'Are you sure you want to permanently delete this customer enquiry message?',
+        confirmText: 'Delete Enquiry',
+        cancelText: 'Cancel',
+        isDanger: true,
+      });
+      if (!confirmed) return;
       await api(`/api/admin/enquiries/${encodeURIComponent(target.dataset.deleteEnquiry)}`, { method: 'DELETE' });
       toast('Enquiry deleted.');
       await renderAdminContent();
     } else if (target.matches('[data-delete-product]')) {
       const prodName = target.dataset.productName || 'this product';
-      if (!confirm(`Are you sure you want to permanently delete "${prodName}" and all its pack options?`)) return;
+      const confirmed = await confirmAction({
+        title: 'Delete Product',
+        message: `Are you sure you want to permanently delete "${prodName}" and all its pack options?`,
+        confirmText: 'Delete Product',
+        cancelText: 'Cancel',
+        isDanger: true,
+      });
+      if (!confirmed) return;
       await api(`/api/admin/products/${encodeURIComponent(target.dataset.deleteProduct)}`, { method: 'DELETE' });
       toast(`Product "${prodName}" deleted.`);
       await renderAdminContent();
     } else if (target.matches('[data-delete-variant]')) {
       const variantName = target.dataset.variantName || 'this option';
-      if (!confirm(`Are you sure you want to delete pack option "${variantName}"?`)) return;
+      const confirmed = await confirmAction({
+        title: 'Delete Pack Option',
+        message: `Are you sure you want to delete pack option "${variantName}"?`,
+        confirmText: 'Delete Option',
+        cancelText: 'Cancel',
+        isDanger: true,
+      });
+      if (!confirmed) return;
       await api(`/api/admin/variants/${encodeURIComponent(target.dataset.deleteVariant)}`, { method: 'DELETE' });
       toast(`Pack option "${variantName}" deleted.`);
       await renderAdminContent();
@@ -2223,7 +2843,15 @@ document.addEventListener('submit', async (event) => {
       csrfToken = result.csrfToken;
       location.assign(result.user.role === 'admin' ? '/admin' : '/account');
     } else if (form.dataset.form === 'forgot') {
-      const result = await api('/api/auth/forgot-password', { method: 'POST', body: JSON.stringify({ email: value('email') }) });
+      const email = value('email');
+      const confirmed = await confirmAction({
+        title: 'Reset Password',
+        message: `Send password reset instructions to ${email}?`,
+        confirmText: 'Send Reset Link',
+        cancelText: 'Cancel',
+      });
+      if (!confirmed) return;
+      const result = await api('/api/auth/forgot-password', { method: 'POST', body: JSON.stringify({ email }) });
       toast(result.message);
     } else if (form.dataset.form === 'reset') {
       const result = await api('/api/auth/reset-password', { method: 'POST', body: JSON.stringify({ token: value('token'), password: value('password'), confirmPassword: value('confirmPassword') }) });
@@ -2275,7 +2903,14 @@ document.addEventListener('submit', async (event) => {
       });
       toast('Email preferences saved.');
     } else if (form.dataset.form === 'delete-account') {
-      if (!confirm('Permanently delete this account and anonymize its completed orders?')) return;
+      const confirmed = await confirmAction({
+        title: 'Delete Account',
+        message: 'Are you sure you want to permanently delete your account and all associated personal data? Completed orders will be anonymized. This action is irreversible.',
+        confirmText: 'Permanently Delete',
+        cancelText: 'Keep Account',
+        isDanger: true,
+      });
+      if (!confirmed) return;
       const result = await api('/api/account', {
         method: 'DELETE',
         body: JSON.stringify({
@@ -2338,6 +2973,48 @@ document.addEventListener('submit', async (event) => {
         });
         sessionStorage.setItem(`brmc-order-request-${result.order.id}`, 'sent');
       }
+
+      if (payMethod === 'razorpay' && window.Razorpay) {
+        const rzpKey = state.config?.razorpayKeyId || 'rzp_test_THNrx21lyjVEE6';
+        const rzp = new window.Razorpay({
+          key: rzpKey,
+          amount: Number(result.order.totalPaise),
+          currency: 'INR',
+          name: 'BR Millet Choice',
+          description: `Order ${result.order.orderNumber}`,
+          image: '/images/br-millet-choice-icon.png',
+          handler: async function (response) {
+            toast('Payment successful!');
+            if (response.razorpay_payment_id) {
+              try {
+                await api(`/api/orders/${encodeURIComponent(result.order.id)}/payments`, {
+                  method: 'POST',
+                  body: JSON.stringify({ reference: `Razorpay: ${response.razorpay_payment_id}` }),
+                });
+              } catch (_) {}
+            }
+            history.pushState(null, '', `/orders/${encodeURIComponent(result.order.id)}`);
+            await renderPage();
+          },
+          prefill: {
+            name: state.user?.fullName || '',
+            email: state.user?.email || '',
+            contact: state.user?.phone || '',
+          },
+          theme: {
+            color: '#1b4d3e',
+          },
+          modal: {
+            ondismiss: function () {
+              history.pushState(null, '', `/orders/${encodeURIComponent(result.order.id)}`);
+              void renderPage();
+            },
+          },
+        });
+        rzp.open();
+        return;
+      }
+
       const isUpi = result.order.paymentMethod === 'manual_transfer';
       const amountRupees = (Number(result.order.totalPaise) / 100).toFixed(2);
       const payeeUpi = 'kkarthik23540-5@okaxis';

@@ -94,8 +94,8 @@ export const config = Object.freeze({
   googleClientSecret: process.env.GOOGLE_CLIENT_SECRET ?? '',
   googleCallbackUrl: resolvedGoogleCallbackUrl,
   ga4MeasurementId: process.env.GA4_MEASUREMENT_ID ?? '',
-  razorpayKeyId: process.env.RAZORPAY_KEY_ID ?? '',
-  paymentProvider: process.env.PAYMENT_PROVIDER ?? 'disabled',
+  razorpayKeyId: process.env.RAZORPAY_KEY_ID || 'rzp_test_THNrx21lyjVEE6',
+  paymentProvider: process.env.PAYMENT_PROVIDER ?? 'razorpay',
   paymentMethods: [
     ...(process.env.ENABLE_CASH_ON_HANDOVER !== 'false'
       ? [{ value: 'cash_on_handover', label: 'Cash on delivery (Pay at doorstep)' }]

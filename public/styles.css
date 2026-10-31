@@ -1323,15 +1323,370 @@ body.admin-mode [data-header-cart] {
   .announcement-bar {
     font-size: 0.75rem;
     padding: 0.35rem 0.5rem;
-    white-space: nowrap;
-    overflow-x: auto;
-    scrollbar-width: none;
-    -webkit-overflow-scrolling: touch;
-  }
-  .announcement-bar::-webkit-scrollbar {
-    display: none;
   }
   .trust-item {
     justify-content: center;
   }
+}
+
+/* ==========================================================================
+   BR Millet Choice - Sliding Announcement Ticker
+   ========================================================================== */
+.announcement-bar {
+  background: linear-gradient(90deg, #163e31, #21543d, #163e31);
+  color: #fffdf5;
+  padding: 0.4rem 0;
+  font-size: 0.8rem;
+  font-weight: 500;
+  overflow: hidden;
+  position: relative;
+  white-space: nowrap;
+}
+.announcement-track {
+  display: inline-flex;
+  align-items: center;
+  gap: 1.5rem;
+  animation: announcementSlide 28s linear infinite;
+  will-change: transform;
+}
+.announcement-bar:hover .announcement-track {
+  animation-play-state: paused;
+}
+.announcement-bullet {
+  opacity: 0.65;
+  font-size: 0.75rem;
+}
+@keyframes announcementSlide {
+  0% { transform: translateX(100vw); }
+  100% { transform: translateX(-100%); }
+}
+
+/* ==========================================================================
+   Interactive Confirmation Modal Dialog
+   ========================================================================== */
+.brmc-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 100000;
+  background: rgba(15, 23, 42, 0.65);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  animation: modalFadeIn 0.2s ease-out forwards;
+}
+.brmc-modal-backdrop.is-closing {
+  animation: modalFadeOut 0.16s ease-in forwards;
+}
+.brmc-modal-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  width: 100%;
+  max-width: 440px;
+  padding: 1.5rem;
+  box-shadow: 0 20px 48px rgba(0, 0, 0, 0.22);
+  animation: modalPopIn 0.24s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+.brmc-modal-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+.brmc-modal-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1rem;
+  flex-shrink: 0;
+}
+.brmc-modal-icon.is-brand {
+  background: #ecfdf5;
+  border: 1px solid #a7f3d0;
+}
+.brmc-modal-icon.is-danger {
+  background: #fff1f2;
+  border: 1px solid #fecdd3;
+}
+@keyframes modalFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes modalFadeOut {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+@keyframes modalPopIn {
+  from { opacity: 0; transform: scale(0.94) translateY(8px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+/* ==========================================================================
+   Tabbed Sticky Account Navigation & Panels (No Jump / Menu Hide)
+   ========================================================================== */
+.account-jump-nav {
+  position: sticky !important;
+  top: 4.25rem !important;
+  z-index: 40 !important;
+  background: rgba(248, 250, 252, 0.95) !important;
+  backdrop-filter: blur(8px) !important;
+  -webkit-backdrop-filter: blur(8px) !important;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 0.4rem;
+  display: flex;
+  gap: 0.5rem;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.account-jump-nav::-webkit-scrollbar {
+  display: none;
+}
+.account-nav-tab {
+  cursor: pointer;
+  border: none;
+  background: transparent;
+  padding: 0.55rem 1rem;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 0.88rem;
+  color: #475569;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  white-space: nowrap;
+  transition: all 0.18s ease;
+}
+.account-nav-tab:hover {
+  background: rgba(255, 255, 255, 0.7);
+  color: #1b4d3e;
+}
+.account-nav-tab.active {
+  background: #ffffff !important;
+  color: #1b4d3e !important;
+  font-weight: 700;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+.account-dashboard-tabbed .account-panel {
+  display: none;
+}
+.account-dashboard-tabbed .account-panel.active-tab-panel {
+  display: block;
+  animation: tabFadeIn 0.22s ease-out;
+}
+@keyframes tabFadeIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ==========================================================================
+   Sliding Empty Products Side Notification
+   ========================================================================== */
+.empty-products-slider {
+  overflow: hidden;
+  padding: 1rem 0;
+}
+.sliding-empty-card {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  background: linear-gradient(135deg, #fffdf5 0%, #f0fdf4 100%);
+  border: 1.5px solid #bbf7d0;
+  border-radius: 16px;
+  padding: 1.5rem 1.75rem;
+  box-shadow: 0 6px 20px rgba(27, 77, 62, 0.07);
+  animation: slideInFromSide 0.55s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+.sliding-empty-icon {
+  font-size: 2.2rem;
+  flex-shrink: 0;
+  width: 54px;
+  height: 54px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  background: #ffffff;
+  border: 1px solid #dcfce7;
+}
+@keyframes slideInFromSide {
+  0% { transform: translateX(60px); opacity: 0; }
+  100% { transform: translateX(0); opacity: 1; }
+}
+
+/* ==========================================================================
+   Footer Social Pills (WhatsApp & Instagram)
+   ========================================================================== */
+.footer-social-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+.footer-social-label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #cbd5e1;
+}
+.footer-social-group {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+.social-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.82rem;
+  font-weight: 650;
+  padding: 0.45rem 1.05rem;
+  border-radius: 999px;
+  text-decoration: none;
+  color: #ffffff !important;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+.social-pill:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.22);
+}
+.whatsapp-pill {
+  background: #25d366;
+}
+.instagram-pill {
+  background: linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%);
+}
+
+/* ==========================================================================
+   Shop Category Pills & Mobile Compact Filters
+   ========================================================================== */
+.shop-category-pills {
+  display: flex;
+  gap: 0.4rem;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: 0.2rem;
+}
+.shop-category-pills::-webkit-scrollbar {
+  display: none;
+}
+.filter-pill {
+  border: 1px solid #cbd5e1;
+  background: #ffffff;
+  color: #334155;
+  font-size: 0.82rem;
+  font-weight: 600;
+  padding: 0.35rem 0.75rem;
+  border-radius: 999px;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.filter-pill:hover, .filter-pill.active {
+  background: #1b4d3e;
+  color: #ffffff;
+  border-color: #1b4d3e;
+}
+@media (max-width: 768px) {
+  .admin-filter-panel {
+    padding: 0.75rem;
+  }
+  .admin-filter-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 0.45rem !important;
+  }
+  .admin-filter-grid > div:first-child {
+    grid-column: 1 / -1 !important;
+  }
+  .admin-filter-grid .form-control,
+  .admin-filter-grid .form-select {
+    height: 38px !important;
+    font-size: 0.84rem !important;
+    padding: 0.35rem 0.65rem !important;
+  }
+}
+
+/* ==========================================================================
+   Enhanced Hero & Home Page Showcase Elements
+   ========================================================================== */
+.hero-badge-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: #eef8f2;
+  border: 1px solid #b7e4c7;
+  color: #1b4d3e;
+  padding: 0.35rem 0.85rem;
+  border-radius: 999px;
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+.badge-dot {
+  width: 8px;
+  height: 8px;
+  background: #10b981;
+  border-radius: 50%;
+  animation: pulseDot 2s infinite;
+}
+@keyframes pulseDot {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.4; transform: scale(0.85); }
+}
+.hero-main-title {
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(2rem, 5vw, 3.25rem);
+  font-weight: 700;
+  color: #12372a;
+  line-height: 1.15;
+  margin-bottom: 1rem;
+}
+.hero-tag {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  color: #334155;
+  padding: 0.25rem 0.65rem;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+.hero-floating-badge {
+  position: absolute;
+  bottom: 0.75rem;
+  right: 0.75rem;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 0.6rem 0.9rem;
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  text-align: left;
+}
+.bg-emerald-soft {
+  background: #f0fdf4 !important;
+}
+.comparison-card {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.comparison-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08) !important;
+}
+.step-card {
+  position: relative;
+  transition: transform 0.2s ease;
+}
+.step-card:hover {
+  transform: translateY(-2px);
+}
+.step-num {
+  font-family: monospace;
+  font-weight: 800;
+  font-size: 1.3rem;
+  color: #1b4d3e;
 }

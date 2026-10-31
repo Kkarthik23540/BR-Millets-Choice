@@ -1073,9 +1073,12 @@ app.delete('/api/cart/items/:variantId', requireVerifiedUser, asyncRoute(async (
 app.post('/api/orders', requireUser, asyncRoute(async (req, res) => {
   const data = parse(z.object({
     addressId: z.string().uuid(),
-    paymentMethod: z.enum(['cash_on_handover', 'manual_transfer']),
+    paymentMethod: z.enum(['cash_on_handover', 'manual_transfer', 'cash_on_delivery', 'upi', 'razorpay']),
     customerNote: z.string().trim().max(500).optional().default(''),
   }), req.body);
+  const canonicalPaymentMethod = (data.paymentMethod === 'cash_on_delivery' || data.paymentMethod === 'cash_on_handover')
+    ? 'cash_on_handover'
+    : 'manual_transfer';
   const idempotencyKey = parse(z.string().uuid(), req.get('idempotency-key'));
   const outcome = await inTransaction(async (client) => {
     await client.query('UPDATE users SET email_verified_at = COALESCE(email_verified_at, NOW()) WHERE id = $1', [req.user.id]);
@@ -1131,7 +1134,7 @@ app.post('/api/orders', requireUser, asyncRoute(async (req, res) => {
          subtotal_paise, delivery_fee_paise, total_paise, idempotency_key, customer_note
        ) VALUES ($1, $2, $3::jsonb, 'confirmed', $4, $5, 0, $5, $6, $7)
        RETURNING id, order_number, status, payment_status, total_paise, created_at`,
-      [orderNumber, req.user.id, JSON.stringify(address), data.paymentMethod, subtotal.toString(), idempotencyKey, data.customerNote],
+      [orderNumber, req.user.id, JSON.stringify(address), canonicalPaymentMethod, subtotal.toString(), idempotencyKey, data.customerNote],
     );
     const order = created.rows[0];
     for (const item of itemData) {
