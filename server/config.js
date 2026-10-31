@@ -94,15 +94,10 @@ export const config = Object.freeze({
   googleClientSecret: process.env.GOOGLE_CLIENT_SECRET ?? '',
   googleCallbackUrl: resolvedGoogleCallbackUrl,
   ga4MeasurementId: process.env.GA4_MEASUREMENT_ID ?? '',
-  razorpayKeyId: process.env.RAZORPAY_KEY_ID || 'rzp_test_THNrx21lyjVEE6',
-  paymentProvider: process.env.PAYMENT_PROVIDER ?? 'razorpay',
+  razorpayKeyId: '',
+  paymentProvider: 'cash_on_handover',
   paymentMethods: [
-    ...(process.env.ENABLE_CASH_ON_HANDOVER !== 'false'
-      ? [{ value: 'cash_on_handover', label: 'Cash on delivery (Pay at doorstep)' }]
-      : []),
-    ...(process.env.ENABLE_MANUAL_TRANSFER !== 'false'
-      ? [{ value: 'manual_transfer', label: 'UPI / Manual transfer (instructions provided)' }]
-      : []),
+    { value: 'cash_on_handover', label: 'Cash on delivery (Pay at doorstep)' },
   ],
 });
 

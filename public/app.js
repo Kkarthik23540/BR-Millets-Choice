@@ -288,20 +288,7 @@ function confirmAction({ title = 'Confirmation', message = 'Are you sure you wan
   });
 }
 
-async function loadRazorpayScript() {
-  if (window.Razorpay) return true;
-  return new Promise((resolve) => {
-    const existing = document.querySelector('script[src*="razorpay.com"]');
-    if (existing && window.Razorpay) return resolve(true);
-    const script = document.createElement('script');
-    script.src = 'https://checkout.razorpay.com/v1/checkout.js';
-    script.async = true;
-    script.onload = () => resolve(Boolean(window.Razorpay));
-    script.onerror = () => resolve(false);
-    document.head.appendChild(script);
-    setTimeout(() => resolve(Boolean(window.Razorpay)), 3500);
-  });
-}
+
 
 async function refreshCartBadge() {
   try {
@@ -1496,14 +1483,22 @@ async function renderAccount() {
     </section>`;
 
   appRoot.querySelectorAll('[data-tab-target]').forEach((tabBtn) => {
-    tabBtn.addEventListener('click', () => {
+    tabBtn.addEventListener('click', (e) => {
+      e.preventDefault();
       const target = tabBtn.dataset.tabTarget;
       appRoot.querySelectorAll('[data-tab-target]').forEach((b) => b.classList.remove('active'));
       tabBtn.classList.add('active');
       appRoot.querySelectorAll('[data-panel-name]').forEach((panel) => {
         panel.classList.toggle('active-tab-panel', panel.dataset.panelName === target);
       });
-      window.history.replaceState(null, '', `#account-${target}`);
+      window.history.replaceState(null, '', location.pathname + `#account-${target}`);
+      const nav = document.querySelector('.account-jump-nav');
+      if (nav) {
+        const rect = nav.getBoundingClientRect();
+        if (rect.top < 70) {
+          window.scrollTo({ top: nav.offsetTop - 80, behavior: 'smooth' });
+        }
+      }
     });
   });
 }
@@ -1665,10 +1660,74 @@ async function renderCart() {
     return;
   }
   const data = await api('/api/cart');
-  const totalQuantity = data.items.reduce((sum, item) => sum + item.quantity, 0);
-  document.querySelector('[data-cart-count]').textContent = String(totalQuantity);
-  appRoot.innerHTML = `${pageHeader('Your basket', 'Shopping cart', 'Prices and totals are refreshed from the product catalogue.')}
-    <section class="container section-space">${data.items.length ? `<div class="table-responsive"><table class="table align-middle"><thead><tr><th>Product</th><th>Pack</th><th>Price</th><th>Quantity</th><th>Total</th><th><span class="visually-hidden">Actions</span></th></tr></thead><tbody>${data.items.map((item) => `<tr><td>${escapeHtml(item.productName)}${item.productActive && item.variantActive ? '' : '<span class="text-danger d-block small">Unavailable</span>'}</td><td>${escapeHtml(item.packSize)}</td><td>${money(item.pricePaise)}</td><td><input class="form-control form-control-sm cart-quantity" type="number" min="1" max="99" value="${item.quantity}" data-cart-quantity="${escapeHtml(item.variantId)}" aria-label="Quantity for ${escapeHtml(item.productName)}"></td><td>${money(Number(item.pricePaise) * item.quantity)}</td><td><button class="btn btn-sm btn-outline-danger" data-remove-cart="${escapeHtml(item.variantId)}">Remove</button></td></tr>`).join('')}</tbody></table></div><div class="d-flex flex-column align-items-end"><p class="fs-5">Subtotal <strong>${money(data.subtotalPaise)}</strong></p><p class="small text-secondary">Delivery details are confirmed after review of your request.</p>${buttonLink('/checkout', 'Continue to checkout')}</div>` : emptyState('Your cart is empty', 'Browse the catalogue and choose an available product option.', '/shop', 'Browse products')}</section>`;
+  const totalQuantity = (data.items || []).reduce((sum, item) => sum + item.quantity, 0);
+  document.querySelectorAll('[data-cart-count]').forEach((el) => {
+    el.textContent = String(totalQuantity);
+  });
+
+  appRoot.innerHTML = `${pageHeader('Your basket', 'Shopping cart', 'Live instantaneous cart updates. 100% Cash on Delivery.')}
+    <section class="container section-space">
+      ${data.items.length ? `
+        <div class="row g-4 justify-content-center">
+          <div class="col-lg-8">
+            <div class="cart-items-wrapper">
+              ${data.items.map((item) => `
+                <article class="cart-item-card p-3 p-md-4 rounded-3 border bg-white shadow-sm" data-cart-row="${escapeHtml(item.variantId)}" data-unit-paise="${item.pricePaise}">
+                  <div class="d-flex flex-wrap align-items-center justify-content-between gap-3">
+                    <div class="d-flex align-items-center gap-3">
+                      <div class="p-2 rounded-2 bg-light text-forest fs-3" aria-hidden="true">🌾</div>
+                      <div>
+                        <h2 class="h6 mb-1 fw-bold text-dark">${escapeHtml(item.productName)}</h2>
+                        <div class="small text-secondary">${escapeHtml(item.packSize)} · <span class="fw-semibold text-dark">${money(item.pricePaise)}</span> / pack</div>
+                        ${item.productActive && item.variantActive ? '' : '<span class="badge bg-danger-subtle text-danger mt-1">Currently unavailable</span>'}
+                      </div>
+                    </div>
+                    <div class="d-flex align-items-center gap-3 ms-auto">
+                      <div class="input-group input-group-sm" style="width: 120px;">
+                        <button class="btn btn-outline-secondary cart-stepper-btn" type="button" data-cart-step="-1" data-variant-id="${escapeHtml(item.variantId)}" aria-label="Decrease quantity">−</button>
+                        <input class="form-control text-center fw-bold cart-qty-val" type="number" min="1" max="99" value="${item.quantity}" data-cart-quantity="${escapeHtml(item.variantId)}" readonly aria-label="Quantity for ${escapeHtml(item.productName)}">
+                        <button class="btn btn-outline-secondary cart-stepper-btn" type="button" data-cart-step="1" data-variant-id="${escapeHtml(item.variantId)}" aria-label="Increase quantity">+</button>
+                      </div>
+                      <div class="text-end" style="min-width: 85px;">
+                        <div class="small text-secondary">Total</div>
+                        <strong class="fs-6 text-forest line-item-total" data-line-total="${escapeHtml(item.variantId)}">${money(Number(item.pricePaise) * item.quantity)}</strong>
+                      </div>
+                      <button class="btn btn-sm btn-outline-danger" type="button" data-remove-cart="${escapeHtml(item.variantId)}" title="Remove item" aria-label="Remove ${escapeHtml(item.productName)}">✕</button>
+                    </div>
+                  </div>
+                </article>
+              `).join('')}
+            </div>
+          </div>
+          <div class="col-lg-4">
+            <div class="feature-card p-4 rounded-3 border bg-white shadow-sm sticky-top" style="top: 5rem;">
+              <h2 class="h5 fw-bold mb-3">Order summary</h2>
+              <div class="d-flex justify-content-between align-items-center mb-2">
+                <span class="text-secondary">Subtotal</span>
+                <strong class="fs-5 text-forest" data-cart-subtotal>${money(data.subtotalPaise)}</strong>
+              </div>
+              <div class="d-flex justify-content-between align-items-center mb-2 small text-secondary">
+                <span>Doorstep Delivery</span>
+                <span class="text-success fw-bold">FREE (Hyderabad)</span>
+              </div>
+              <div class="d-flex justify-content-between align-items-center mb-3 small text-secondary">
+                <span>Payment Mode</span>
+                <span class="badge bg-success-subtle text-success fw-bold">💵 Cash on Delivery</span>
+              </div>
+              <hr class="my-3">
+              <div class="d-flex justify-content-between align-items-center fs-5 fw-bold mb-4">
+                <span>Total to Pay</span>
+                <strong class="fs-4 text-forest" data-cart-grandtotal>${money(data.subtotalPaise)}</strong>
+              </div>
+              <div class="d-grid gap-2">
+                ${buttonLink('/checkout', 'Proceed to Checkout (COD) →', 'btn btn-brand btn-lg w-100')}
+                <a href="/shop" class="btn btn-outline-secondary w-100">← Continue shopping</a>
+              </div>
+            </div>
+          </div>
+        </div>
+      ` : emptyState('Your cart is empty', 'Browse the catalogue and choose an available product option.', '/shop', 'Browse products')}
+    </section>`;
 }
 
 async function renderCheckout() {
@@ -1678,42 +1737,27 @@ async function renderCheckout() {
     return;
   }
   const [cart, addressData] = await Promise.all([api('/api/cart'), api('/api/addresses')]);
-  const methods = state.config?.paymentMethods ?? [];
   if (!cart.items.length) {
     appRoot.innerHTML = `${pageHeader('Checkout', 'Review your request')}<section class="container section-space">${emptyState('Your cart is empty', 'Add a product option before checkout.', '/shop', 'Browse products')}</section>`;
     return;
   }
-  if (!methods.length) {
-    appRoot.innerHTML = `${pageHeader('Checkout', 'Order requests are not enabled yet')}<section class="container section-space"><div class="notice">The business has not enabled a payment/fulfilment method. No order has been placed. Please contact BR Millet Choice for availability and payment arrangements.</div></section>`;
-    return;
-  }
-  appRoot.innerHTML = `${pageHeader('Checkout', 'Complete your order', 'Choose your delivery address and instant payment method.')}
+  appRoot.innerHTML = `${pageHeader('Checkout', 'Complete your order', '100% Cash on Delivery (COD) — pay when your fresh millets reach your doorstep.')}
     <section class="container section-space"><div class="row g-5"><div class="col-lg-7">
       ${addressData.addresses.length ? `<form data-form="checkout"><h2 class="h4 mb-3">Delivery address</h2><select class="form-select mb-4" name="addressId" required>${addressData.addresses.map((a) => `<option value="${escapeHtml(a.id)}">${escapeHtml(a.label)} — ${escapeHtml(a.recipientName)}, ${escapeHtml(a.city)} (${escapeHtml(a.phone)})</option>`).join('')}</select>
-      <h2 class="h4 mb-3">Choose payment method</h2>
-      <div class="row g-3 mb-4">
-        <div class="col-12">
-          <label class="feature-card p-3 d-flex align-items-start gap-3 border rounded-3 w-100 mb-0" for="method-cod" style="cursor:pointer">
-            <input class="form-check-input mt-1 flex-shrink-0" type="radio" name="paymentMethod" id="method-cod" value="cash_on_delivery" checked>
-            <div>
-              <div class="fw-bold fs-6">💵 Cash on Delivery (COD)</div>
-              <div class="small text-secondary mt-1">Pay with cash or UPI scan when your order arrives at your delivery doorstep.</div>
-            </div>
-          </label>
+      <h2 class="h4 mb-3">Payment method</h2>
+      <div class="feature-card p-3 p-md-4 border rounded-3 mb-4 bg-light-subtle">
+        <div class="d-flex align-items-center gap-3">
+          <span class="fs-1">💵</span>
+          <div>
+            <h3 class="h5 mb-1 text-success-emphasis fw-bold">Cash on Delivery (COD)</h3>
+            <p class="small text-secondary mb-0">Pay with cash or scan delivery partner's UPI QR at your doorstep upon arrival. No advance online payment required!</p>
+          </div>
         </div>
-        <div class="col-12">
-          <label class="feature-card p-3 d-flex align-items-start gap-3 border rounded-3 w-100 mb-0" for="method-razorpay" style="cursor:pointer">
-            <input class="form-check-input mt-1 flex-shrink-0" type="radio" name="paymentMethod" id="method-razorpay" value="razorpay">
-            <div>
-              <div class="fw-bold fs-6">💳 Online Payment (Razorpay)</div>
-              <div class="small text-secondary mt-1">Pay securely via UPI (Google Pay, PhonePe, Paytm), Credit/Debit Card, or NetBanking.</div>
-            </div>
-          </label>
-        </div>
+        <input type="hidden" name="paymentMethod" value="cash_on_handover">
       </div>
       <div class="mt-4"><label class="form-label" for="customer-note">Delivery instructions or landmark (optional)</label><textarea class="form-control" id="customer-note" name="customerNote" rows="2" maxlength="500" placeholder="e.g. Leave with security, call before arrival..."></textarea></div>
-      <div class="form-check mt-3 mb-3"><input class="form-check-input" type="checkbox" id="confirm-request" checked required><label class="form-check-label" for="confirm-request">I confirm that all delivery details are correct.</label></div><button class="btn btn-brand btn-lg w-100" type="submit">Confirm and Place Order</button></form>` : emptyState('Add a delivery address first', 'Checkout requires a saved address for your account.', '/addresses', 'Manage addresses')}
-    </div><aside class="col-lg-5"><div class="feature-card"><h2 class="h4">Order summary</h2><ul class="detail-list">${cart.items.map((item) => `<li class="d-flex justify-content-between gap-2"><span>${escapeHtml(item.productName)} · ${escapeHtml(item.packSize)} × ${item.quantity}</span><strong>${money(Number(item.pricePaise) * item.quantity)}</strong></li>`).join('')}</ul><div class="d-flex justify-content-between fs-5"><span>Subtotal</span><strong>${money(cart.subtotalPaise)}</strong></div><p class="small text-secondary mt-3 mb-0">Free delivery in Hyderabad on orders above ₹500.</p></div></aside></div></section>`;
+      <div class="form-check mt-3 mb-3"><input class="form-check-input" type="checkbox" id="confirm-request" checked required><label class="form-check-label" for="confirm-request">I confirm that all delivery details are correct.</label></div><button class="btn btn-brand btn-lg w-100" type="submit">Place Cash on Delivery Order</button></form>` : emptyState('Add a delivery address first', 'Checkout requires a saved address for your account.', '/addresses', 'Manage addresses')}
+    </div><aside class="col-lg-5"><div class="feature-card"><h2 class="h4">Order summary</h2><ul class="detail-list">${cart.items.map((item) => `<li class="d-flex justify-content-between gap-2"><span>${escapeHtml(item.productName)} · ${escapeHtml(item.packSize)} × ${item.quantity}</span><strong>${money(Number(item.pricePaise) * item.quantity)}</strong></li>`).join('')}</ul><div class="d-flex justify-content-between fs-5"><span>Total to pay (COD)</span><strong>${money(cart.subtotalPaise)}</strong></div><p class="small text-secondary mt-3 mb-0">Free delivery in Hyderabad on orders above ₹500.</p></div></aside></div></section>`;
 }
 
 async function renderOrders(orderId = '') {
@@ -1724,66 +1768,18 @@ async function renderOrders(orderId = '') {
   }
   if (orderId) {
     const { order } = await api(`/api/orders/${encodeURIComponent(orderId)}`);
-    const isManual = order.paymentMethod === 'manual_transfer';
     const isPaid = order.paymentStatus === 'paid';
-    const paymentsList = (order.payments ?? []);
     appRoot.innerHTML = `${pageHeader(order.orderNumber, 'Order details', `Order status: ${order.status.replaceAll('_', ' ')}.`)}
       <section class="container section-space">
-        ${isManual && !isPaid ? `
-          <div class="feature-card p-4 mb-4 border border-success-subtle bg-light">
-            <div class="d-flex align-items-center gap-2 mb-2">
-              <span class="fs-4">📱</span>
-              <h3 class="h5 text-success-emphasis mb-0">UPI / Direct Transfer Instructions</h3>
-            </div>
-            <p class="small mb-3">Please transfer <strong>${money(order.totalPaise)}</strong> using your preferred UPI app (Google Pay, PhonePe, Paytm, or BHIM):</p>
-            <div class="p-3 bg-white rounded border mb-3">
-              <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-2">
-                <span><strong>UPI ID:</strong> <code class="fs-6 text-dark user-select-all">kkarthik23540-5@okaxis</code></span>
-                <button class="btn btn-sm btn-outline-brand" type="button" data-copy-text="kkarthik23540-5@okaxis">Copy UPI ID</button>
-              </div>
-              ${state.config?.supportPhone ? `
-              <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
-                <span><strong>Phone / GPay / PhonePe:</strong> <code class="fs-6 text-dark user-select-all">${escapeHtml(state.config.supportPhone)}</code></span>
-                <button class="btn btn-sm btn-outline-brand" type="button" data-copy-text="${escapeHtml(state.config.supportPhone)}">Copy Number</button>
-              </div>` : ''}
-              <div class="small text-secondary mt-2">Payee: BR Millet Choice (Karthik Reddy)</div>
-            </div>
-            ${paymentsList.length ? `
-              <div class="mb-3 p-2 bg-success-subtle text-success-emphasis rounded border border-success-subtle small">
-                <strong>Submitted Payment Reference:</strong> ${paymentsList.map((p) => escapeHtml(p.reference || 'Submitted')).join(', ')}
-                <div class="text-secondary mt-1">Status: ${escapeHtml(order.paymentStatus)} — The team is verifying your payment.</div>
-              </div>
-            ` : `
-              <form data-form="submit-payment-reference" data-order-id="${escapeHtml(order.id)}" class="mt-3">
-                <label class="form-label small fw-bold" for="upi-ref-input">Have you paid? Enter your UPI 12-digit UTR / Transaction reference:</label>
-                <div class="input-group">
-                  <input class="form-control" id="upi-ref-input" name="reference" placeholder="e.g. 428910293847" required minlength="3" maxlength="100">
-                  <button class="btn btn-brand" type="submit">Submit UTR</button>
-                </div>
-                <div class="form-text">Your UTR is found in your payment receipt details in GPay, PhonePe, or Paytm.</div>
-              </form>
-            `}
-            ${state.config?.whatsapp || state.config?.supportPhone ? `
-            <div class="mt-3 pt-3 border-top d-flex flex-wrap gap-2 align-items-center">
-              <span class="small text-secondary">Need quick verification?</span>
-              <a class="btn btn-sm btn-outline-success" target="_blank" rel="noopener noreferrer" href="https://wa.me/${(state.config.whatsapp || state.config.supportPhone).replace(/\D/g, '')}?text=${encodeURIComponent('Hello BR Millet Choice, I have submitted payment for Order ' + order.orderNumber + ' of amount ' + money(order.totalPaise) + '. Please check!')}">
-                💬 Send Screenshot on WhatsApp
-              </a>
-            </div>` : ''}
+        <div class="alert alert-success d-flex align-items-center gap-3 mb-4 p-3 rounded-3 shadow-sm">
+          <span class="fs-2">💵</span>
+          <div>
+            <h3 class="h6 fw-bold mb-1">Payment Method: Cash on Delivery (COD)</h3>
+            <p class="small mb-0">Please keep <strong>${money(order.totalPaise)}</strong> ready in cash or UPI scan when your fresh millets arrive at your doorstep.</p>
           </div>
-        ` : order.paymentMethod === 'cash_on_handover' ? `
-          <div class="alert alert-info d-flex align-items-center gap-2 mb-4">
-            <span class="fs-4">💵</span>
-            <div><strong>Cash on Delivery (COD):</strong> Please keep <strong>${money(order.totalPaise)}</strong> ready in cash when the delivery person arrives at your address.</div>
-          </div>
-        ` : isPaid ? `
-          <div class="alert alert-success d-flex align-items-center gap-2 mb-4">
-            <span class="fs-4">✅</span>
-            <div><strong>Payment Confirmed & Verified.</strong> Thank you!</div>
-          </div>
-        ` : ''}
+        </div>
 
-        <div class="row g-4"><div class="col-lg-7"><div class="feature-card"><h2 class="h4">Items</h2><ul class="detail-list">${order.items.map((item) => `<li class="d-flex justify-content-between"><span>${escapeHtml(item.productName)} · ${escapeHtml(item.packSize)} × ${item.quantity}</span><strong>${money(item.lineTotalPaise)}</strong></li>`).join('')}</ul><div class="d-flex justify-content-between"><span>Total</span><strong>${money(order.totalPaise)}</strong></div><p class="small text-secondary mt-2 mb-0">Payment status: <span class="badge ${isPaid ? 'bg-success' : 'bg-secondary'}">${escapeHtml(order.paymentStatus)}</span> · Method: ${escapeHtml(order.paymentMethod.replaceAll('_', ' '))}</p></div></div>
+        <div class="row g-4"><div class="col-lg-7"><div class="feature-card"><h2 class="h4">Items</h2><ul class="detail-list">${order.items.map((item) => `<li class="d-flex justify-content-between"><span>${escapeHtml(item.productName)} · ${escapeHtml(item.packSize)} × ${item.quantity}</span><strong>${money(item.lineTotalPaise)}</strong></li>`).join('')}</ul><div class="d-flex justify-content-between"><span>Total</span><strong>${money(order.totalPaise)}</strong></div><p class="small text-secondary mt-2 mb-0">Payment status: <span class="badge ${isPaid ? 'bg-success' : 'bg-warning-subtle text-dark'}">${escapeHtml(order.paymentStatus.replaceAll('_', ' '))}</span> · Method: Cash on Delivery</p></div></div>
         <div class="col-lg-5"><div class="feature-card"><h2 class="h4">Delivery details</h2><p>${escapeHtml(order.address.recipient_name)} · ${escapeHtml(order.address.phone)}<br>${escapeHtml(order.address.line1)} ${escapeHtml(order.address.line2)}<br>${escapeHtml(order.address.city)}, ${escapeHtml(order.address.state)} ${escapeHtml(order.address.postal_code)}</p><h3 class="h5">Status history</h3><ul class="detail-list">${order.history.map((item) => `<li><strong>${escapeHtml(item.status.replaceAll('_', ' '))}</strong><br><span class="small text-secondary">${new Date(item.createdAt).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })} · ${escapeHtml(item.note || 'Status updated')}</span></li>`).join('')}</ul>${['awaiting_confirmation', 'confirmed'].includes(order.status) ? `<button class="btn btn-outline-danger" data-cancel-order="${escapeHtml(order.id)}">Cancel order</button>` : ''}</div></div></div>
       </section>`;
     return;
@@ -2402,13 +2398,95 @@ document.addEventListener('click', async (event) => {
     } else if (target.matches('[data-add-to-cart]')) {
       const variantId = target.dataset.addToCart;
       const quantity = Number(document.querySelector('#product-quantity')?.value ?? 1);
-      await api('/api/cart/items', { method: 'POST', body: JSON.stringify({ variantId, quantity }) });
-      void refreshCartBadge();
-      if (state.analyticsStarted) window.gtag('event', 'add_to_cart', { currency: 'INR' });
-      toast('Added to your cart.');
-      target.textContent = 'Added';
+      // Instant optimistic live update of cart badges across the screen
+      document.querySelectorAll('[data-cart-count]').forEach((el) => {
+        const prev = parseInt(el.textContent || '0', 10) || 0;
+        el.textContent = String(prev + quantity);
+      });
+      target.textContent = '✓ Added to Cart';
+      try {
+        await api('/api/cart/items', { method: 'POST', body: JSON.stringify({ variantId, quantity }) });
+        if (state.analyticsStarted) window.gtag('event', 'add_to_cart', { currency: 'INR' });
+        toast('Added to your cart.');
+        void refreshCartBadge();
+      } catch (err) {
+        toast(err.message || 'Could not add to cart', true);
+        void refreshCartBadge();
+      }
       target.disabled = false;
       if (previousButtonState) previousButtonState.preserve = true;
+    } else if (target.closest('[data-cart-step]')) {
+      const stepBtn = target.closest('[data-cart-step]');
+      const step = parseInt(stepBtn.dataset.cartStep, 10);
+      const variantId = stepBtn.dataset.variantId;
+      const row = document.querySelector(`[data-cart-row="${CSS.escape(variantId)}"]`);
+      if (row) {
+        const qtyInput = row.querySelector('.cart-qty-val');
+        const lineTotalEl = row.querySelector('[data-line-total]');
+        const unitPaise = parseInt(row.dataset.unitPaise, 10) || 0;
+        let currentQty = parseInt(qtyInput?.value || '1', 10);
+        let newQty = currentQty + step;
+
+        if (newQty < 1) {
+          const confirmed = await confirmAction({
+            title: 'Remove Item',
+            message: 'Do you want to remove this product from your cart?',
+            confirmText: 'Remove',
+            cancelText: 'Keep Item',
+            isDanger: true,
+          });
+          if (!confirmed) return;
+          row.style.opacity = '0.3';
+          row.style.pointerEvents = 'none';
+          try {
+            await api(`/api/cart/items/${encodeURIComponent(variantId)}`, { method: 'DELETE' });
+            toast('Item removed from cart.');
+            await renderCart();
+            void refreshCartBadge();
+          } catch (err) {
+            toast(err.message || 'Could not remove item', true);
+            row.style.opacity = '1';
+            row.style.pointerEvents = 'auto';
+          }
+          return;
+        }
+
+        if (newQty > 99) return;
+
+        // 1. INSTANT 0ms DOM UPDATE: quantity & line total
+        if (qtyInput) qtyInput.value = String(newQty);
+        if (lineTotalEl) lineTotalEl.textContent = money(unitPaise * newQty);
+
+        // Recalculate subtotal & grandtotal instantly across all rows
+        let newSubtotalPaise = 0;
+        let newTotalQty = 0;
+        document.querySelectorAll('[data-cart-row]').forEach((r) => {
+          const q = parseInt(r.querySelector('.cart-qty-val')?.value || '0', 10);
+          const p = parseInt(r.dataset.unitPaise, 10) || 0;
+          newSubtotalPaise += (q * p);
+          newTotalQty += q;
+        });
+        const subtotalEl = document.querySelector('[data-cart-subtotal]');
+        if (subtotalEl) subtotalEl.textContent = money(newSubtotalPaise);
+        const grandTotalEl = document.querySelector('[data-cart-grandtotal]');
+        if (grandTotalEl) grandTotalEl.textContent = money(newSubtotalPaise);
+
+        // Instantly update ALL cart count badges across the page
+        document.querySelectorAll('[data-cart-count]').forEach((el) => {
+          el.textContent = String(newTotalQty);
+        });
+
+        // 2. Background API sync
+        try {
+          await api(`/api/cart/items/${encodeURIComponent(variantId)}`, {
+            method: 'PATCH',
+            body: JSON.stringify({ quantity: newQty }),
+          });
+        } catch (err) {
+          toast(err.message || 'Could not update quantity', true);
+          await renderCart();
+        }
+      }
     } else if (target.matches('[data-buy-now]')) {
       const variantId = target.dataset.buyNow;
       const quantity = Number(document.querySelector('#product-quantity')?.value ?? 1);
@@ -2482,11 +2560,34 @@ document.addEventListener('click', async (event) => {
           : '<div>No movement records.</div>';
       }
       toast('Inventory history loaded.');
-    } else if (target.matches('[data-remove-cart]')) {
-      await api(`/api/cart/items/${encodeURIComponent(target.dataset.removeCart)}`, { method: 'DELETE' });
-      void refreshCartBadge();
-      await renderCart();
-      toast('Item removed from your cart.');
+    } else if (target.matches('[data-remove-cart]') || target.closest('[data-remove-cart]')) {
+      const removeBtn = target.matches('[data-remove-cart]') ? target : target.closest('[data-remove-cart]');
+      const variantId = removeBtn.dataset.removeCart;
+      const confirmed = await confirmAction({
+        title: 'Remove Item',
+        message: 'Are you sure you want to remove this item from your cart?',
+        confirmText: 'Remove',
+        cancelText: 'Cancel',
+        isDanger: true,
+      });
+      if (!confirmed) return;
+      const row = document.querySelector(`[data-cart-row="${CSS.escape(variantId)}"]`);
+      if (row) {
+        row.style.opacity = '0.3';
+        row.style.pointerEvents = 'none';
+      }
+      try {
+        await api(`/api/cart/items/${encodeURIComponent(variantId)}`, { method: 'DELETE' });
+        toast('Item removed from your cart.');
+        await renderCart();
+        void refreshCartBadge();
+      } catch (err) {
+        toast(err.message || 'Could not remove item', true);
+        if (row) {
+          row.style.opacity = '1';
+          row.style.pointerEvents = 'auto';
+        }
+      }
     } else if (target.matches('[data-logout]')) {
       await api('/api/auth/logout', { method: 'POST' });
       csrfToken = '';
@@ -2797,13 +2898,12 @@ document.addEventListener('submit', async (event) => {
       toast(result.message);
     } else if (form.dataset.form === 'checkout') {
       if (state.analyticsStarted) window.gtag('event', 'begin_checkout', { currency: 'INR' });
-      const payMethod = value('paymentMethod');
       const customerNote = value('customerNote') || '';
 
       const result = await api('/api/orders', {
         method: 'POST',
         headers: { 'Idempotency-Key': crypto.randomUUID() },
-        body: JSON.stringify({ addressId: value('addressId'), paymentMethod: payMethod, customerNote }),
+        body: JSON.stringify({ addressId: value('addressId'), paymentMethod: 'cash_on_handover', customerNote }),
       });
       if (state.analyticsStarted && !sessionStorage.getItem(`brmc-order-request-${result.order.id}`)) {
         window.gtag('event', 'order_request_created', {
@@ -2812,81 +2912,16 @@ document.addEventListener('submit', async (event) => {
         });
         sessionStorage.setItem(`brmc-order-request-${result.order.id}`, 'sent');
       }
+      // Instant live update: clear cart badge count
+      document.querySelectorAll('[data-cart-count]').forEach((el) => {
+        el.textContent = '0';
+      });
       void refreshCartBadge();
-
-      if (payMethod === 'razorpay') {
-        const loaded = await loadRazorpayScript();
-        if (!loaded || !window.Razorpay) {
-          toast('Online payment gateway unavailable. Your order has been placed as Cash on Delivery.');
-          history.pushState(null, '', `/orders/${encodeURIComponent(result.order.id)}`);
-          await renderPage();
-          return;
-        }
-
-        const rzpKey = state.config?.razorpayKeyId || 'rzp_test_THNrx21lyjVEE6';
-        const addressEl = form.querySelector('select[name="addressId"]');
-        const selectedAddressText = addressEl ? addressEl.selectedOptions[0]?.textContent : '';
-        const phoneMatch = selectedAddressText.match(/\(([^)]+)\)/);
-        const contactDigits = phoneMatch ? phoneMatch[1].replace(/\D/g, '') : '';
-        const validContact = contactDigits.length >= 10 ? contactDigits.slice(-10) : undefined;
-
-        const prefillData = {
-          name: state.user?.fullName || 'Customer',
-          email: state.user?.email || '',
-        };
-        if (validContact) prefillData.contact = validContact;
-
-        try {
-          const rzp = new window.Razorpay({
-            key: rzpKey,
-            amount: Number(result.order.totalPaise),
-            currency: 'INR',
-            name: 'BR Millet Choice',
-            description: `Order ${result.order.orderNumber}`,
-            image: '/images/br-millet-choice-icon.png',
-            handler: async function (response) {
-              toast('Payment successful!');
-              if (response.razorpay_payment_id) {
-                try {
-                  await api(`/api/orders/${encodeURIComponent(result.order.id)}/payments`, {
-                    method: 'POST',
-                    body: JSON.stringify({ reference: `Razorpay: ${response.razorpay_payment_id}` }),
-                  });
-                } catch (_) {}
-              }
-              history.pushState(null, '', `/orders/${encodeURIComponent(result.order.id)}`);
-              await renderPage();
-            },
-            prefill: prefillData,
-            theme: {
-              color: '#1b4d3e',
-            },
-            modal: {
-              ondismiss: function () {
-                toast('Order booked! Stock reserved. You can view your order status.');
-                history.pushState(null, '', `/orders/${encodeURIComponent(result.order.id)}`);
-                void renderPage();
-              },
-            },
-          });
-          rzp.on('payment.failed', function (errResp) {
-            console.warn('Razorpay payment failed:', errResp.error);
-            toast(errResp.error?.description || 'Payment was not completed. Stock is reserved for your order.');
-            history.pushState(null, '', `/orders/${encodeURIComponent(result.order.id)}`);
-            void renderPage();
-          });
-          rzp.open();
-          return;
-        } catch (err) {
-          console.error('Razorpay initialization error:', err);
-          toast(`Razorpay error: ${err.message || 'Payment window could not be opened'}`);
-        }
-      }
 
       appRoot.innerHTML = `${pageHeader('Order Confirmed', 'Thank you for your order!')}
         <section class="container content-shell">
           <div class="notice mb-4">
-            Your order <strong>${escapeHtml(result.order.orderNumber)}</strong> has been confirmed successfully! Our Hyderabad milling team is packing your fresh unpolished millets. Pay with Cash or UPI when delivered at your doorstep.
+            Your Cash on Delivery order <strong>${escapeHtml(result.order.orderNumber)}</strong> has been booked successfully! Our Hyderabad milling team is packing your fresh unpolished millets. Pay with Cash or UPI scan when delivered to your doorstep.
           </div>
           <div class="p-3 bg-light rounded-3 border mb-4">
             <div class="d-flex justify-content-between mb-2"><span>Order Number:</span><strong>${escapeHtml(result.order.orderNumber)}</strong></div>
@@ -2899,6 +2934,7 @@ document.addEventListener('submit', async (event) => {
             ${buttonLink('/shop', 'Continue shopping', 'btn-outline-brand')}
           </div>
         </section>`;
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     } else if (form.dataset.form === 'admin-product') {
       const active = formData.has('active');
       const imageUrl = await uploadAdminImage(form);

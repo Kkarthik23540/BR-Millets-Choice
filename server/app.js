@@ -295,8 +295,8 @@ app.get('/api/config', asyncRoute(async (_req, res) => {
     ...Object.fromEntries(Object.entries(businessDetails).map(([key, value]) => [key, value ?? null])),
     emailConfigured,
     googleConfigured: Boolean(config.googleClientId && config.googleClientSecret && config.googleCallbackUrl),
-    paymentsEnabled: Boolean(config.razorpayKeyId),
-    razorpayKeyId: config.razorpayKeyId || null,
+    paymentsEnabled: true,
+    razorpayKeyId: null,
     paymentMethods: config.paymentMethods,
     analyticsId: config.ga4MeasurementId || null,
   });
@@ -1073,12 +1073,10 @@ app.delete('/api/cart/items/:variantId', requireVerifiedUser, asyncRoute(async (
 app.post('/api/orders', requireUser, asyncRoute(async (req, res) => {
   const data = parse(z.object({
     addressId: z.string().uuid(),
-    paymentMethod: z.enum(['cash_on_handover', 'manual_transfer', 'cash_on_delivery', 'upi', 'razorpay']),
+    paymentMethod: z.string().optional().default('cash_on_handover'),
     customerNote: z.string().trim().max(500).optional().default(''),
   }), req.body);
-  const canonicalPaymentMethod = (data.paymentMethod === 'cash_on_delivery' || data.paymentMethod === 'cash_on_handover')
-    ? 'cash_on_handover'
-    : 'manual_transfer';
+  const canonicalPaymentMethod = 'cash_on_handover';
   const idempotencyKey = parse(z.string().uuid(), req.get('idempotency-key'));
   const outcome = await inTransaction(async (client) => {
     await client.query('UPDATE users SET email_verified_at = COALESCE(email_verified_at, NOW()) WHERE id = $1', [req.user.id]);
