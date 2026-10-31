@@ -288,6 +288,31 @@ function confirmAction({ title = 'Confirmation', message = 'Are you sure you wan
   });
 }
 
+async function loadRazorpayScript() {
+  if (window.Razorpay) return true;
+  return new Promise((resolve) => {
+    const existing = document.querySelector('script[src*="razorpay.com"]');
+    if (existing && window.Razorpay) return resolve(true);
+    const script = document.createElement('script');
+    script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+    script.async = true;
+    script.onload = () => resolve(Boolean(window.Razorpay));
+    script.onerror = () => resolve(false);
+    document.head.appendChild(script);
+    setTimeout(() => resolve(Boolean(window.Razorpay)), 3500);
+  });
+}
+
+async function refreshCartBadge() {
+  try {
+    const data = await api('/api/cart');
+    const totalQuantity = (data.items || []).reduce((sum, item) => sum + item.quantity, 0);
+    document.querySelectorAll('[data-cart-count]').forEach((el) => {
+      el.textContent = String(totalQuantity);
+    });
+  } catch {}
+}
+
 async function getConfig() {
   if (!state.config) {
     try {
@@ -358,51 +383,48 @@ function cardGrid(products) {
 }
 
 async function renderHome() {
-  const data = await api('/api/products');
+  const [data, reviewsRes] = await Promise.all([
+    api('/api/products').catch(() => ({ products: [] })),
+    api('/api/reviews').catch(() => ({ reviews: [] })),
+  ]);
   const products = data.products || [];
-  const topProducts = products.slice(0, 3);
+  const realReviews = (reviewsRes.reviews || []).filter((r) => r.isApproved !== false && r.comment);
+
   appRoot.innerHTML = `
-    <!-- Hero Section -->
-    <section class="hero scroll-reveal-item position-relative overflow-hidden">
+    <!-- Clean Minimal Hero -->
+    <section class="hero scroll-reveal-item position-relative overflow-hidden py-4">
       <div class="container">
-        <div class="row align-items-center gy-4 gy-lg-5">
+        <div class="row align-items-center gy-4">
           <div class="col-lg-7">
             <div class="hero-badge-pill mb-3">
               <span class="badge-dot"></span>
-              <span>100% Native Stone-Ground Supergrains</span>
+              <span>100% Native Stone-Ground Millets</span>
             </div>
             <h1 class="hero-main-title">Pure Millets, Healthy Living.</h1>
             <p class="hero-copy">
-              Nutrient-rich, unpolished supergrains stone-ground fresh weekly in Hyderabad. Naturally rich in dietary fiber, slow-burning complex carbs, and essential minerals for your family's daily wellness.
+              100% pure stone-ground unpolished millets freshly prepared in Hyderabad. Wholesome daily nutrition for your entire family.
             </p>
-            <div class="hero-feature-tags d-flex flex-wrap gap-2 my-3">
+            <div class="d-flex flex-wrap gap-2 my-3">
               <span class="hero-tag">🌾 100% Unpolished</span>
-              <span class="hero-tag">🚫 Zero Bleach &amp; Chemicals</span>
-              <span class="hero-tag">🩺 Diabetic &amp; Heart Friendly</span>
-              <span class="hero-tag">⚡ Fast Hyderabad Delivery</span>
+              <span class="hero-tag">⚙️ Stone-Ground</span>
+              <span class="hero-tag">🌿 Gluten-Free</span>
+              <span class="hero-tag">💵 COD Available</span>
             </div>
             <div class="d-flex flex-wrap gap-3 mt-4">
               ${buttonLink('/shop', 'Shop Fresh Millets →', 'btn-brand btn-lg shadow-sm')}
-              ${buttonLink('/recipes', 'Explore Usage Ideas 🍲', 'btn-outline-brand btn-lg')}
+              ${buttonLink('/recipes', 'Usage Ideas 🍲', 'btn-outline-brand btn-lg')}
             </div>
           </div>
           <div class="col-lg-5 text-center">
             <div class="hero-brand-card position-relative">
-              <img src="/images/br-millet-choice-logo.png" alt="BR Millets Choice — Pure Millets, Healthy Living" width="640" height="640" class="img-fluid hero-logo-img">
-              <div class="hero-floating-badge shadow-sm">
-                <span class="fs-5">✨</span>
-                <div>
-                  <strong>Freshly Milled</strong>
-                  <small class="d-block text-secondary">Hyderabad batches weekly</small>
-                </div>
-              </div>
+              <img src="/images/br-millet-choice-logo.png" alt="BR Millets Choice" width="480" height="480" class="img-fluid hero-logo-img">
             </div>
           </div>
         </div>
       </div>
     </section>
 
-    <!-- Trust Strip -->
+    <!-- 4 Quick Trust Badges -->
     <section class="trust-strip py-4 scroll-reveal-item">
       <div class="container">
         <div class="row gy-3">
@@ -411,16 +433,7 @@ async function renderHome() {
               <span class="trust-icon" aria-hidden="true">🌾</span>
               <div>
                 <strong>100% Pure &amp; Raw</strong>
-                <small>Unpolished with bran intact</small>
-              </div>
-            </div>
-          </div>
-          <div class="col-6 col-md-3">
-            <div class="trust-item">
-              <span class="trust-icon" aria-hidden="true">🩺</span>
-              <div>
-                <strong>Low Glycemic Index</strong>
-                <small>Steady energy, diabetic friendly</small>
+                <small>Unpolished with bran</small>
               </div>
             </div>
           </div>
@@ -428,8 +441,17 @@ async function renderHome() {
             <div class="trust-item">
               <span class="trust-icon" aria-hidden="true">⚙️</span>
               <div>
-                <strong>Cold Stone-Ground</strong>
-                <small>Retains natural grain oils</small>
+                <strong>Stone-Ground</strong>
+                <small>Traditional milling</small>
+              </div>
+            </div>
+          </div>
+          <div class="col-6 col-md-3">
+            <div class="trust-item">
+              <span class="trust-icon" aria-hidden="true">🩺</span>
+              <div>
+                <strong>Diabetic Friendly</strong>
+                <small>Rich in natural fiber</small>
               </div>
             </div>
           </div>
@@ -437,8 +459,8 @@ async function renderHome() {
             <div class="trust-item">
               <span class="trust-icon" aria-hidden="true">🚚</span>
               <div>
-                <strong>Direct Doorstep</strong>
-                <small>Hyderabad delivery over ₹500</small>
+                <strong>Direct Delivery</strong>
+                <small>Cash on Delivery</small>
               </div>
             </div>
           </div>
@@ -446,192 +468,62 @@ async function renderHome() {
       </div>
     </section>
 
-    <!-- Featured Millets Showcase -->
+    <!-- Live Products on Homepage -->
     <section class="section-space scroll-reveal-item">
       <div class="container">
         <div class="d-flex flex-wrap justify-content-between align-items-end gap-3 mb-4">
           <div>
-            <p class="eyebrow mb-1">Our Farm Harvest</p>
-            <h2 class="section-heading mb-2">Explore Our Pure Products</h2>
-            <p class="section-intro mb-0">Select your favorite stone-ground millet powders. When stock is in, order directly online.</p>
+            <p class="eyebrow mb-1">Our Products</p>
+            <h2 class="section-heading mb-0">Fresh Millet Flour &amp; Grains</h2>
           </div>
-          ${buttonLink('/shop', 'View full catalogue →', 'btn-outline-brand')}
+          ${buttonLink('/shop', 'View all products →', 'btn-outline-brand')}
         </div>
-        ${cardGrid(topProducts)}
+        ${cardGrid(products)}
       </div>
     </section>
 
-    <!-- Nutritional Comparison: Why Switch to Millets? -->
-    <section class="soft-section section-space scroll-reveal-item">
+    <!-- Real Customer Reviews Only -->
+    ${realReviews.length ? `
+    <section class="section-space soft-section scroll-reveal-item">
       <div class="container">
-        <div class="text-center max-w-700 mx-auto mb-5">
-          <p class="eyebrow mb-1">Health Comparison</p>
-          <h2 class="section-heading mb-2">Why Your Family Needs Millets</h2>
-          <p class="section-intro mb-0">See how pure unpolished millets compare to ordinary polished white rice and refined wheat.</p>
-        </div>
-        <div class="row g-4 align-items-stretch">
-          <div class="col-md-6">
-            <div class="comparison-card comparison-bad h-100 p-4 rounded-4 border bg-white shadow-sm">
-              <div class="d-flex align-items-center gap-2 mb-3">
-                <span class="fs-4">🍚</span>
-                <h3 class="h5 mb-0 text-danger fw-bold">Polished White Rice &amp; Maida</h3>
-              </div>
-              <ul class="comparison-list list-unstyled mb-0">
-                <li class="d-flex align-items-start gap-2 mb-2 text-secondary">
-                  <span class="text-danger fw-bold">✕</span>
-                  <span>Stripped of outer nutrient-rich bran during heavy polishing</span>
-                </li>
-                <li class="d-flex align-items-start gap-2 mb-2 text-secondary">
-                  <span class="text-danger fw-bold">✕</span>
-                  <span>High Glycemic Index causes rapid blood sugar spikes</span>
-                </li>
-                <li class="d-flex align-items-start gap-2 mb-2 text-secondary">
-                  <span class="text-danger fw-bold">✕</span>
-                  <span>Low fiber leads to post-meal sluggishness and quick hunger crashes</span>
-                </li>
-                <li class="d-flex align-items-start gap-2 text-secondary">
-                  <span class="text-danger fw-bold">✕</span>
-                  <span>Often chemically bleached and fumigated for prolonged shelf-life</span>
-                </li>
-              </ul>
-            </div>
-          </div>
-          <div class="col-md-6">
-            <div class="comparison-card comparison-good h-100 p-4 rounded-4 border border-success-subtle bg-emerald-soft shadow-sm">
-              <div class="d-flex align-items-center gap-2 mb-3">
-                <span class="fs-4">🌾</span>
-                <h3 class="h5 mb-0 text-forest fw-bold">BR Stone-Ground Millets</h3>
-              </div>
-              <ul class="comparison-list list-unstyled mb-0">
-                <li class="d-flex align-items-start gap-2 mb-2 text-forest-deep">
-                  <span class="text-success fw-bold">✓</span>
-                  <span>100% Unpolished: Retains complete dietary fiber, germ &amp; bran</span>
-                </li>
-                <li class="d-flex align-items-start gap-2 mb-2 text-forest-deep">
-                  <span class="text-success fw-bold">✓</span>
-                  <span>Low GI: Slow, sustained release of glucose for balanced energy</span>
-                </li>
-                <li class="d-flex align-items-start gap-2 mb-2 text-forest-deep">
-                  <span class="text-success fw-bold">✓</span>
-                  <span>3x more dietary fiber, natural calcium, iron, and magnesium</span>
-                </li>
-                <li class="d-flex align-items-start gap-2 text-forest-deep">
-                  <span class="text-success fw-bold">✓</span>
-                  <span>Zero chemicals, zero bleach: Pure grain from farm to kitchen</span>
-                </li>
-              </ul>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- The 4-Step Fresh Process -->
-    <section class="section-space scroll-reveal-item">
-      <div class="container">
-        <div class="row align-items-center gy-4">
-          <div class="col-lg-5">
-            <p class="eyebrow mb-1">Our Craft</p>
-            <h2 class="section-heading mb-3">From Native Fields to Your Kitchen</h2>
-            <p class="section-intro mb-4">We believe food should nourish, not just fill. We honor traditional stone-milling traditions so you receive real grain goodness.</p>
-            <div class="d-flex gap-2 flex-wrap">
-              ${buttonLink('/about', 'Read our story', 'btn-outline-brand')}
-              ${buttonLink('/recipes', 'View recipe ideas', 'btn-outline-brand')}
-            </div>
-          </div>
-          <div class="col-lg-7">
-            <div class="home-benefits">
-              <article class="feature-card step-card">
-                <span class="trust-icon step-num" aria-hidden="true">01</span>
-                <h3>Native Sourcing</h3>
-                <p class="product-meta mb-0">Handpicked native millets grown with sustainable farming practices.</p>
-              </article>
-              <article class="feature-card step-card">
-                <span class="trust-icon step-num" aria-hidden="true">02</span>
-                <h3>Zero Polish</h3>
-                <p class="product-meta mb-0">Husked carefully to protect the grain's natural bran and fiber layer.</p>
-              </article>
-              <article class="feature-card step-card">
-                <span class="trust-icon step-num" aria-hidden="true">03</span>
-                <h3>Stone Ground</h3>
-                <p class="product-meta mb-0">Slow cold stone grinding ensures vital grain oils never burn off.</p>
-              </article>
-              <article class="feature-card step-card">
-                <span class="trust-icon step-num" aria-hidden="true">04</span>
-                <h3>Freshly Delivered</h3>
-                <p class="product-meta mb-0">Vacuum packed and doorstep-delivered across Hyderabad.</p>
-              </article>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- Customer Reviews / Moving Stories Marquee -->
-    <section class="section-space soft-section scroll-reveal-item overflow-hidden">
-      <div class="container">
-        <div class="d-flex flex-wrap justify-content-between align-items-end gap-2 mb-4">
+        <div class="d-flex justify-content-between align-items-center mb-4">
           <div>
-            <p class="eyebrow mb-1">Real Feedback</p>
-            <h2 class="section-heading mb-0">Trusted by Hyderabad Families</h2>
+            <p class="eyebrow mb-1">Customer Feedback</p>
+            <h2 class="section-heading mb-0">What Customers Say</h2>
           </div>
-          <a href="/about" class="btn btn-sm btn-outline-brand">More reviews →</a>
+          <a href="/about" class="btn btn-sm btn-outline-brand">View all →</a>
+        </div>
+        <div class="row g-3">
+          ${realReviews.slice(0, 3).map((r) => `
+            <div class="col-md-4">
+              <div class="feature-card p-4 h-100 bg-white border rounded-3 shadow-sm">
+                <div class="text-warning mb-2">${'★'.repeat(r.rating || 5)}${'☆'.repeat(5 - (r.rating || 5))}</div>
+                ${r.title ? `<h3 class="h6 fw-bold mb-2">${escapeHtml(r.title)}</h3>` : ''}
+                <p class="small text-secondary mb-3">${escapeHtml(r.comment)}</p>
+                <div class="small fw-semibold text-dark">${escapeHtml(r.customerName || 'Verified Customer')}</div>
+              </div>
+            </div>
+          `).join('')}
         </div>
       </div>
-      <div class="stories-marquee-wrapper">
-        <div class="stories-track">
-          <div class="story-review-card">
-            <div class="d-flex align-items-center gap-2 mb-2">
-              <span class="text-warning">★★★★★</span>
-              <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill small px-2">Verified Customer</span>
-            </div>
-            <p class="story-text">"The Ragi flour from BR Millet Choice makes the softest dosas and rich ambali. You can literally smell the authentic stone-ground freshness!"</p>
-            <div class="story-author"><strong>Karthik Reddy</strong> • Lakdikapul, Hyderabad</div>
-          </div>
-          <div class="story-review-card">
-            <div class="d-flex align-items-center gap-2 mb-2">
-              <span class="text-warning">★★★★★</span>
-              <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill small px-2">Verified Customer</span>
-            </div>
-            <p class="story-text">"Switched to their Foxtail and Little Millet for my father's diabetic diet. His sugar levels are noticeably more stable. Outstanding quality!"</p>
-            <div class="story-author"><strong>Priya Sharma</strong> • Banjara Hills, Hyderabad</div>
-          </div>
-          <div class="story-review-card">
-            <div class="d-flex align-items-center gap-2 mb-2">
-              <span class="text-warning">★★★★★</span>
-              <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill small px-2">Verified Customer</span>
-            </div>
-            <p class="story-text">"Jowar rotis come out wonderfully soft without cracking. Fast delivery and COD made it super convenient to try. Highly recommended!"</p>
-            <div class="story-author"><strong>Suresh Kumar</strong> • Kukatpally, Hyderabad</div>
-          </div>
-          <div class="story-review-card">
-            <div class="d-flex align-items-center gap-2 mb-2">
-              <span class="text-warning">★★★★★</span>
-              <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill small px-2">Verified Customer</span>
-            </div>
-            <p class="story-text">"Finally a pure millet brand without starch adulteration. We make the morning porridge every single day. Pure and genuine."</p>
-            <div class="story-author"><strong>Ananya Rao</strong> • Gachibowli, Hyderabad</div>
-          </div>
-        </div>
-      </div>
-    </section>
+    </section>` : ''}
 
-    <!-- Community Callout Banner -->
-    <section class="home-contact-cta scroll-reveal-item">
-      <div class="container d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-4">
+    <!-- Quick Help & WhatsApp Callout -->
+    <section class="home-contact-cta scroll-reveal-item my-4">
+      <div class="container d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3">
         <div>
-          <span class="eyebrow mb-1">Join the Millet Movement</span>
-          <h2 class="h3 mb-1 text-forest fw-bold">Have Questions or Need Custom Pack Quantities?</h2>
-          <p class="mb-0 text-secondary">Chat directly with our milling team for recommendations, order support, or bulk inquiries.</p>
+          <h2 class="h4 mb-1 text-forest fw-bold">Need Help or Want to Order Directly?</h2>
+          <p class="mb-0 text-secondary">Chat with BR Millet Choice on WhatsApp for instant orders, pack details, and delivery assistance.</p>
         </div>
         <div class="d-flex gap-2 flex-wrap">
-          <a class="btn btn-brand" href="/contact">Contact Support</a>
-          <a class="btn btn-outline-brand" href="https://whatsapp.com/channel/0029Vb909Ye7oQhkdutTQM24" target="_blank" rel="noopener noreferrer">WhatsApp Channel</a>
+          <a class="btn btn-success" href="https://wa.me/917893176982?text=${encodeURIComponent('Hello BR Millet Choice, I would like to inquire about fresh millets.')}" target="_blank" rel="noopener noreferrer">💬 Chat on WhatsApp</a>
+          <a class="btn btn-outline-brand" href="https://whatsapp.com/channel/0029Vb909Ye7oQhkdutTQM24" target="_blank" rel="noopener noreferrer">📢 Follow Channel</a>
         </div>
       </div>
     </section>
   `;
   markViewedPage();
+  void refreshCartBadge();
 }
 
 async function renderShop() {
@@ -995,44 +887,13 @@ async function renderAboutPage() {
     reviewsList = res.reviews || [];
   } catch {}
 
-  const storiesToDisplay = reviewsList.length
-    ? reviewsList.map((r) => ({
-        title: r.title || `Review on ${r.productName}`,
-        author: r.customerName || 'Verified Customer',
-        location: `${r.productName} • Verified Purchase`,
-        rating: r.rating || 5,
-        story: r.comment,
-      }))
-    : [
-        {
-          title: 'Fasting Sugar Dropped from 155 to 110!',
-          author: 'Priya Sharma',
-          location: 'Kondapur, Hyderabad',
-          rating: 5,
-          story: 'Switched our family breakfast from polished white rice dosa to BR Millet Foxtail & Ragi flour mix 3 months ago. The taste is earthy, delicious, and my father’s fasting sugar has remarkably stabilized.'
-        },
-        {
-          title: 'Authentic Village Aroma in Jowar Flour',
-          author: 'Dr. V. N. Rao',
-          location: 'Banjara Hills, Hyderabad',
-          rating: 5,
-          story: 'The stone-ground aroma of BR Millet Choice Jowar flour immediately reminded me of traditional village cooking. No gritty stones, no chemical bleaching — just pure, nutritious rotis.'
-        },
-        {
-          title: 'My Kids Love the Bajra & Ragi Porridge',
-          author: 'Sunitha K.',
-          location: 'Gachibowli, Hyderabad',
-          rating: 5,
-          story: 'Giving my children clean nutrition without synthetic powders was my priority. The Ragi porridge with organic jaggery is their favorite evening drink.'
-        },
-        {
-          title: 'Replaced White Rice with Little Millet',
-          author: 'Rajesh Varma',
-          location: 'Madhapur, Hyderabad',
-          rating: 5,
-          story: 'We replaced polished afternoon white rice with BR Little Millet. We no longer feel the heavy post-lunch lethargy, digestion is feather-light.'
-        }
-      ];
+  const storiesToDisplay = reviewsList.map((r) => ({
+    title: r.title || `Review on ${r.productName || 'BR Millets'}`,
+    author: r.customerName || 'Verified Customer',
+    location: `${r.productName || 'Pure Millets'} • Verified Purchase`,
+    rating: r.rating || 5,
+    story: r.comment,
+  }));
 
   appRoot.innerHTML = `${pageHeader('Wholesome Living', 'Our Story & Real Customer Journeys', 'From farm fields to your kitchen table — 100% stone-ground unpolished millet goodness crafted in Hyderabad.')}
     <section class="container section-space">
@@ -1086,6 +947,7 @@ async function renderAboutPage() {
           <p class="text-secondary small">Real feedback submitted by customers. Hover over any card to pause and read.</p>
         </div>
 
+        ${storiesToDisplay.length ? `
         <div class="stories-marquee-wrapper" aria-label="Customer transformation stories marquee">
           <div class="stories-track">
             ${[...storiesToDisplay, ...storiesToDisplay].map((story) => `
@@ -1108,7 +970,7 @@ async function renderAboutPage() {
               </article>
             `).join('')}
           </div>
-        </div>
+        </div>` : '<div class="p-4 bg-light rounded text-center text-secondary">No customer reviews yet. Be the first to share your experience with BR Millets on any product page!</div>'}
       </div>
 
       <div class="text-center mt-5">
@@ -1463,6 +1325,7 @@ function updateAdminShell(user) {
       <a href="/about" aria-label="Our story" title="Our story"><svg aria-hidden="true" viewBox="0 0 24 24"><circle cx="12" cy="8" r="3"></circle><path d="M5 20c.7-3.5 3.2-5 7-5s6.3 1.5 7 5"></path></svg><span>Our story</span></a>
       <a href="/millets" aria-label="Millets" title="Millets"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M12 21V4m0 7c-4 0-6-2-7-5 4 0 6 2 7 5Zm0 4c4 0 6-2 7-5-4 0-6 2-7 5Z"></path></svg><span>Millets</span></a>
       <a href="/recipes" aria-label="Ideas" title="Ideas"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M4 4h16v16H4z"></path><path d="M8 8h8M8 12h8M8 16h5"></path></svg><span>Ideas</span></a>
+      <a href="/orders" aria-label="My Orders" title="My Orders"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M5 4h14v17H5z"></path><path d="M8 8h8M8 12h8M8 16h5"></path></svg><span>My Orders</span></a>
       <a href="/contact" aria-label="Contact" title="Contact"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M4 5h16v12H9l-5 4z"></path><path d="M8 9h8M8 13h5"></path></svg><span>Contact</span></a>
       <a class="site-nav-cart" href="/cart" aria-label="Cart" title="Cart"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M3 4h2l2.2 11h11.5l2-8H6"></path><circle cx="9" cy="19" r="1"></circle><circle cx="18" cy="19" r="1"></circle></svg><span>Cart</span><span class="cart-count" data-cart-count>0</span></a>
       ${user?.role === 'admin' ? '<a class="site-nav-cart" href="/admin" aria-label="Admin Console" title="Admin Console" style="border-top:1px dashed var(--earth);color:var(--forest)"><svg aria-hidden="true" viewBox="0 0 24 24"><rect x="3" y="3" width="8" height="8" rx="1"></rect><rect x="13" y="3" width="8" height="5" rx="1"></rect><rect x="13" y="10" width="8" height="11" rx="1"></rect><rect x="3" y="13" width="8" height="8" rx="1"></rect></svg><span class="fw-bold">⚙️ Admin Console</span></a>' : ''}`;
@@ -1839,32 +1702,11 @@ async function renderCheckout() {
           </label>
         </div>
         <div class="col-12">
-          <label class="feature-card p-3 d-flex flex-column gap-2 border rounded-3 w-100 mb-0" for="method-upi" style="cursor:pointer">
-            <div class="d-flex align-items-start gap-3">
-              <input class="form-check-input mt-1 flex-shrink-0" type="radio" name="paymentMethod" id="method-upi" value="manual_transfer">
-              <div>
-                <div class="fw-bold fs-6">📱 Instant Online UPI (GPay / PhonePe / Paytm / BHIM)</div>
-                <div class="small text-secondary mt-1">Pay online using your UPI ID or UPI app. Instant payment verification and fast dispatch.</div>
-              </div>
-            </div>
-            <div class="upi-entry-box mt-2 p-3 bg-light rounded-3 border" data-upi-box style="display:none;">
-              <label class="form-label small fw-semibold" for="checkout-upi-id">Enter your UPI ID / VPA</label>
-              <div class="input-group mb-2">
-                <input class="form-control" id="checkout-upi-id" name="upiId" placeholder="e.g. yourname@oksbi or 9876543210@paytm">
-                <button class="btn btn-sm btn-outline-brand" type="button" data-upi-chip="@oksbi">@oksbi</button>
-                <button class="btn btn-sm btn-outline-brand" type="button" data-upi-chip="@paytm">@paytm</button>
-                <button class="btn btn-sm btn-outline-brand" type="button" data-upi-chip="@ybl">@ybl</button>
-              </div>
-              <div class="small text-secondary">BR Millet Choice UPI ID: <code class="user-select-all fw-bold text-dark">kkarthik23540-5@okaxis</code></div>
-            </div>
-          </label>
-        </div>
-        <div class="col-12">
           <label class="feature-card p-3 d-flex align-items-start gap-3 border rounded-3 w-100 mb-0" for="method-razorpay" style="cursor:pointer">
             <input class="form-check-input mt-1 flex-shrink-0" type="radio" name="paymentMethod" id="method-razorpay" value="razorpay">
             <div>
-              <div class="fw-bold fs-6">💳 Online Cards &amp; NetBanking (Razorpay)</div>
-              <div class="small text-secondary mt-1">Pay securely via Credit/Debit card, NetBanking, or Wallet powered by Razorpay.</div>
+              <div class="fw-bold fs-6">💳 Online Payment (Razorpay)</div>
+              <div class="small text-secondary mt-1">Pay securely via UPI (Google Pay, PhonePe, Paytm), Credit/Debit Card, or NetBanking.</div>
             </div>
           </label>
         </div>
@@ -2293,6 +2135,7 @@ async function renderPage() {
       : path;
   const [title, description] = pageMeta[route] ?? ['Page not found | BR Millet Choice', 'The page you requested could not be found.'];
   updateSiteNavigation(route);
+  void refreshCartBadge();
   document.title = title;
   document.querySelector('meta[name="description"]').content = description;
   document.querySelector('meta[name="robots"]').content = ['/account', '/profile', '/addresses', '/cart', '/checkout', '/orders', '/notifications', '/admin', '/admin/products', '/admin/manage-products', '/admin/orders', '/admin/enquiries', '/admin/customers', '/login', '/signup', '/reset-password', '/forgot-password', '/verify'].includes(route) ? 'noindex,nofollow' : 'index,follow';
@@ -2333,7 +2176,7 @@ async function renderPage() {
     if (route === '/cart') return await renderCart();
     if (route === '/checkout') return await renderCheckout();
     if (route === '/orders') {
-      if (!path.startsWith('/orders/')) return await renderAccount();
+      if (!path.startsWith('/orders/')) return await renderOrders();
       return await renderOrders(path.split('/').pop());
     }
     if (route === '/notifications') return await renderAccount();
@@ -2560,6 +2403,7 @@ document.addEventListener('click', async (event) => {
       const variantId = target.dataset.addToCart;
       const quantity = Number(document.querySelector('#product-quantity')?.value ?? 1);
       await api('/api/cart/items', { method: 'POST', body: JSON.stringify({ variantId, quantity }) });
+      void refreshCartBadge();
       if (state.analyticsStarted) window.gtag('event', 'add_to_cart', { currency: 'INR' });
       toast('Added to your cart.');
       target.textContent = 'Added';
@@ -2569,6 +2413,7 @@ document.addEventListener('click', async (event) => {
       const variantId = target.dataset.buyNow;
       const quantity = Number(document.querySelector('#product-quantity')?.value ?? 1);
       await api('/api/cart/items', { method: 'POST', body: JSON.stringify({ variantId, quantity }) });
+      void refreshCartBadge();
       toast('Proceeding to checkout...');
       history.pushState(null, '', '/checkout');
       await renderPage();
@@ -2639,6 +2484,7 @@ document.addEventListener('click', async (event) => {
       toast('Inventory history loaded.');
     } else if (target.matches('[data-remove-cart]')) {
       await api(`/api/cart/items/${encodeURIComponent(target.dataset.removeCart)}`, { method: 'DELETE' });
+      void refreshCartBadge();
       await renderCart();
       toast('Item removed from your cart.');
     } else if (target.matches('[data-logout]')) {
@@ -2760,6 +2606,7 @@ document.addEventListener('change', async (event) => {
       method: 'PATCH',
       body: JSON.stringify({ quantity: Number(input.value) }),
     });
+    void refreshCartBadge();
     await renderCart();
   } catch (error) {
     toast(error.message, true);
@@ -2951,15 +2798,7 @@ document.addEventListener('submit', async (event) => {
     } else if (form.dataset.form === 'checkout') {
       if (state.analyticsStarted) window.gtag('event', 'begin_checkout', { currency: 'INR' });
       const payMethod = value('paymentMethod');
-      const upiId = value('upiId');
-      if (payMethod === 'manual_transfer' && submitButton) {
-        submitButton.textContent = 'Verifying UPI & Processing Payment…';
-        await new Promise((r) => setTimeout(r, 800));
-      }
-      const noteParts = [];
-      if (upiId) noteParts.push(`UPI ID: ${upiId}`);
-      if (value('customerNote')) noteParts.push(value('customerNote'));
-      const customerNote = noteParts.join(' | ');
+      const customerNote = value('customerNote') || '';
 
       const result = await api('/api/orders', {
         method: 'POST',
@@ -2973,129 +2812,86 @@ document.addEventListener('submit', async (event) => {
         });
         sessionStorage.setItem(`brmc-order-request-${result.order.id}`, 'sent');
       }
+      void refreshCartBadge();
 
-      if (payMethod === 'razorpay' && window.Razorpay) {
+      if (payMethod === 'razorpay') {
+        const loaded = await loadRazorpayScript();
+        if (!loaded || !window.Razorpay) {
+          toast('Online payment gateway unavailable. Your order has been placed as Cash on Delivery.');
+          history.pushState(null, '', `/orders/${encodeURIComponent(result.order.id)}`);
+          await renderPage();
+          return;
+        }
+
         const rzpKey = state.config?.razorpayKeyId || 'rzp_test_THNrx21lyjVEE6';
-        const rzp = new window.Razorpay({
-          key: rzpKey,
-          amount: Number(result.order.totalPaise),
-          currency: 'INR',
-          name: 'BR Millet Choice',
-          description: `Order ${result.order.orderNumber}`,
-          image: '/images/br-millet-choice-icon.png',
-          handler: async function (response) {
-            toast('Payment successful!');
-            if (response.razorpay_payment_id) {
-              try {
-                await api(`/api/orders/${encodeURIComponent(result.order.id)}/payments`, {
-                  method: 'POST',
-                  body: JSON.stringify({ reference: `Razorpay: ${response.razorpay_payment_id}` }),
-                });
-              } catch (_) {}
-            }
-            history.pushState(null, '', `/orders/${encodeURIComponent(result.order.id)}`);
-            await renderPage();
-          },
-          prefill: {
-            name: state.user?.fullName || '',
-            email: state.user?.email || '',
-            contact: state.user?.phone || '',
-          },
-          theme: {
-            color: '#1b4d3e',
-          },
-          modal: {
-            ondismiss: function () {
+        const addressEl = form.querySelector('select[name="addressId"]');
+        const selectedAddressText = addressEl ? addressEl.selectedOptions[0]?.textContent : '';
+        const phoneMatch = selectedAddressText.match(/\(([^)]+)\)/);
+        const contactDigits = phoneMatch ? phoneMatch[1].replace(/\D/g, '') : '';
+        const validContact = contactDigits.length >= 10 ? contactDigits.slice(-10) : undefined;
+
+        const prefillData = {
+          name: state.user?.fullName || 'Customer',
+          email: state.user?.email || '',
+        };
+        if (validContact) prefillData.contact = validContact;
+
+        try {
+          const rzp = new window.Razorpay({
+            key: rzpKey,
+            amount: Number(result.order.totalPaise),
+            currency: 'INR',
+            name: 'BR Millet Choice',
+            description: `Order ${result.order.orderNumber}`,
+            image: '/images/br-millet-choice-icon.png',
+            handler: async function (response) {
+              toast('Payment successful!');
+              if (response.razorpay_payment_id) {
+                try {
+                  await api(`/api/orders/${encodeURIComponent(result.order.id)}/payments`, {
+                    method: 'POST',
+                    body: JSON.stringify({ reference: `Razorpay: ${response.razorpay_payment_id}` }),
+                  });
+                } catch (_) {}
+              }
               history.pushState(null, '', `/orders/${encodeURIComponent(result.order.id)}`);
-              void renderPage();
+              await renderPage();
             },
-          },
-        });
-        rzp.open();
-        return;
-      }
-
-      const isUpi = result.order.paymentMethod === 'manual_transfer';
-      const amountRupees = (Number(result.order.totalPaise) / 100).toFixed(2);
-      const payeeUpi = 'kkarthik23540-5@okaxis';
-      const upiUri = `upi://pay?pa=${payeeUpi}&pn=BR%20Millet%20Choice&am=${amountRupees}&cu=INR&tn=Order%20${encodeURIComponent(result.order.orderNumber)}`;
-      const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(upiUri)}`;
-
-      // On mobile devices, immediately trigger UPI app deep-link
-      const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
-      if (isUpi && isMobile) {
-        window.location.href = upiUri;
+            prefill: prefillData,
+            theme: {
+              color: '#1b4d3e',
+            },
+            modal: {
+              ondismiss: function () {
+                toast('Order booked! Stock reserved. You can view your order status.');
+                history.pushState(null, '', `/orders/${encodeURIComponent(result.order.id)}`);
+                void renderPage();
+              },
+            },
+          });
+          rzp.on('payment.failed', function (errResp) {
+            console.warn('Razorpay payment failed:', errResp.error);
+            toast(errResp.error?.description || 'Payment was not completed. Stock is reserved for your order.');
+            history.pushState(null, '', `/orders/${encodeURIComponent(result.order.id)}`);
+            void renderPage();
+          });
+          rzp.open();
+          return;
+        } catch (err) {
+          console.error('Razorpay initialization error:', err);
+          toast(`Razorpay error: ${err.message || 'Payment window could not be opened'}`);
+        }
       }
 
       appRoot.innerHTML = `${pageHeader('Order Confirmed', 'Thank you for your order!')}
         <section class="container content-shell">
           <div class="notice mb-4">
-            ${isUpi
-              ? `Your order <strong>${escapeHtml(result.order.orderNumber)}</strong> has been booked! Complete your payment of <strong>₹${amountRupees}</strong> below using your preferred UPI app.`
-              : `Your order <strong>${escapeHtml(result.order.orderNumber)}</strong> has been confirmed successfully! Stock is reserved for Cash on Delivery.`}
+            Your order <strong>${escapeHtml(result.order.orderNumber)}</strong> has been confirmed successfully! Our Hyderabad milling team is packing your fresh unpolished millets. Pay with Cash or UPI when delivered at your doorstep.
           </div>
-
-          ${isUpi ? `
-            <div class="p-4 bg-white rounded-4 border shadow-sm mb-4">
-              <div class="d-flex align-items-center gap-2 mb-3">
-                <span class="fs-3">📱</span>
-                <div>
-                  <h3 class="h5 mb-0 text-success">Pay with Any UPI App</h3>
-                  <span class="small text-secondary">Google Pay, PhonePe, Paytm, BHIM, or Axis Pay</span>
-                </div>
-              </div>
-
-              <!-- Quick Pay Button for Mobile & Direct Click -->
-              <div class="mb-4 text-center">
-                <a class="btn btn-success btn-lg px-4 py-3 fw-bold w-100 shadow-sm" href="${upiUri}">
-                  📱 Tap to Pay ₹${amountRupees} in GPay / PhonePe / Paytm
-                </a>
-                <span class="form-text small d-block mt-2">Tapping this opens your UPI payment app with the amount pre-filled.</span>
-              </div>
-
-              <!-- Dynamic QR Code for Desktop or Laptop -->
-              <div class="row align-items-center gy-3 p-3 bg-light rounded-3 border mb-4">
-                <div class="col-md-5 text-center">
-                  <img src="${qrCodeUrl}" alt="UPI QR Code for Order ${escapeHtml(result.order.orderNumber)}" class="img-fluid rounded border bg-white p-2 shadow-sm" style="max-width:180px;">
-                  <span class="d-block small text-secondary mt-1 fw-semibold">Scan with your phone to pay</span>
-                </div>
-                <div class="col-md-7">
-                  <h4 class="h6 mb-2">Or Pay Directly to UPI ID:</h4>
-                  <div class="d-flex align-items-center gap-2 mb-3">
-                    <code class="fs-6 bg-white p-2 border rounded user-select-all fw-bold text-dark">${payeeUpi}</code>
-                    <button class="btn btn-sm btn-outline-brand" type="button" data-copy-text="${payeeUpi}">Copy UPI</button>
-                  </div>
-                  <div class="small mb-1"><strong>Payee:</strong> BR Millet Choice (Karthik Reddy)</div>
-                  <div class="small mb-1"><strong>Amount:</strong> ₹${amountRupees}</div>
-                  <div class="small text-secondary"><strong>Remark / Note:</strong> Order ${escapeHtml(result.order.orderNumber)}</div>
-                </div>
-              </div>
-
-              <!-- Instant UTR Confirmation Form -->
-              <form data-form="submit-payment-reference" data-order-id="${escapeHtml(result.order.id)}" class="mt-3">
-                <label class="form-label small fw-bold" for="order-confirm-utr">Enter your 12-digit UPI UTR / Transaction Reference after paying:</label>
-                <div class="input-group">
-                  <input class="form-control" id="order-confirm-utr" name="reference" placeholder="e.g. 428910293847" required minlength="4" maxlength="100">
-                  <button class="btn btn-brand" type="submit">Submit UTR</button>
-                </div>
-                <div class="form-text small">Found in your payment receipt on Google Pay, PhonePe, or Paytm.</div>
-              </form>
-
-              ${(state.config?.whatsapp || state.config?.supportPhone) ? `
-                <div class="mt-4 pt-3 border-top d-flex flex-wrap align-items-center justify-content-between gap-2">
-                  <span class="small text-secondary">Need immediate verification?</span>
-                  <a class="btn btn-sm btn-outline-success" target="_blank" rel="noopener noreferrer" href="https://wa.me/${(state.config.whatsapp || state.config.supportPhone).replace(/\D/g, '')}?text=${encodeURIComponent('Hi BR Millet Choice, I placed order ' + result.order.orderNumber + ' for ₹' + amountRupees + '. Here is my UPI payment confirmation.')}">
-                    💬 Send Payment Screenshot on WhatsApp
-                  </a>
-                </div>
-              ` : ''}
-            </div>
-          ` : ''}
-
           <div class="p-3 bg-light rounded-3 border mb-4">
             <div class="d-flex justify-content-between mb-2"><span>Order Number:</span><strong>${escapeHtml(result.order.orderNumber)}</strong></div>
             <div class="d-flex justify-content-between mb-2"><span>Order Status:</span><span class="badge bg-success">Confirmed &amp; Stock Reserved</span></div>
-            <div class="d-flex justify-content-between mb-2"><span>Payment:</span><strong>${isUpi ? '📱 UPI (Online Payment)' : '💵 Cash on Delivery'}</strong></div>
+            <div class="d-flex justify-content-between mb-2"><span>Payment:</span><strong>💵 Cash on Delivery</strong></div>
             <div class="d-flex justify-content-between"><span>Total:</span><strong>${money(result.order.totalPaise)}</strong></div>
           </div>
           <div class="d-flex flex-wrap gap-2">

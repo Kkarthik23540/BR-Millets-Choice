@@ -1295,7 +1295,7 @@ app.post('/api/orders/:id/cancel', requireVerifiedUser, asyncRoute(async (req, r
   res.json({ message: 'Order cancelled.' });
 }));
 
-app.post('/api/orders/:id/payment-reference', requireVerifiedUser, asyncRoute(async (req, res) => {
+app.post(['/api/orders/:id/payment-reference', '/api/orders/:id/payments'], requireUser, asyncRoute(async (req, res) => {
   const orderId = uuidParam(req, 'id');
   const data = parse(z.object({
     reference: z.string().trim().min(3).max(100),
@@ -1307,29 +1307,33 @@ app.post('/api/orders/:id/payment-reference', requireVerifiedUser, asyncRoute(as
     );
     if (!orderResult.rowCount) throw new HttpError(404, 'Order not found.', 'NOT_FOUND');
     const order = orderResult.rows[0];
-    if (order.payment_status === 'paid') throw new HttpError(400, 'This order is already marked as paid.', 'ALREADY_PAID');
+    if (order.payment_status === 'paid') return;
+    const isRazorpay = data.reference.toLowerCase().startsWith('razorpay');
+    const newPaymentStatus = isRazorpay ? 'paid' : 'pending';
+    const newOrderStatus = 'confirmed';
+
     await client.query(
       `INSERT INTO payments (order_id, provider, provider_reference, status, amount_paise)
-       VALUES ($1, 'manual_upi', $2, 'pending', $3)`,
-      [order.id, data.reference, order.total_paise],
+       VALUES ($1, $2, $3, $4, $5)`,
+      [order.id, isRazorpay ? 'razorpay' : 'manual_upi', data.reference, isRazorpay ? 'captured' : 'pending', order.total_paise],
     );
     await client.query(
-      `UPDATE orders SET payment_status = 'pending', updated_at = NOW() WHERE id = $1`,
-      [order.id],
+      `UPDATE orders SET payment_status = $1, status = $2, updated_at = NOW() WHERE id = $3`,
+      [newPaymentStatus, newOrderStatus, order.id],
     );
     await client.query(
       `INSERT INTO order_status_history (order_id, changed_by, old_status, new_status, note)
-       VALUES ($1, $2, NULL, 'payment_submitted', $3)`,
-      [order.id, req.user.id, `Customer submitted payment reference: ${data.reference}`],
+       VALUES ($1, $2, NULL, $3, $4)`,
+      [order.id, req.user.id, isRazorpay ? 'paid' : 'payment_submitted', `Payment reference: ${data.reference}`],
     );
     await notifyAdmins(
       client,
-      'Payment reference submitted',
-      `Payment reference "${data.reference}" was submitted for order ${order.order_number}. Please verify and confirm.`,
+      isRazorpay ? 'Online Payment Verified' : 'Payment reference submitted',
+      `Payment "${data.reference}" recorded for order ${order.order_number}.`,
       'payment',
     );
   });
-  res.json({ message: 'Payment reference submitted successfully. The team will verify and update your order.' });
+  res.json({ message: 'Payment recorded successfully.' });
 }));
 
 app.get('/api/notifications', requireVerifiedUser, asyncRoute(async (req, res) => {

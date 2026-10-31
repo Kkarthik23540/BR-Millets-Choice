@@ -298,16 +298,46 @@ a:hover { color: var(--earth); }
 @media (min-width: 992px) {
   .account-menu-panel { width: 100%; }
   .site-layout.sidebar-collapsed { --sidebar-width: 76px; }
-  .sidebar-collapsed .site-sidebar { padding-inline: .55rem; }
+  .sidebar-collapsed .site-sidebar { padding-inline: .55rem; overflow: visible !important; }
   .sidebar-collapsed .site-sidebar-top { justify-content: center; }
-  .sidebar-collapsed .site-nav a { justify-content: center; padding-inline: .4rem; }
+  .sidebar-collapsed .site-nav a { justify-content: center; padding-inline: .4rem; position: relative; }
   .sidebar-collapsed .site-nav a > span:not(.cart-count) { display: none; }
+  .sidebar-collapsed .site-nav a::after {
+    content: attr(title);
+    position: absolute;
+    left: calc(100% + 0.65rem);
+    top: 50%;
+    transform: translateY(-50%);
+    background: #1b4d3e;
+    color: #ffffff;
+    font-size: 0.8rem;
+    font-weight: 600;
+    padding: 0.35rem 0.65rem;
+    border-radius: 6px;
+    white-space: nowrap;
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transition: opacity 0.15s ease;
+    z-index: 999999;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.18);
+  }
+  .sidebar-collapsed .site-nav a:hover::after,
+  .sidebar-collapsed .site-nav a:focus::after {
+    opacity: 1;
+    visibility: visible;
+  }
   .sidebar-collapsed .site-nav .cart-count { position: absolute; transform: translate(1rem, -.7rem); margin: 0; }
   .sidebar-collapsed .account-menu-summary { justify-content: center; padding-inline: 0; }
   .sidebar-collapsed .account-user-name { display: none; }
-  .sidebar-collapsed .account-menu-panel { left: calc(100% + .5rem); bottom: 0; width: min(250px, calc(100vw - 100px)); }
+  .sidebar-collapsed .account-menu-panel { left: calc(100% + .5rem); bottom: 0; width: min(250px, calc(100vw - 100px)); z-index: 999999; }
 }
 @media (max-width: 991.98px) {
+  .sidebar-collapsed .site-nav a > span:not(.cart-count) { display: inline !important; }
+  .sidebar-collapsed .account-user-name { display: inline !important; }
+  .sidebar-collapsed .site-nav a { justify-content: flex-start !important; padding-inline: .75rem !important; }
+  .sidebar-collapsed .account-menu-summary { justify-content: flex-start !important; }
+  .sidebar-collapsed .site-nav a::after { display: none !important; }
   .site-header-inner { min-height: 3.5rem; gap: .5rem; flex-wrap: nowrap; padding: .4rem .75rem; }
   .site-nav-toggle { display: grid; }
   .site-layout { display: flex; min-height: calc(100vh - 6.5rem); flex-direction: column; }
