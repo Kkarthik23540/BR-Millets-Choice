@@ -56,6 +56,7 @@ const preferenceForTemplate = {
   order_update: 'orderUpdates',
   payment_update: 'orderUpdates',
   enquiry_received: 'enquiryAcknowledgements',
+  admin_contact_enquiry: null,
   back_in_stock: 'backInStock',
   promotion: 'promotions',
   welcome: 'promotions',
@@ -83,6 +84,7 @@ function emailContent(template, payload) {
         : template === 'order_update' ? 'Your order has been updated'
           : template === 'payment_update' ? 'Your payment status has been updated'
             : template === 'enquiry_received' ? 'We received your enquiry'
+              : template === 'admin_contact_enquiry' ? `New Customer Message: ${safe(payload.subject || 'Enquiry')}`
           : template === 'back_in_stock' ? 'A product option is available again'
             : template === 'admin_alert' ? String(payload.title ?? 'BR Millet Choice alert')
             : template === 'password_changed' ? 'Your password was changed'
@@ -96,6 +98,8 @@ function emailContent(template, payload) {
         ? `Payment status for order ${safe(payload.orderNumber)}: ${safe(payload.status)}.`
       : template === 'enquiry_received'
         ? 'Thank you for contacting BR Millet Choice. Your enquiry has been received.'
+      : template === 'admin_contact_enquiry'
+        ? 'A new message was submitted by a user on the Contact Us page.'
       : template === 'back_in_stock'
         ? `${safe(payload.productName)} (${safe(payload.packSize)}) is available again.`
       : template === 'admin_alert'
@@ -116,14 +120,28 @@ function emailContent(template, payload) {
   const addressHtml = template === 'order_received' && address
     ? `<h3>Delivery address supplied</h3><p>${safe(address)}</p>`
     : '';
-  const html = `<!doctype html><html lang="en"><body style="margin:0;padding:0;background-color:#f3f5ef;font-family:Arial,Helvetica,sans-serif;color:#243b2c"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#f3f5ef"><tr><td align="center" style="padding:32px 16px"><table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" style="width:100%;max-width:600px;background-color:#ffffff;border:1px solid #e1e7dc;border-radius:12px"><tr><td style="padding:22px 32px;border-bottom:1px solid #e8ede5"><p style="margin:0;color:#315c3c;font-size:20px;line-height:1.3;font-weight:bold">BR Millet Choice</p><p style="margin:5px 0 0;color:#718174;font-size:11px;line-height:1.4;letter-spacing:2px">PURE MILLETS · HEALTHY LIVING</p></td></tr><tr><td style="padding:28px 32px 32px"><h1 style="margin:0 0 16px;color:#213b2c;font-size:24px;line-height:1.3">${safe(title)}</h1><p style="margin:0 0 22px;color:#43594a;font-size:16px;line-height:1.65">${message}</p>${orderHtml}${addressHtml}${link ? `<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:24px 0"><tr><td align="center" bgcolor="#315c3c" style="border-radius:7px"><a href="${link}" style="display:inline-block;padding:13px 22px;color:#ffffff;font-size:15px;line-height:1.3;font-weight:bold;text-decoration:none">Continue securely</a></td></tr></table>` : ''}<p style="margin:24px 0 0;padding-top:16px;border-top:1px solid #e8ede5;color:#718174;font-size:13px;line-height:1.6">This is a transactional message from BR Millet Choice.</p></td></tr></table><p style="margin:16px 0 0;color:#718174;font-size:12px;line-height:1.5">© BR Millet Choice</p></td></tr></table></body></html>`;
+  const contactDetailsHtml = template === 'admin_contact_enquiry'
+    ? `<div style="background-color:#f8f9fa;border:1px solid #e2e8f0;border-radius:8px;padding:16px;margin:16px 0;">
+        <table role="presentation" width="100%" cellpadding="6" cellspacing="0" style="font-size:14px;color:#243b2c;">
+          <tr><td style="font-weight:bold;width:110px;color:#1e3d29;">From:</td><td><strong>${safe(payload.name)}</strong></td></tr>
+          <tr><td style="font-weight:bold;color:#1e3d29;">Email:</td><td><a href="mailto:${safe(payload.email)}" style="color:#2563eb;text-decoration:none;">${safe(payload.email)}</a></td></tr>
+          <tr><td style="font-weight:bold;color:#1e3d29;">Subject:</td><td>${safe(payload.subject)}</td></tr>
+          <tr><td style="font-weight:bold;color:#1e3d29;vertical-align:top;">Message:</td><td style="white-space:pre-wrap;background:#ffffff;border:1px solid #edf2f7;border-radius:6px;padding:12px;line-height:1.6;">${safe(payload.message)}</td></tr>
+          <tr><td style="font-weight:bold;color:#1e3d29;">Received At:</td><td style="color:#64748b;">${safe(payload.submittedAt || '')}</td></tr>
+        </table>
+       </div>`
+    : '';
+  const contactDetailsText = template === 'admin_contact_enquiry'
+    ? `\n\nContact Enquiry Details:\n- Name: ${payload.name}\n- Email: ${payload.email}\n- Subject: ${payload.subject}\n- Received: ${payload.submittedAt || ''}\n\nMessage:\n${payload.message}\n`
+    : '';
+  const html = `<!doctype html><html lang="en"><body style="margin:0;padding:0;background-color:#f3f5ef;font-family:Arial,Helvetica,sans-serif;color:#243b2c"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#f3f5ef"><tr><td align="center" style="padding:32px 16px"><table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" style="width:100%;max-width:600px;background-color:#ffffff;border:1px solid #e1e7dc;border-radius:12px"><tr><td style="padding:22px 32px;border-bottom:1px solid #e8ede5"><p style="margin:0;color:#315c3c;font-size:20px;line-height:1.3;font-weight:bold">BR Millet Choice</p><p style="margin:5px 0 0;color:#718174;font-size:11px;line-height:1.4;letter-spacing:2px">PURE MILLETS · HEALTHY LIVING</p></td></tr><tr><td style="padding:28px 32px 32px"><h1 style="margin:0 0 16px;color:#213b2c;font-size:24px;line-height:1.3">${safe(title)}</h1><p style="margin:0 0 22px;color:#43594a;font-size:16px;line-height:1.65">${message}</p>${orderHtml}${addressHtml}${contactDetailsHtml}${link ? `<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:24px 0"><tr><td align="center" bgcolor="#315c3c" style="border-radius:7px"><a href="${link}" style="display:inline-block;padding:13px 22px;color:#ffffff;font-size:15px;line-height:1.3;font-weight:bold;text-decoration:none">Continue securely</a></td></tr></table>` : ''}<p style="margin:24px 0 0;padding-top:16px;border-top:1px solid #e8ede5;color:#718174;font-size:13px;line-height:1.6">This is a transactional message from BR Millet Choice.</p></td></tr></table><p style="margin:16px 0 0;color:#718174;font-size:12px;line-height:1.5">© BR Millet Choice</p></td></tr></table></body></html>`;
   const orderText = template === 'order_received' && items.length
     ? `\n\nOrder summary:\n${orderLines.join('\n')}\nSubtotal: ${amount(payload.subtotalPaise)}\nDelivery: ${amount(payload.deliveryFeePaise)}\nTotal requested: ${amount(payload.totalPaise)}\nPayment status: ${payload.paymentStatus}${address ? `\nDelivery address supplied: ${address}` : ''}`
     : '';
   return {
     subject: `${title} | BR Millet Choice`,
     html,
-    text: `${title}\n\n${message}${orderText}${payload.link ? `\n\n${payload.link}` : ''}`,
+    text: `${title}\n\n${message}${contactDetailsText}${orderText}${payload.link ? `\n\n${payload.link}` : ''}`,
   };
 }
 

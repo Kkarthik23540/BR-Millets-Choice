@@ -213,11 +213,12 @@ async function enqueueTemplate(client, userId, recipient, template, payload) {
   await enqueueEmail(client, { userId, recipient, template, payload });
 }
 
-async function notifyAdmins(client, title, body, kind = 'inventory') {
+async function notifyAdmins(client, title, body, kind = 'inventory', href = null) {
   const admins = await client.query("SELECT id, email FROM users WHERE role = 'admin'");
   for (const admin of admins.rows) {
-    await notifyUser(client, admin.id, kind, title, body);
-    await enqueueTemplate(client, admin.id, admin.email, 'admin_alert', { title, body });
+    await notifyUser(client, admin.id, kind, title, body, href);
+    // Note: Admin email notifications for orders and inventory are disabled per preference;
+    // admin manages orders and status directly inside the admin portal.
   }
 }
 
@@ -261,7 +262,7 @@ async function getBusinessDetails() {
       [config.businessAddress, config.businessPhone, config.businessEmail, config.businessWhatsapp],
     );
     const result = await pool.query(
-      'SELECT address, phone, email, whatsapp, hours, latitude, longitude FROM business_details WHERE id = 1',
+      'SELECT address, phone, email, whatsapp, hours, latitude, longitude, open_time, close_time, days_open, auto_schedule FROM business_details WHERE id = 1',
     );
     const details = result.rows[0];
     return {
@@ -269,9 +270,13 @@ async function getBusinessDetails() {
       supportPhone: details?.phone ?? config.businessPhone,
       whatsapp: details?.whatsapp ?? config.businessWhatsapp,
       supportAddress: details?.address ?? config.businessAddress,
-      businessHours: details?.hours ?? '',
+      businessHours: details?.hours ?? 'Monday to Saturday, 09:00 AM – 09:00 PM',
       businessLatitude: details?.latitude ?? null,
       businessLongitude: details?.longitude ?? null,
+      openTime: details?.open_time ?? '09:00',
+      closeTime: details?.close_time ?? '21:00',
+      daysOpen: details?.days_open ?? 'Monday to Saturday',
+      autoSchedule: details?.auto_schedule !== false,
     };
   } catch (err) {
     console.warn('Could not query business details from database, using config fallback:', err.message);
@@ -280,19 +285,29 @@ async function getBusinessDetails() {
       supportPhone: config.businessPhone,
       whatsapp: config.businessWhatsapp,
       supportAddress: config.businessAddress,
-      businessHours: '',
+      businessHours: 'Monday to Saturday, 09:00 AM – 09:00 PM',
       businessLatitude: null,
       businessLongitude: null,
+      openTime: '09:00',
+      closeTime: '21:00',
+      daysOpen: 'Monday to Saturday',
+      autoSchedule: true,
     };
   }
 }
 
 app.get('/api/config', asyncRoute(async (_req, res) => {
   void ensureDatabaseReady();
-  const businessDetails = await getBusinessDetails();
+  const [businessDetails, visitsRes, productsRes] = await Promise.all([
+    getBusinessDetails(),
+    pool.query("SELECT metric_value::text AS count FROM site_metrics WHERE metric_key = 'public_page_views'"),
+    pool.query('SELECT COUNT(*)::int AS count FROM products'),
+  ]);
   res.json({
     businessName: config.businessName,
     ...Object.fromEntries(Object.entries(businessDetails).map(([key, value]) => [key, value ?? null])),
+    pageVisits: visitsRes.rows[0]?.count ?? '0',
+    productCount: productsRes.rows[0]?.count ?? 0,
     emailConfigured,
     googleConfigured: Boolean(config.googleClientId && config.googleClientSecret && config.googleCallbackUrl),
     paymentsEnabled: true,
@@ -300,6 +315,11 @@ app.get('/api/config', asyncRoute(async (_req, res) => {
     paymentMethods: config.paymentMethods,
     analyticsId: config.ga4MeasurementId || null,
   });
+}));
+
+app.get('/api/page-visits', asyncRoute(async (_req, res) => {
+  const visitsRes = await pool.query("SELECT metric_value::text AS count FROM site_metrics WHERE metric_key = 'public_page_views'");
+  res.json({ pageVisits: visitsRes.rows[0]?.count ?? '0' });
 }));
 
 app.post('/api/auth/register', authLimiter, asyncRoute(async (req, res) => {
@@ -536,9 +556,8 @@ app.get('/api/auth/google', (req, res, next) => {
   const host = req.get('host') || 'br-millets-choice.vercel.app';
   const proto = req.get('x-forwarded-proto') || (req.secure ? 'https' : 'http');
   const isLocal = host.includes('localhost') || host.includes('127.0.0.1');
-  const redirectUri = isLocal
-    ? `${proto}://${host}/api/auth/google/callback`
-    : `https://${host}/api/auth/google/callback`;
+  const redirectUri = config.googleCallbackUrl
+    || (isLocal ? `${proto}://${host}/api/auth/google/callback` : `https://${host}/api/auth/google/callback`);
 
   const state = randomToken();
   req.session.googleState = state;
@@ -707,6 +726,10 @@ app.get('/api/admin/business-details', requireAdmin, asyncRoute(async (_req, res
       hours: details.businessHours,
       latitude: details.businessLatitude,
       longitude: details.businessLongitude,
+      openTime: details.openTime,
+      closeTime: details.closeTime,
+      daysOpen: details.daysOpen,
+      autoSchedule: details.autoSchedule,
     },
   });
 }));
@@ -722,6 +745,10 @@ app.put('/api/admin/business-details', requireAdmin, asyncRoute(async (req, res)
     email: optionalEmail.default(''),
     whatsapp: z.string().trim().max(40).default(''),
     hours: z.string().trim().max(300).default(''),
+    openTime: z.string().trim().max(10).default('09:00'),
+    closeTime: z.string().trim().max(10).default('21:00'),
+    daysOpen: z.string().trim().max(100).default('Monday to Saturday'),
+    autoSchedule: z.boolean().default(true),
     latitude: z.number().min(-90).max(90).nullable().default(null),
     longitude: z.number().min(-180).max(180).nullable().default(null),
   }).refine((value) => (value.latitude === null) === (value.longitude === null), {
@@ -729,16 +756,33 @@ app.put('/api/admin/business-details', requireAdmin, asyncRoute(async (req, res)
     path: ['longitude'],
   }), req.body);
   const result = await pool.query(
-    `INSERT INTO business_details (id, address, phone, email, whatsapp, hours, latitude, longitude, updated_at)
-     VALUES (1, $1, $2, $3, $4, $5, $6, $7, NOW())
+    `INSERT INTO business_details (id, address, phone, email, whatsapp, hours, open_time, close_time, days_open, auto_schedule, latitude, longitude, updated_at)
+     VALUES (1, $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, NOW())
      ON CONFLICT (id) DO UPDATE
      SET address = EXCLUDED.address, phone = EXCLUDED.phone, email = EXCLUDED.email,
-         whatsapp = EXCLUDED.whatsapp, hours = EXCLUDED.hours, latitude = EXCLUDED.latitude,
-         longitude = EXCLUDED.longitude, updated_at = NOW()
-     RETURNING address, phone, email, whatsapp, hours, latitude, longitude`,
-    [details.address, details.phone, details.email, details.whatsapp, details.hours, details.latitude, details.longitude],
+         whatsapp = EXCLUDED.whatsapp, hours = EXCLUDED.hours,
+         open_time = EXCLUDED.open_time, close_time = EXCLUDED.close_time,
+         days_open = EXCLUDED.days_open, auto_schedule = EXCLUDED.auto_schedule,
+         latitude = EXCLUDED.latitude, longitude = EXCLUDED.longitude, updated_at = NOW()
+     RETURNING address, phone, email, whatsapp, hours, open_time, close_time, days_open, auto_schedule, latitude, longitude`,
+    [details.address, details.phone, details.email, details.whatsapp, details.hours, details.openTime, details.closeTime, details.daysOpen, details.autoSchedule, details.latitude, details.longitude],
   );
-  res.json({ details: result.rows[0] });
+  const row = result.rows[0];
+  res.json({
+    details: {
+      address: row.address,
+      phone: row.phone,
+      email: row.email,
+      whatsapp: row.whatsapp,
+      hours: row.hours,
+      openTime: row.open_time,
+      closeTime: row.close_time,
+      daysOpen: row.days_open,
+      autoSchedule: row.auto_schedule,
+      latitude: row.latitude,
+      longitude: row.longitude,
+    },
+  });
 }));
 
 app.delete('/api/account', requireUser, asyncRoute(async (req, res) => {
@@ -1158,6 +1202,7 @@ app.post('/api/orders', requireUser, asyncRoute(async (req, res) => {
       'New order confirmed',
       `${orderNumber} was placed and confirmed.`,
       'order',
+      `/admin/orders?search=${encodeURIComponent(orderNumber)}`,
     );
     await enqueueTemplate(client, req.user.id, req.user.email, 'order_received', {
       orderNumber,
@@ -1472,7 +1517,7 @@ app.get('/api/admin/events', requireAdmin, asyncRoute(async (req, res) => {
     if (closed) return;
     try {
       const result = await pool.query(
-        `SELECT id, title, body FROM notifications
+        `SELECT id, title, body, href, created_at FROM notifications
          WHERE user_id = $1 AND kind = 'order'
          ORDER BY created_at DESC LIMIT 1`,
         [req.user.id],
@@ -1489,11 +1534,28 @@ app.get('/api/admin/events', requireAdmin, asyncRoute(async (req, res) => {
       console.error('Admin order notification stream failed:', error.message);
       if (!closed) res.write('event: refresh\ndata: {}\n\n');
     }
-  }, 10_000);
+  }, 5_000);
   res.on('close', () => {
     closed = true;
     clearInterval(timer);
   });
+}));
+
+app.get('/api/admin/latest-order', requireAdmin, asyncRoute(async (_req, res) => {
+  const result = await pool.query(
+    `SELECT o.id, o.order_number AS "orderNumber", o.total_paise AS "totalPaise",
+            o.status, o.payment_status AS "paymentStatus", o.payment_method AS "paymentMethod",
+            o.created_at AS "createdAt",
+            COALESCE(u.full_name, 'Customer') AS "customerName",
+            COALESCE((
+              SELECT string_agg(CONCAT(oi.product_name, ' (', oi.pack_size, ' × ', oi.quantity, ')'), ', ')
+              FROM order_items oi WHERE oi.order_id = o.id
+            ), 'Millet Pack') AS "itemsSummary"
+     FROM orders o
+     LEFT JOIN users u ON u.id = o.user_id
+     ORDER BY o.created_at DESC LIMIT 1`
+  );
+  res.json({ latestOrder: result.rows[0] ?? null });
 }));
 
 app.get('/api/inventory/events', (req, res) => {
@@ -1600,8 +1662,32 @@ app.post('/api/contact', contactLimiter, asyncRoute(async (req, res) => {
        VALUES ($1, $2, $3, $4, $5)`,
       [req.session.userId ?? null, data.name, data.email, data.subject, data.message],
     );
+    // User acknowledgement
     await enqueueTemplate(client, req.session.userId ?? null, data.email, 'enquiry_received', { name: data.name });
-    await notifyAdmins(client, 'New customer enquiry', `A new enquiry was submitted: ${data.subject}.`, 'enquiry');
+
+    // Send email with full message details ONLY to admin
+    const submittedAt = new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata', dateStyle: 'full', timeStyle: 'medium' });
+    const enquiryPayload = {
+      name: data.name,
+      email: data.email,
+      subject: data.subject,
+      message: data.message,
+      submittedAt,
+    };
+
+    const admins = await client.query("SELECT id, email FROM users WHERE role = 'admin'");
+    const adminEmails = new Set(admins.rows.map((a) => a.email).filter(Boolean));
+    if (config.adminAlertEmail) adminEmails.add(config.adminAlertEmail);
+
+    for (const adminEmail of adminEmails) {
+      const adminUser = admins.rows.find((a) => a.email === adminEmail);
+      await enqueueTemplate(client, adminUser?.id ?? null, adminEmail, 'admin_contact_enquiry', enquiryPayload);
+    }
+
+    // In-app notification for admin dashboard
+    for (const admin of admins.rows) {
+      await notifyUser(client, admin.id, 'enquiry', 'New customer enquiry', `A new enquiry was submitted by ${data.name}: ${data.subject}.`, '/admin/enquiries');
+    }
   });
   res.status(201).json({ message: 'Your enquiry has been received.' });
 }));
@@ -1818,6 +1904,10 @@ app.delete('/api/admin/products/:id', requireAdmin, asyncRoute(async (req, res) 
   const result = await inTransaction(async (client) => {
     const prod = await client.query('SELECT name FROM products WHERE id = $1', [productId]);
     if (!prod.rowCount) throw new HttpError(404, 'Product not found.', 'NOT_FOUND');
+    await client.query(`
+      DELETE FROM inventory_movements 
+      WHERE variant_id IN (SELECT id FROM product_variants WHERE product_id = $1)
+    `, [productId]);
     await client.query('DELETE FROM products WHERE id = $1', [productId]);
     await client.query(
       `INSERT INTO audit_logs (admin_user_id, action, entity_type, entity_id, metadata)
@@ -1942,6 +2032,7 @@ app.delete('/api/admin/variants/:id', requireAdmin, asyncRoute(async (req, res) 
   const result = await inTransaction(async (client) => {
     const v = await client.query('SELECT sku, pack_size, product_id FROM product_variants WHERE id = $1', [variantId]);
     if (!v.rowCount) throw new HttpError(404, 'Product option not found.', 'NOT_FOUND');
+    await client.query('DELETE FROM inventory_movements WHERE variant_id = $1', [variantId]);
     await client.query('DELETE FROM product_variants WHERE id = $1', [variantId]);
     await client.query(
       `INSERT INTO audit_logs (admin_user_id, action, entity_type, entity_id, metadata)
