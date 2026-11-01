@@ -17,7 +17,7 @@ a:hover { color: var(--earth); }
 .skip-link { position: absolute; left: 1rem; top: -4rem; z-index: 20; padding: .65rem 1rem; background: white; }
 .skip-link:focus { top: 1rem; }
 .announcement-bar { padding: .32rem 1rem; text-align: center; color: #fffdf7; background: linear-gradient(90deg, #153e2e, #1f543c, #153e2e); font-size: .8rem; font-weight: 500; letter-spacing: .02em; overflow: hidden; white-space: nowrap; border-bottom: 1px solid rgba(255,255,255,0.12); }
-.site-header { position: sticky; top: 0; left: 0; right: 0; width: 100%; z-index: 1000; background: var(--warm-white); border-bottom: 1px solid var(--line); box-shadow: 0 2px 10px rgba(32,58,40,.06); }
+.site-header { position: -webkit-sticky; position: sticky; top: 0; left: 0; right: 0; width: 100%; z-index: 1000; background: var(--warm-white); border-bottom: 1px solid var(--line); box-shadow: 0 2px 10px rgba(32,58,40,.06); }
 .site-header-inner { display: flex; min-height: 4.5rem; align-items: center; gap: 1rem; padding: .45rem clamp(1rem, 3vw, 2rem); }
 .site-nav-toggle { display: none; width: 2.5rem; height: 2.5rem; flex: 0 0 auto; place-items: center; border: 1px solid var(--line); border-radius: .55rem; color: var(--forest); background: white; }
 .site-nav-toggle:hover, .sidebar-collapse-toggle:hover { background: var(--cream); }
@@ -509,6 +509,7 @@ a:hover { color: var(--earth); }
   .sidebar-collapsed .account-menu-panel { left: calc(100% + .5rem); bottom: 0; width: min(250px, calc(100vw - 100px)); z-index: 999999; }
 }
 @media (max-width: 991.98px) {
+  .site-header { position: -webkit-sticky !important; position: sticky !important; top: 0 !important; z-index: 1000 !important; }
   .sidebar-collapsed .site-nav a > span:not(.cart-count) { display: inline !important; }
   .sidebar-collapsed .account-user-name { display: inline !important; }
   .sidebar-collapsed .site-nav a { justify-content: flex-start !important; padding-inline: .75rem !important; }
@@ -2321,7 +2322,13 @@ body.admin-mode [data-header-cart] {
 @media (max-width: 576px) {
   html, body {
     max-width: 100vw;
-    overflow-x: hidden !important;
+    overflow-x: clip !important;
+  }
+  .site-header {
+    position: -webkit-sticky !important;
+    position: sticky !important;
+    top: 0 !important;
+    z-index: 1000 !important;
   }
   .brand-tagline {
     display: none !important;
