@@ -1587,15 +1587,15 @@ body.admin-mode [data-header-cart] {
    Interactive Confirmation Modal Dialog
    ========================================================================== */
 .brmc-modal-backdrop {
-  position: fixed;
-  inset: 0;
-  z-index: 100000;
-  background: rgba(15, 23, 42, 0.65);
-  backdrop-filter: blur(4px);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 1rem;
+  position: fixed !important;
+  inset: 0 !important;
+  z-index: 1000005 !important;
+  background: rgba(15, 23, 42, 0.65) !important;
+  backdrop-filter: blur(4px) !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 1rem !important;
   animation: modalFadeIn 0.2s ease-out forwards;
 }
 .brmc-modal-backdrop.is-closing {

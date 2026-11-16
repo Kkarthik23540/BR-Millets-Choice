@@ -45,13 +45,15 @@ export function AuthProvider({ children }) {
     });
   }, [refreshUser, refreshConfig]);
 
-  const logout = useCallback(async (skipConfirm = false) => {
+  const logout = useCallback(async (options = false) => {
+    const skipConfirm = typeof options === 'boolean' ? options : Boolean(options && typeof options === 'object' && options.skipConfirm);
     if (!skipConfirm) {
       const confirmed = await confirmAction({
         title: 'Sign Out',
         message: 'Are you sure you want to sign out of your account?',
         confirmText: 'Yes, Sign Out',
         cancelText: 'No, Stay Signed In',
+        isDanger: false,
       });
       if (!confirmed) return false;
     }

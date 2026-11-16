@@ -79,6 +79,19 @@ export default function AdminOrders() {
     e.preventDefault();
     const statusVal = e.target.elements.status?.value;
     if (!statusVal) return;
+
+    if (statusVal === 'rejected' || statusVal === 'cancelled') {
+      const isRejected = statusVal === 'rejected';
+      const confirmed = await confirmAction({
+        title: isRejected ? 'Reject Order' : 'Cancel Order',
+        message: `Are you sure you want to mark this order as ${statusVal}? Reserved inventory will be returned to stock.`,
+        confirmText: isRejected ? 'Yes, Reject Order' : 'Yes, Cancel Order',
+        cancelText: 'No, Keep Current Status',
+        isDanger: true,
+      });
+      if (!confirmed) return;
+    }
+
     try {
       await api(`/api/admin/orders/${encodeURIComponent(orderId)}/status`, {
         method: 'PATCH',

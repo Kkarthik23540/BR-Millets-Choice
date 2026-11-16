@@ -706,6 +706,16 @@ export default function Profile({ initialTab = null }) {
                   </Link>
                 </div>
 
+                <div className="mb-4 pt-3 border-top d-flex justify-content-between align-items-center flex-wrap gap-2">
+                  <div>
+                    <h3 className="h6 fw-bold text-dark mb-0">Sign out</h3>
+                    <span className="small text-secondary">Sign out of this session on your browser.</span>
+                  </div>
+                  <button type="button" className="btn btn-sm btn-outline-danger" onClick={logout}>
+                    Sign out
+                  </button>
+                </div>
+
                 <div className="border-top pt-4" id="account-delete">
                   <h3 className="h6 fw-bold text-danger mb-2">Delete Account</h3>
                   <p className="small text-secondary mb-3">

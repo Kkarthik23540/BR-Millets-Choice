@@ -329,6 +329,15 @@ function ProductCard({ product, onReload }) {
 
   const handleAddVariant = async (e) => {
     e.preventDefault();
+    const confirmed = await confirmAction({
+      title: 'Add Pack Option',
+      message: `Are you sure you want to add pack option "${newPackSize}" to "${product.name}"?`,
+      confirmText: 'Yes, Add Option',
+      cancelText: 'Cancel',
+      isDanger: false,
+    });
+    if (!confirmed) return;
+
     setAddingVariant(true);
     try {
       const skuVal = newSku || `${product.slug}-${newPackSize.toLowerCase().replace(/[^a-z0-9]/g, '')}`;
@@ -637,6 +646,20 @@ export default function AdminManageProduct() {
 
   const handleCreateProduct = async (e) => {
     e.preventDefault();
+    if (!form.name || !form.slug || !form.category) {
+      showToast('Please fill in product name, slug, and category.', true);
+      return;
+    }
+
+    const confirmed = await confirmAction({
+      title: 'Add Product',
+      message: `Are you sure you want to add and publish "${form.name}" to the store catalogue?`,
+      confirmText: 'Yes, Add Product',
+      cancelText: 'Cancel',
+      isDanger: false,
+    });
+    if (!confirmed) return;
+
     setCreating(true);
 
     try {
