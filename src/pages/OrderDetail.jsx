@@ -4,6 +4,7 @@ import PageHeader from '../components/PageHeader';
 import BrandLoader from '../components/BrandLoader';
 import { api, money } from '../services/api';
 import { useToast } from '../context/ToastContext';
+import { confirmAction } from '../services/modal';
 
 export default function OrderDetail() {
   const { id } = useParams();
@@ -28,7 +29,14 @@ export default function OrderDetail() {
   }, [id]);
 
   const handleCancel = async () => {
-    if (!window.confirm('Are you sure you want to cancel this order request?')) return;
+    const confirmed = await confirmAction({
+      title: 'Cancel Order Request',
+      message: 'Are you sure you want to cancel this order request? Stock will be restored to inventory.',
+      confirmText: 'Yes, Cancel Order',
+      cancelText: 'No, Keep Order',
+      isDanger: true,
+    });
+    if (!confirmed) return;
     setCancelling(true);
     try {
       await api(`/api/orders/${encodeURIComponent(id)}/cancel`, { method: 'POST' });

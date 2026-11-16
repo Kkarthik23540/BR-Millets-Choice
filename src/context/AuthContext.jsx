@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { api, loadCsrf } from '../services/api';
+import { confirmAction } from '../services/modal';
 
 const AuthContext = createContext({
   user: null,
@@ -44,7 +45,16 @@ export function AuthProvider({ children }) {
     });
   }, [refreshUser, refreshConfig]);
 
-  const logout = useCallback(async () => {
+  const logout = useCallback(async (skipConfirm = false) => {
+    if (!skipConfirm) {
+      const confirmed = await confirmAction({
+        title: 'Sign Out',
+        message: 'Are you sure you want to sign out of your account?',
+        confirmText: 'Yes, Sign Out',
+        cancelText: 'No, Stay Signed In',
+      });
+      if (!confirmed) return false;
+    }
     try {
       await api('/api/auth/logout', { method: 'POST' });
     } catch (e) {
@@ -52,6 +62,7 @@ export function AuthProvider({ children }) {
     }
     setUser(null);
     window.location.href = '/login';
+    return true;
   }, []);
 
   const isAdmin = user?.role === 'admin';

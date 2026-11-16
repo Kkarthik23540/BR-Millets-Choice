@@ -4,6 +4,7 @@ import PageHeader from '../../components/PageHeader';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
 import { api } from '../../services/api';
+import { confirmAction } from '../../services/modal';
 
 export default function ForgotPassword() {
   const { user } = useAuth();
@@ -14,6 +15,14 @@ export default function ForgotPassword() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    const confirmed = await confirmAction({
+      title: 'Send Password Reset Link',
+      message: `Send password reset instructions to ${email}?`,
+      confirmText: 'Send Reset Link',
+      cancelText: 'Cancel',
+    });
+    if (!confirmed) return;
+
     setLoading(true);
     try {
       await api('/api/auth/forgot-password', {

@@ -4,6 +4,7 @@ import PageHeader from '../components/PageHeader';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import { api, money } from '../services/api';
+import { confirmAction } from '../services/modal';
 
 const VALID_TABS = ['profile', 'preferences', 'addresses', 'orders', 'notifications', 'overview'];
 
@@ -183,7 +184,14 @@ export default function Profile({ initialTab = null }) {
   };
 
   const handleDeleteAddress = async (id) => {
-    if (!window.confirm('Delete this address?')) return;
+    const confirmed = await confirmAction({
+      title: 'Delete Delivery Address',
+      message: 'Are you sure you want to remove this delivery address from your account?',
+      confirmText: 'Yes, Delete Address',
+      cancelText: 'No, Keep Address',
+      isDanger: true,
+    });
+    if (!confirmed) return;
     try {
       await api(`/api/addresses/${encodeURIComponent(id)}`, { method: 'DELETE' });
       showToast('Address deleted.');
@@ -194,7 +202,14 @@ export default function Profile({ initialTab = null }) {
   };
 
   const handleCancelOrder = async (id) => {
-    if (!window.confirm('Cancel this order request?')) return;
+    const confirmed = await confirmAction({
+      title: 'Cancel Order Request',
+      message: 'Are you sure you want to cancel this order request? Stock will be restored to inventory.',
+      confirmText: 'Yes, Cancel Order',
+      cancelText: 'No, Keep Order',
+      isDanger: true,
+    });
+    if (!confirmed) return;
     try {
       await api(`/api/orders/${encodeURIComponent(id)}/cancel`, { method: 'POST' });
       showToast('✓ Order cancelled.');
@@ -223,7 +238,14 @@ export default function Profile({ initialTab = null }) {
       showToast('Please type DELETE to confirm.', true);
       return;
     }
-    if (!window.confirm('Are you absolutely sure? This will delete your account permanently.')) return;
+    const confirmed = await confirmAction({
+      title: 'Delete Account',
+      message: 'Are you sure you want to permanently delete your account and all associated personal data? Completed orders will be anonymized. This action is irreversible.',
+      confirmText: 'Permanently Delete',
+      cancelText: 'Keep Account',
+      isDanger: true,
+    });
+    if (!confirmed) return;
     try {
       await api('/api/account', {
         method: 'DELETE',
@@ -233,7 +255,7 @@ export default function Profile({ initialTab = null }) {
         }),
       });
       showToast('Account deleted.');
-      logout();
+      logout(true);
     } catch (err) {
       showToast(err.message, true);
     }

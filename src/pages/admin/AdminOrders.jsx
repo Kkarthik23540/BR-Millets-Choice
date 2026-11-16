@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import PageHeader from '../../components/PageHeader';
 import { api, money } from '../../services/api';
 import { useToast } from '../../context/ToastContext';
+import { confirmAction } from '../../services/modal';
 
 export default function AdminOrders() {
   const { showToast } = useToast();
@@ -104,6 +105,24 @@ export default function AdminOrders() {
         }),
       });
       showToast('✓ Payment status updated.');
+      loadOrders({ append: false });
+    } catch (err) {
+      showToast(err.message, true);
+    }
+  };
+
+  const handleDeleteOrder = async (orderId, orderNum) => {
+    const confirmed = await confirmAction({
+      title: 'Delete Order Record',
+      message: `Are you sure you want to permanently delete order "${orderNum}"? This action cannot be undone.`,
+      confirmText: 'Yes, Delete Order',
+      cancelText: 'No, Keep Order',
+      isDanger: true,
+    });
+    if (!confirmed) return;
+    try {
+      await api(`/api/admin/orders/${encodeURIComponent(orderId)}`, { method: 'DELETE' });
+      showToast('✓ Order deleted successfully.');
       loadOrders({ append: false });
     } catch (err) {
       showToast(err.message, true);
@@ -331,6 +350,14 @@ export default function AdminOrders() {
                       maxLength={200}
                     />
                     <button className="btn btn-sm btn-outline-brand" type="submit">Save</button>
+                    <button
+                      type="button"
+                      className="btn btn-sm btn-outline-danger ms-1"
+                      onClick={() => handleDeleteOrder(order.id, order.orderNumber)}
+                      title="Delete order record"
+                    >
+                      Delete
+                    </button>
                   </form>
                 </article>
               );

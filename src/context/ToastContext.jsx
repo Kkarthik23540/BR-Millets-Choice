@@ -1,4 +1,14 @@
-import React, { createContext, useContext, useState, useCallback } from 'react';
+import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
+
+let globalShowToast = null;
+
+export function toast(message, isError = false, href = '') {
+  if (globalShowToast) {
+    globalShowToast(message, isError, href);
+  } else {
+    console.log('[Toast]', isError ? 'ERROR:' : 'INFO:', message);
+  }
+}
 
 const ToastContext = createContext({
   showToast: () => {},
@@ -17,22 +27,30 @@ export function ToastProvider({ children }) {
   }, []);
 
   const showToast = useCallback((message, isError = false, href = '') => {
+    if (!message) return;
     const id = Date.now() + Math.random();
     setToasts((prev) => {
       // Keep at most 3 toasts visible
-      const active = prev.slice(-2);
-      return [...active, { id, message, isError, href, leaving: false }];
+      const active = prev.filter((t) => !t.leaving).slice(-2);
+      return [...active, { id, message, isError: Boolean(isError), href, leaving: false }];
     });
 
     setTimeout(() => {
       dismissToast(id);
-    }, 4000);
+    }, 4500);
   }, [dismissToast]);
+
+  useEffect(() => {
+    globalShowToast = showToast;
+    return () => {
+      globalShowToast = null;
+    };
+  }, [showToast]);
 
   return (
     <ToastContext.Provider value={{ showToast }}>
       {children}
-      <div id="toast-region" aria-live="polite">
+      <div id="toast-region" className="toast-region" aria-live="polite" aria-atomic="true">
         {toasts.map((t) => (
           <div
             key={t.id}

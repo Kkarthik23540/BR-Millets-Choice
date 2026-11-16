@@ -63,7 +63,11 @@ export default function Header({ onToggleSidebar, isSidebarOpen }) {
           </svg>
         </button>
 
-        <Link className="brand-wordmark" to="/" aria-label="BR Millet Choice home">
+        <Link
+          className="brand-wordmark"
+          to={isAdmin ? '/admin' : '/'}
+          aria-label={isAdmin ? 'BR Millet Choice admin dashboard' : 'BR Millet Choice home'}
+        >
           <img
             className="brand-logo"
             src="/images/br-millet-choice-logo.png"

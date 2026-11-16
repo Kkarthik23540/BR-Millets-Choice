@@ -5,6 +5,7 @@ import BrandLoader from '../../components/BrandLoader';
 import { api, money } from '../../services/api';
 import { useToast } from '../../context/ToastContext';
 import { useAuth } from '../../context/AuthContext';
+import { confirmAction } from '../../services/modal';
 
 function compressImageFile(file, maxWidth = 1200, quality = 0.85) {
   return new Promise((resolve) => {
@@ -289,9 +290,14 @@ function ProductCard({ product, onReload }) {
   };
 
   const handleDeleteProduct = async () => {
-    if (!window.confirm(`Are you sure you want to permanently delete "${product.name}" and all its pack options?`)) {
-      return;
-    }
+    const confirmed = await confirmAction({
+      title: 'Delete Product',
+      message: `Are you sure you want to permanently delete "${product.name}" and all its pack options?`,
+      confirmText: 'Yes, Delete Product',
+      cancelText: 'No, Keep Product',
+      isDanger: true,
+    });
+    if (!confirmed) return;
     try {
       await api(`/api/admin/products/${encodeURIComponent(product.id)}`, { method: 'DELETE' });
       showToast(`✓ "${product.name}" deleted.`);
@@ -303,9 +309,14 @@ function ProductCard({ product, onReload }) {
   };
 
   const handleDeleteVariant = async (variantId, packName) => {
-    if (!window.confirm(`Are you sure you want to delete pack option "${packName}"?`)) {
-      return;
-    }
+    const confirmed = await confirmAction({
+      title: 'Delete Pack Option',
+      message: `Are you sure you want to delete pack option "${packName}"?`,
+      confirmText: 'Yes, Delete Option',
+      cancelText: 'No, Keep Option',
+      isDanger: true,
+    });
+    if (!confirmed) return;
     try {
       await api(`/api/admin/variants/${encodeURIComponent(variantId)}`, { method: 'DELETE' });
       showToast(`✓ Pack option "${packName}" deleted.`);

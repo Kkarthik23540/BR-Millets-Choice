@@ -3,6 +3,7 @@ import PageHeader from '../../components/PageHeader';
 import BrandLoader from '../../components/BrandLoader';
 import { api } from '../../services/api';
 import { useToast } from '../../context/ToastContext';
+import { confirmAction } from '../../services/modal';
 
 export default function AdminEnquiries() {
   const { showToast } = useToast();
@@ -78,7 +79,14 @@ export default function AdminEnquiries() {
   };
 
   const handleDeleteEnquiry = async (id) => {
-    if (!window.confirm('Delete this customer enquiry?')) return;
+    const confirmed = await confirmAction({
+      title: 'Delete Customer Enquiry',
+      message: 'Are you sure you want to permanently delete this customer enquiry message?',
+      confirmText: 'Yes, Delete Enquiry',
+      cancelText: 'No, Keep Enquiry',
+      isDanger: true,
+    });
+    if (!confirmed) return;
     try {
       await api(`/api/admin/enquiries/${encodeURIComponent(id)}`, { method: 'DELETE' });
       showToast('✓ Enquiry deleted.');

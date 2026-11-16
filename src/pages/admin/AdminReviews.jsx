@@ -3,6 +3,7 @@ import PageHeader from '../../components/PageHeader';
 import BrandLoader from '../../components/BrandLoader';
 import { api } from '../../services/api';
 import { useToast } from '../../context/ToastContext';
+import { confirmAction } from '../../services/modal';
 
 export default function AdminReviews() {
   const { showToast } = useToast();
@@ -41,7 +42,14 @@ export default function AdminReviews() {
   };
 
   const handleDeleteReview = async (id) => {
-    if (!window.confirm('Delete this review permanently?')) return;
+    const confirmed = await confirmAction({
+      title: 'Delete Customer Review',
+      message: 'Are you sure you want to permanently delete this customer review?',
+      confirmText: 'Yes, Delete Review',
+      cancelText: 'Cancel',
+      isDanger: true,
+    });
+    if (!confirmed) return;
     try {
       await api(`/api/admin/reviews/${encodeURIComponent(id)}`, { method: 'DELETE' });
       showToast('✓ Review deleted.');

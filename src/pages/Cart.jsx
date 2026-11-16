@@ -3,11 +3,31 @@ import { Link } from 'react-router-dom';
 import PageHeader from '../components/PageHeader';
 import { money } from '../services/api';
 import { useCart } from '../context/CartContext';
+import { useToast } from '../context/ToastContext';
+import { confirmAction } from '../services/modal';
 
 export default function Cart() {
   const { cart, updateQuantity, clearCart } = useCart();
+  const { showToast } = useToast();
   const items = cart?.items || [];
   const isEmpty = items.length === 0;
+
+  const handleStepQuantity = async (variantId, newQty, productName) => {
+    if (newQty <= 0) {
+      const confirmed = await confirmAction({
+        title: 'Remove Item',
+        message: `Are you sure you want to remove "${productName || 'this item'}" from your cart?`,
+        confirmText: 'Yes, Remove Item',
+        cancelText: 'No, Keep Item',
+        isDanger: true,
+      });
+      if (!confirmed) return;
+      await updateQuantity(variantId, 0);
+      showToast('Item removed from your cart.');
+    } else {
+      await updateQuantity(variantId, newQty);
+    }
+  };
 
   return (
     <>
@@ -74,7 +94,8 @@ export default function Cart() {
                           <button
                             className="btn btn-outline-secondary"
                             type="button"
-                            onClick={() => updateQuantity(item.variantId, item.quantity - 1)}
+                            onClick={() => handleStepQuantity(item.variantId, item.quantity - 1, item.productName)}
+                            aria-label="Decrease quantity"
                           >
                             -
                           </button>
@@ -87,7 +108,8 @@ export default function Cart() {
                           <button
                             className="btn btn-outline-secondary"
                             type="button"
-                            onClick={() => updateQuantity(item.variantId, item.quantity + 1)}
+                            onClick={() => handleStepQuantity(item.variantId, item.quantity + 1, item.productName)}
+                            aria-label="Increase quantity"
                           >
                             +
                           </button>
@@ -100,7 +122,7 @@ export default function Cart() {
                         <button
                           type="button"
                           className="btn btn-sm btn-outline-danger"
-                          onClick={() => updateQuantity(item.variantId, 0)}
+                          onClick={() => handleStepQuantity(item.variantId, 0, item.productName)}
                           title="Remove item"
                         >
                           ✕
