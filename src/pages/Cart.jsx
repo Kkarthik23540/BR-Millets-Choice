@@ -12,6 +12,19 @@ export default function Cart() {
   const items = cart?.items || [];
   const isEmpty = items.length === 0;
 
+  const handleClearCart = async () => {
+    const confirmed = await confirmAction({
+      title: 'Clear Shopping Cart',
+      message: 'Are you sure you want to remove all items from your cart?',
+      confirmText: 'Yes, Clear Cart',
+      cancelText: 'Keep Items',
+      isDanger: true,
+    });
+    if (!confirmed) return;
+    await clearCart();
+    showToast('Cart cleared.');
+  };
+
   const handleStepQuantity = async (variantId, newQty, productName) => {
     if (newQty <= 0) {
       const confirmed = await confirmAction({
@@ -57,7 +70,7 @@ export default function Cart() {
                   <button
                     type="button"
                     className="btn btn-link btn-sm text-danger text-decoration-none p-0"
-                    onClick={clearCart}
+                    onClick={handleClearCart}
                   >
                     Clear Cart
                   </button>

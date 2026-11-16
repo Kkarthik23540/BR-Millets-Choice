@@ -6,6 +6,7 @@ import { api, money } from '../services/api';
 import { useCart } from '../context/CartContext';
 import { useToast } from '../context/ToastContext';
 import { useAuth } from '../context/AuthContext';
+import { confirmAction } from '../services/modal';
 
 export default function ProductDetail() {
   const { slug } = useParams();
@@ -17,6 +18,8 @@ export default function ProductDetail() {
   const [reviews, setReviews] = useState([]);
   const [reviewForm, setReviewForm] = useState({ rating: 5, title: '', comment: '' });
   const [submittingReview, setSubmittingReview] = useState(false);
+  const [addingToCart, setAddingToCart] = useState(false);
+  const [addedFeedback, setAddedFeedback] = useState(false);
 
   const { addToCart } = useCart();
   const { showToast } = useToast();
@@ -35,7 +38,7 @@ export default function ProductDetail() {
       .catch((err) => showToast(err.message, true))
       .finally(() => setLoading(false));
 
-    api(`/api/reviews?productSlug=${encodeURIComponent(slug)}`)
+    api(`/api/products/${encodeURIComponent(slug)}/reviews`)
       .then((data) => setReviews(data.reviews || []))
       .catch(() => {});
   }, [slug, showToast]);
@@ -65,16 +68,36 @@ export default function ProductDetail() {
   const ratingRound = Math.round(averageRating);
   const starsHtml = '★'.repeat(ratingRound) + '☆'.repeat(5 - ratingRound);
 
-  const handleAdd = () => {
-    if (selectedVariant) {
-      addToCart(selectedVariant.id, quantity);
+  const handleAdd = async () => {
+    if (!user) {
+      showToast('Please sign in to add items to your cart.', true);
+      navigate('/login');
+      return;
+    }
+    if (selectedVariant && !addingToCart) {
+      setAddingToCart(true);
+      const ok = await addToCart(selectedVariant.id, quantity);
+      setAddingToCart(false);
+      if (ok) {
+        setAddedFeedback(true);
+        setTimeout(() => setAddedFeedback(false), 2000);
+      }
     }
   };
 
-  const handleBuyNow = () => {
-    if (selectedVariant) {
-      addToCart(selectedVariant.id, quantity);
-      navigate('/checkout');
+  const handleBuyNow = async () => {
+    if (!user) {
+      showToast('Please sign in to place an order.', true);
+      navigate('/login');
+      return;
+    }
+    if (selectedVariant && !addingToCart) {
+      setAddingToCart(true);
+      const ok = await addToCart(selectedVariant.id, quantity, { silent: true });
+      setAddingToCart(false);
+      if (ok) {
+        navigate('/checkout');
+      }
     }
   };
 
@@ -82,23 +105,38 @@ export default function ProductDetail() {
     e.preventDefault();
     if (!user) {
       showToast('Please sign in to leave a review.', true);
+      navigate('/login');
       return;
     }
+    const commentTrimmed = (reviewForm.comment || '').trim();
+    if (commentTrimmed.length < 5) {
+      showToast('Please enter at least 5 characters in your review comment.', true);
+      return;
+    }
+
+    const confirmed = await confirmAction({
+      title: 'Submit Review',
+      message: `Are you sure you want to submit your review for "${product.name}"?`,
+      confirmText: 'Yes, Submit Review',
+      cancelText: 'Cancel',
+      isDanger: false,
+    });
+    if (!confirmed) return;
+
     setSubmittingReview(true);
     try {
-      await api('/api/reviews', {
+      await api(`/api/products/${encodeURIComponent(slug)}/reviews`, {
         method: 'POST',
         body: JSON.stringify({
-          productId: product.id,
           rating: Number(reviewForm.rating),
-          title: reviewForm.title,
-          comment: reviewForm.comment,
+          title: (reviewForm.title || '').trim(),
+          comment: commentTrimmed,
         }),
       });
       showToast('✓ Thank you! Your review has been submitted for moderation.');
       setReviewForm({ rating: 5, title: '', comment: '' });
       // Reload reviews
-      api(`/api/reviews?productSlug=${encodeURIComponent(slug)}`)
+      api(`/api/products/${encodeURIComponent(slug)}/reviews`)
         .then((data) => setReviews(data.reviews || []))
         .catch(() => {});
     } catch (err) {
@@ -241,17 +279,17 @@ export default function ProductDetail() {
                 <div className="d-flex flex-wrap gap-2">
                   <button
                     className="btn btn-outline-brand btn-lg flex-fill fw-bold"
-                    disabled={isOutOfStock}
+                    disabled={isOutOfStock || addingToCart}
                     onClick={handleAdd}
                   >
-                    🛒 Add to Cart
+                    {addedFeedback ? '✓ Added to Cart!' : addingToCart ? 'Adding…' : '🛒 Add to Cart'}
                   </button>
                   <button
                     className="btn btn-brand btn-lg flex-fill fw-bold"
-                    disabled={isOutOfStock}
+                    disabled={isOutOfStock || addingToCart}
                     onClick={handleBuyNow}
                   >
-                    ⚡ Buy Now
+                    {addingToCart ? 'Processing…' : '⚡ Buy Now'}
                   </button>
                 </div>
               </div>

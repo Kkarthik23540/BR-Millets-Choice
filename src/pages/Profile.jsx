@@ -8,6 +8,182 @@ import { confirmAction } from '../services/modal';
 
 const VALID_TABS = ['profile', 'preferences', 'addresses', 'orders', 'notifications', 'overview'];
 
+function AddressItem({ addr, onUpdate, onDelete }) {
+  const [editing, setEditing] = useState(false);
+  const [form, setForm] = useState({
+    label: addr.label || 'Home',
+    recipientName: addr.recipientName || '',
+    phone: addr.phone || '',
+    line1: addr.line1 || '',
+    line2: addr.line2 || '',
+    city: addr.city || 'Hyderabad',
+    state: addr.state || 'Telangana',
+    postalCode: addr.postalCode || '',
+    isDefault: Boolean(addr.isDefault),
+  });
+  const [saving, setSaving] = useState(false);
+  const { showToast } = useToast();
+
+  const handleSave = async (e) => {
+    e.preventDefault();
+    setSaving(true);
+    try {
+      await api(`/api/addresses/${encodeURIComponent(addr.id)}`, {
+        method: 'PATCH',
+        body: JSON.stringify(form),
+      });
+      showToast('✓ Address updated successfully.');
+      setEditing(false);
+      onUpdate();
+    } catch (err) {
+      showToast(err.message, true);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <article className="address-card account-address-card mb-3">
+      <div className="d-flex justify-content-between align-items-start gap-2">
+        <h3 className="h6 mb-2 fw-bold text-forest">
+          {addr.label} {addr.isDefault && <span className="status-pill ms-2">Default</span>}
+        </h3>
+        <div className="d-flex gap-2">
+          <button
+            type="button"
+            className="btn btn-sm btn-outline-brand"
+            onClick={() => setEditing(!editing)}
+          >
+            {editing ? 'Cancel' : 'Edit'}
+          </button>
+          <button
+            type="button"
+            className="btn btn-sm btn-outline-danger"
+            onClick={() => onDelete(addr.id)}
+          >
+            Delete
+          </button>
+        </div>
+      </div>
+      <p className="small text-secondary mb-0">
+        {addr.recipientName} · {addr.phone}
+        <br />
+        {addr.line1} {addr.line2 ? `${addr.line2}, ` : ''}{addr.city}, {addr.state} {addr.postalCode}
+      </p>
+
+      {editing && (
+        <form onSubmit={handleSave} className="mt-3 pt-3 border-top">
+          <div className="row g-2">
+            <div className="col-md-6">
+              <label className="form-label small">Label (e.g. Home, Office)</label>
+              <input
+                className="form-control form-control-sm"
+                required
+                maxLength={40}
+                value={form.label}
+                onChange={(e) => setForm({ ...form, label: e.target.value })}
+              />
+            </div>
+            <div className="col-md-6">
+              <label className="form-label small">Recipient Name</label>
+              <input
+                className="form-control form-control-sm"
+                required
+                maxLength={100}
+                value={form.recipientName}
+                onChange={(e) => setForm({ ...form, recipientName: e.target.value })}
+              />
+            </div>
+            <div className="col-md-6">
+              <label className="form-label small">Contact Phone Number</label>
+              <input
+                className="form-control form-control-sm"
+                required
+                type="tel"
+                maxLength={20}
+                value={form.phone}
+                onChange={(e) => setForm({ ...form, phone: e.target.value })}
+              />
+            </div>
+            <div className="col-12">
+              <label className="form-label small">Address Line 1</label>
+              <input
+                className="form-control form-control-sm"
+                required
+                maxLength={150}
+                value={form.line1}
+                onChange={(e) => setForm({ ...form, line1: e.target.value })}
+              />
+            </div>
+            <div className="col-12">
+              <label className="form-label small">Address Line 2 (Optional)</label>
+              <input
+                className="form-control form-control-sm"
+                maxLength={150}
+                value={form.line2}
+                onChange={(e) => setForm({ ...form, line2: e.target.value })}
+              />
+            </div>
+            <div className="col-md-4">
+              <label className="form-label small">City</label>
+              <input
+                className="form-control form-control-sm"
+                required
+                maxLength={80}
+                value={form.city}
+                onChange={(e) => setForm({ ...form, city: e.target.value })}
+              />
+            </div>
+            <div className="col-md-4">
+              <label className="form-label small">State</label>
+              <input
+                className="form-control form-control-sm"
+                required
+                maxLength={80}
+                value={form.state}
+                onChange={(e) => setForm({ ...form, state: e.target.value })}
+              />
+            </div>
+            <div className="col-md-4">
+              <label className="form-label small">Postal Code (PIN)</label>
+              <input
+                className="form-control form-control-sm"
+                required
+                maxLength={10}
+                value={form.postalCode}
+                onChange={(e) => setForm({ ...form, postalCode: e.target.value })}
+              />
+            </div>
+            <div className="col-12">
+              <label className="form-check small mt-1">
+                <input
+                  type="checkbox"
+                  className="form-check-input"
+                  checked={form.isDefault}
+                  onChange={(e) => setForm({ ...form, isDefault: e.target.checked })}
+                />
+                <span className="form-check-label">Set as default delivery address</span>
+              </label>
+            </div>
+            <div className="col-12 mt-2 d-flex gap-2">
+              <button className="btn btn-brand btn-sm" type="submit" disabled={saving}>
+                {saving ? 'Saving…' : 'Save changes'}
+              </button>
+              <button
+                className="btn btn-outline-secondary btn-sm"
+                type="button"
+                onClick={() => setEditing(false)}
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </form>
+      )}
+    </article>
+  );
+}
+
 export default function Profile({ initialTab = null }) {
   const { user, refreshUser, logout } = useAuth();
   const { showToast } = useToast();
@@ -227,6 +403,21 @@ export default function Profile({ initialTab = null }) {
         unreadCount: Math.max(0, prev.unreadCount - 1),
         notifications: prev.notifications.map((n) => (n.id === id ? { ...n, readAt: new Date() } : n)),
       }));
+      showToast('Notification marked as read.');
+    } catch (err) {
+      showToast(err.message, true);
+    }
+  };
+
+  const handleMarkAllNotifications = async () => {
+    try {
+      await api('/api/notifications/read-all', { method: 'PATCH' });
+      setNotifications((prev) => ({
+        ...prev,
+        unreadCount: 0,
+        notifications: prev.notifications.map((n) => ({ ...n, readAt: n.readAt || new Date() })),
+      }));
+      showToast('All notifications marked as read.');
     } catch (err) {
       showToast(err.message, true);
     }
@@ -479,25 +670,12 @@ export default function Profile({ initialTab = null }) {
                 {addresses.length > 0 ? (
                   <div className="account-address-list">
                     {addresses.map((addr) => (
-                      <article key={addr.id} className="address-card account-address-card mb-3">
-                        <div className="d-flex justify-content-between align-items-start gap-2">
-                          <h3 className="h6 mb-2 fw-bold text-forest">
-                            {addr.label} {addr.isDefault && <span className="status-pill ms-2">Default</span>}
-                          </h3>
-                          <button
-                            type="button"
-                            className="btn btn-sm btn-outline-danger"
-                            onClick={() => handleDeleteAddress(addr.id)}
-                          >
-                            Delete
-                          </button>
-                        </div>
-                        <p className="small text-secondary mb-0">
-                          {addr.recipientName} · {addr.phone}
-                          <br />
-                          {addr.line1} {addr.line2 ? `${addr.line2}, ` : ''}{addr.city}, {addr.state} {addr.postalCode}
-                        </p>
-                      </article>
+                      <AddressItem
+                        key={addr.id}
+                        addr={addr}
+                        onUpdate={loadData}
+                        onDelete={handleDeleteAddress}
+                      />
                     ))}
                   </div>
                 ) : (
@@ -647,9 +825,20 @@ export default function Profile({ initialTab = null }) {
                     <p className="eyebrow mb-1">Updates</p>
                     <h2 className="h4 mb-0">Notifications</h2>
                   </div>
-                  {notifications.unreadCount > 0 && (
-                    <span className="profile-tab-count is-alert">{notifications.unreadCount}</span>
-                  )}
+                  <div className="d-flex align-items-center gap-2">
+                    {notifications.unreadCount > 0 && (
+                      <span className="profile-tab-count is-alert">{notifications.unreadCount} unread</span>
+                    )}
+                    {notifications.unreadCount > 0 && (
+                      <button
+                        type="button"
+                        className="btn btn-sm btn-outline-brand"
+                        onClick={handleMarkAllNotifications}
+                      >
+                        ✓ Mark all read
+                      </button>
+                    )}
+                  </div>
                 </div>
 
                 {notifications.notifications?.length > 0 ? (

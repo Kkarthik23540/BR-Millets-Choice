@@ -36,6 +36,11 @@ a:hover { color: var(--earth); }
 .border-forest-subtle { border-color: #a8dab5 !important; }
 .site-layout { --sidebar-width: 240px; display: grid; min-height: calc(100vh - 4rem); grid-template-columns: var(--sidebar-width) minmax(0, 1fr); transition: grid-template-columns .2s ease; }
 .site-sidebar { position: fixed; top: var(--site-sidebar-top, 4rem); bottom: 0; left: 0; z-index: 990; display: flex; width: var(--sidebar-width); min-height: 0; flex-direction: column; overflow-y: auto; overscroll-behavior-y: contain; padding: 1rem .75rem; border-right: 1px solid var(--line); background: #f8f7f0; transition: width .2s ease; }
+@media (min-width: 992px) {
+  body:not(.admin-mode) .site-sidebar {
+    top: var(--site-sidebar-top, 6.35rem);
+  }
+}
 .admin-mode .announcement-bar, .admin-mode .site-footer { display: none; }
 .admin-mode [data-admin-view][hidden] { display: none !important; }
 .admin-mode .page-hero { padding-block: 1.75rem; }

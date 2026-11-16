@@ -25,6 +25,27 @@ export default function Layout({ children }) {
     document.body.classList.toggle('admin-mode', Boolean(isOnAdmin));
   }, [isOnAdmin]);
 
+  // Synchronize sidebar top offset with sticky header & announcement bar (matches public/app.js:4425)
+  useEffect(() => {
+    const syncSidebarOffset = () => {
+      const siteSidebar = document.querySelector('.site-sidebar');
+      const siteHeader = document.querySelector('.site-header');
+      if (!siteSidebar || !siteHeader) return;
+      if (window.matchMedia('(min-width: 992px)').matches) {
+        siteSidebar.style.setProperty('--site-sidebar-top', `${Math.max(0, siteHeader.getBoundingClientRect().bottom)}px`);
+      } else {
+        siteSidebar.style.removeProperty('--site-sidebar-top');
+      }
+    };
+    syncSidebarOffset();
+    window.addEventListener('scroll', syncSidebarOffset, { passive: true });
+    window.addEventListener('resize', syncSidebarOffset, { passive: true });
+    return () => {
+      window.removeEventListener('scroll', syncSidebarOffset);
+      window.removeEventListener('resize', syncSidebarOffset);
+    };
+  }, [isOnAdmin]);
+
   // Lock mobile body scroll when drawer open
   useEffect(() => {
     document.body.classList.toggle('site-nav-open', Boolean(isSidebarOpen));
