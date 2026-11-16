@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useLocation } from 'react-router-dom';
 import Header from './Header';
 import Sidebar from './Sidebar';
@@ -15,6 +15,18 @@ export default function Layout({ children }) {
     return localStorage.getItem('brmc-sidebar-collapsed') === 'true';
   });
   const [scrollBtnDirection, setScrollBtnDirection] = useState(null);
+
+  const handleToggleSidebar = useCallback(() => {
+    setIsSidebarOpen((prev) => !prev);
+  }, []);
+
+  const handleCloseSidebar = useCallback(() => {
+    setIsSidebarOpen(false);
+  }, []);
+
+  const handleToggleCollapse = useCallback(() => {
+    setIsCollapsed((prev) => !prev);
+  }, []);
 
   useEffect(() => {
     localStorage.setItem('brmc-sidebar-collapsed', String(isCollapsed));
@@ -117,14 +129,14 @@ export default function Layout({ children }) {
       <div id="top-nav-loader" aria-hidden="true" />
 
       <Header
-        onToggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
+        onToggleSidebar={handleToggleSidebar}
         isSidebarOpen={isSidebarOpen}
       />
 
       <button
         className="site-nav-backdrop"
         type="button"
-        onClick={() => setIsSidebarOpen(false)}
+        onClick={handleCloseSidebar}
         aria-label="Close navigation"
         hidden={!isSidebarOpen}
       />
@@ -132,9 +144,9 @@ export default function Layout({ children }) {
       <div className={`site-layout ${isCollapsed ? 'sidebar-collapsed' : ''}`}>
         <Sidebar
           isOpen={isSidebarOpen}
-          onClose={() => setIsSidebarOpen(false)}
+          onClose={handleCloseSidebar}
           isCollapsed={isCollapsed}
-          onToggleCollapse={() => setIsCollapsed(!isCollapsed)}
+          onToggleCollapse={handleToggleCollapse}
         />
 
         <div className="site-content">

@@ -12,10 +12,14 @@ export default function Sidebar({ isOpen, onClose, isCollapsed, onToggleCollapse
   const accountMenuRef = useRef(null);
   const isOnAdmin = Boolean(isAdmin || location.pathname.startsWith('/admin'));
 
-  // Close mobile sidebar on route change
+  // Close mobile sidebar only on route change
+  const prevPathRef = useRef(location.pathname);
   useEffect(() => {
-    onClose();
-    setAccountMenuOpen(false);
+    if (prevPathRef.current !== location.pathname) {
+      prevPathRef.current = location.pathname;
+      onClose();
+      setAccountMenuOpen(false);
+    }
   }, [location.pathname, onClose]);
 
   // Dismiss account menu on click outside

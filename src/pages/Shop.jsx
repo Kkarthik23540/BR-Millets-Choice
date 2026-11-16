@@ -33,28 +33,30 @@ export default function Shop() {
   const filteredProducts = useMemo(() => {
     let result = [...products];
 
+    const normalize = (str) =>
+      (str || '')
+        .toLowerCase()
+        .replace(/millets/g, 'millet')
+        .replace(/powders/g, 'powder');
+
+    const matchesQuery = (p, rawQuery) => {
+      const q = normalize(rawQuery.trim());
+      if (!q) return true;
+      const name = p.name || '';
+      const desc = p.description || '';
+      const cat = p.category || '';
+      const ing = p.ingredients || '';
+      const packSizes = (p.variants || []).map((v) => v.packSize || '').join(' ');
+      const combined = normalize(`${name} ${desc} ${cat} ${ing} ${packSizes}`);
+      return combined.includes(q);
+    };
+
     if (search.trim()) {
-      const q = search.toLowerCase().trim();
-      result = result.filter((p) => {
-        const name = (p.name || '').toLowerCase();
-        const desc = (p.description || '').toLowerCase();
-        const cat = (p.category || '').toLowerCase();
-        const ing = (p.ingredients || '').toLowerCase();
-        const packSizes = (p.variants || []).map((v) => (v.packSize || '').toLowerCase()).join(' ');
-        return name.includes(q) || desc.includes(q) || cat.includes(q) || ing.includes(q) || packSizes.includes(q);
-      });
+      result = result.filter((p) => matchesQuery(p, search));
     }
 
     if (activeFilter !== 'all') {
-      const q = activeFilter.toLowerCase();
-      result = result.filter((p) => {
-        const name = (p.name || '').toLowerCase();
-        const desc = (p.description || '').toLowerCase();
-        const cat = (p.category || '').toLowerCase();
-        const ing = (p.ingredients || '').toLowerCase();
-        const packSizes = (p.variants || []).map((v) => (v.packSize || '').toLowerCase()).join(' ');
-        return name.includes(q) || desc.includes(q) || cat.includes(q) || ing.includes(q) || packSizes.includes(q);
-      });
+      result = result.filter((p) => matchesQuery(p, activeFilter));
     }
 
     if (activeSort === 'price-asc') {

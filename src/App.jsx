@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react';
 import { Routes, Route, useLocation, Navigate } from 'react-router-dom';
 import Layout from './components/Layout';
+import ErrorBoundary from './components/ErrorBoundary';
 
 // Storefront pages
 import Home from './pages/Home';
@@ -78,9 +79,10 @@ function ScrollToTopAndMeta() {
 
 export default function App() {
   return (
-    <Layout>
-      <ScrollToTopAndMeta />
-      <Routes>
+    <ErrorBoundary>
+      <Layout>
+        <ScrollToTopAndMeta />
+        <Routes>
         {/* Storefront */}
         <Route path="/" element={<Home />} />
         <Route path="/shop" element={<Shop />} />
@@ -128,5 +130,6 @@ export default function App() {
         <Route path="*" element={<NotFound />} />
       </Routes>
     </Layout>
+  </ErrorBoundary>
   );
 }

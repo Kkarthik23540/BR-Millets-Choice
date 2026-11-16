@@ -43,6 +43,17 @@ export default function ProductDetail() {
       .catch(() => {});
   }, [slug, showToast]);
 
+  const selectedVariant = product?.variants?.find((v) => v.id === selectedVariantId) || product?.variants?.[0];
+  const isOutOfStock = !selectedVariant || Number(selectedVariant.stockQuantity) <= 0;
+  const maxQuantity = Math.min(10, Math.max(1, Number(selectedVariant?.stockQuantity) || 10));
+  const mainImage = product?.imageUrl || product?.images?.[0]?.url || product?.images?.[0]?.image_url;
+
+  useEffect(() => {
+    if (quantity > maxQuantity) {
+      setQuantity(maxQuantity);
+    }
+  }, [maxQuantity, quantity]);
+
   if (loading) {
     return <BrandLoader message="Loading fresh product details…" />;
   }
@@ -58,17 +69,6 @@ export default function ProductDetail() {
       </div>
     );
   }
-
-  const selectedVariant = product.variants?.find((v) => v.id === selectedVariantId) || product.variants?.[0];
-  const isOutOfStock = !selectedVariant || Number(selectedVariant.stockQuantity) <= 0;
-  const maxQuantity = Math.min(10, Math.max(1, Number(selectedVariant?.stockQuantity) || 10));
-  const mainImage = product.imageUrl || product.images?.[0]?.url || product.images?.[0]?.image_url;
-
-  useEffect(() => {
-    if (quantity > maxQuantity) {
-      setQuantity(maxQuantity);
-    }
-  }, [maxQuantity, quantity]);
 
   const averageRating = reviews.length
     ? reviews.reduce((acc, r) => acc + (Number(r.rating) || 5), 0) / reviews.length
