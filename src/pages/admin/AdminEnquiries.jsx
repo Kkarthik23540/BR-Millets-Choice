@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import PageHeader from '../../components/PageHeader';
+import BrandLoader from '../../components/BrandLoader';
 import { api } from '../../services/api';
 import { useToast } from '../../context/ToastContext';
 
@@ -167,10 +168,7 @@ export default function AdminEnquiries() {
 
         {/* Enquiry Cards */}
         {loading ? (
-          <div className="text-center py-5">
-            <div className="spinner-border text-forest" role="status" />
-            <p className="mt-2 text-secondary">Loading enquiries…</p>
-          </div>
+          <BrandLoader message="Loading customer enquiries…" />
         ) : filteredEnquiries.length > 0 ? (
           filteredEnquiries.map((item) => (
             <article key={item.id} className="enquiry-card-elevated mb-3">

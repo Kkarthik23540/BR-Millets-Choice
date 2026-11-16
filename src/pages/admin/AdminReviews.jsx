@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import PageHeader from '../../components/PageHeader';
+import BrandLoader from '../../components/BrandLoader';
 import { api } from '../../services/api';
 import { useToast } from '../../context/ToastContext';
 
@@ -66,10 +67,7 @@ export default function AdminReviews() {
         </div>
 
         {loading ? (
-          <div className="text-center py-5">
-            <div className="spinner-border text-forest" role="status" />
-            <p className="mt-2 text-secondary">Loading reviews…</p>
-          </div>
+          <BrandLoader message="Loading customer reviews…" />
         ) : reviews.length > 0 ? (
           <div className="row g-3">
             {reviews.map((r) => (

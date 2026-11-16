@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import PageHeader from '../../components/PageHeader';
+import BrandLoader from '../../components/BrandLoader';
 import { api, money } from '../../services/api';
 import { useToast } from '../../context/ToastContext';
 
@@ -124,10 +125,7 @@ export default function AdminCustomers() {
 
         {/* Customer list */}
         {loading ? (
-          <div className="text-center py-5">
-            <div className="spinner-border text-forest" role="status" />
-            <p className="mt-2 text-secondary">Loading customers…</p>
-          </div>
+          <BrandLoader message="Loading customers directory…" />
         ) : filteredCustomers.length > 0 ? (
           filteredCustomers.map((customer) => {
             const isVerified = Boolean(customer.emailVerifiedAt);

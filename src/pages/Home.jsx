@@ -1,39 +1,50 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { api, money } from '../services/api';
-import { useCart } from '../context/CartContext';
 import ProductCard from '../components/ProductCard';
+import BrandLoader from '../components/BrandLoader';
 
 export default function Home() {
   const [products, setProducts] = useState([]);
   const [reviews, setReviews] = useState([]);
-  const [selectedPack, setSelectedPack] = useState({});
-  const { addToCart } = useCart();
+  const [loading, setLoading] = useState(true);
+  const [typedTitle, setTypedTitle] = useState('');
+
+  useEffect(() => {
+    const fullText = 'BR MILLETS CHOICE';
+    let i = 0;
+    const timer = setInterval(() => {
+      if (i <= fullText.length) {
+        setTypedTitle(fullText.slice(0, i));
+        i++;
+      } else {
+        clearInterval(timer);
+      }
+    }, 60);
+    return () => clearInterval(timer);
+  }, []);
 
   useEffect(() => {
     Promise.all([
       api('/api/products').catch(() => ({ products: [] })),
       api('/api/reviews').catch(() => ({ reviews: [] })),
-    ]).then(([prodData, revData]) => {
-      const prods = prodData.products || [];
-      setProducts(prods);
-      setReviews((revData.reviews || []).filter((r) => r.isApproved !== false && r.comment));
-
-      // Set default selected variant for each product
-      const defaultPacks = {};
-      prods.forEach((p) => {
-        if (p.variants?.length) {
-          defaultPacks[p.id] = p.variants[0].id;
-        }
-      });
-      setSelectedPack(defaultPacks);
-    });
+    ])
+      .then(([prodData, revData]) => {
+        const prods = prodData.products || [];
+        setProducts(prods);
+        setReviews((revData.reviews || []).filter((r) => r.isApproved !== false && r.comment));
+      })
+      .finally(() => setLoading(false));
   }, []);
+
+  if (loading) {
+    return <BrandLoader message="Loading fresh millet harvest…" />;
+  }
 
   return (
     <>
       {/* Impressive Clean Landing Hero */}
-      <section className="landing-hero py-3 py-md-4 position-relative overflow-hidden scroll-section-overlay">
+      <section className="landing-hero py-3 py-md-4 position-relative overflow-hidden scroll-section-overlay is-revealed">
         <div className="container">
           <div className="row align-items-center gy-3 gy-md-4">
             <div className="col-lg-7 text-center text-lg-start">
@@ -41,7 +52,7 @@ export default function Home() {
                 <span>🌾 100% PURE &amp; NATURAL</span>
               </div>
               <h1 className="landing-title mb-1">
-                <span className="typing-brand-title">BR MILLETS CHOICE</span>
+                <span className="typing-brand-title">{typedTitle || 'BR MILLETS CHOICE'}</span>
                 <span className="typing-cursor" aria-hidden="true">|</span>
               </h1>
               <p className="landing-subtitle mb-2">
@@ -88,7 +99,7 @@ export default function Home() {
       </section>
 
       {/* 4 Simple Reasons Strip */}
-      <section className="py-3 py-md-4 bg-white border-top border-bottom scroll-section-overlay">
+      <section className="py-3 py-md-4 bg-white border-top border-bottom scroll-section-overlay is-revealed">
         <div className="container">
           <div className="row gy-3">
             <div className="col-6 col-md-3">
@@ -132,12 +143,12 @@ export default function Home() {
       </section>
 
       {/* What's Inside Our Blend (Bento Grid Layout) */}
-      <section className="section-space scroll-section-overlay" id="whats-inside" style={{ background: '#fafaf7' }}>
+      <section className="section-space scroll-section-overlay is-revealed" id="whats-inside" style={{ background: '#fafaf7' }}>
         <div className="container">
           <div className="text-center mb-3 mb-md-4">
             <div
               className="d-inline-flex align-items-center gap-2 px-3 py-1 rounded-pill mb-2 fw-bold text-uppercase shadow-xs"
-              style={{ background: '#113425', color: '#ffffff', fontSize: '0.8rem', letterSpacing: '0.06em' }}
+              style={{ backgroundColor: '#113425', color: '#ffffff', fontSize: '0.8rem', letterSpacing: '0.06em' }}
             >
               <span>🌾</span>
               <span style={{ color: '#ffffff' }}>OUR SPECIAL BLEND</span>
@@ -176,9 +187,9 @@ export default function Home() {
                   ['Barnyard', 'Gut Health'],
                   ['Kodo', 'Antioxidants'],
                   ['Brown Top', 'Detox Grain'],
-                  ['Little', 'Iron & Minerals'],
-                  ['Ragi', 'High Calcium'],
-                  ['Bajra', 'Strength & Vitality'],
+                  ['Little Millet', 'Metabolism'],
+                  ['Bajra', 'Iron & Energy'],
+                  ['Ragi', 'Rich Calcium'],
                 ].map(([name, tag]) => (
                   <div className="col" key={name}>
                     <div className="ingredient-pill-card">
@@ -195,75 +206,107 @@ export default function Home() {
 
             {/* Bento Split: Nuts and Seeds */}
             <div className="row g-3">
-              <div className="col-lg-6">
-                <div className="ingredient-bento-card p-3 p-md-4 rounded-4 bg-white border h-100">
-                  <div className="d-flex align-items-center gap-2 mb-3 pb-2 border-bottom">
-                    <div className="blend-icon-circle bg-warning-subtle text-warning fs-5">🥜</div>
-                    <div>
-                      <h3 className="h6 fw-bold mb-0 text-dark">4 Crunchy Nuts</h3>
-                      <small className="text-secondary" style={{ fontSize: '0.8rem' }}>Rich in Healthy Fats &amp; Plant Protein</small>
+              <div className="col-md-5">
+                <div className="ingredient-bento-subcard p-3 p-md-4 rounded-4 bg-white border h-100 d-flex flex-column nut-card-border">
+                  <div className="d-flex align-items-center justify-content-between mb-2 pb-2 border-bottom">
+                    <div className="d-flex align-items-center gap-2">
+                      <div className="blend-icon-circle" style={{ background: '#fef3c7', color: '#92400e' }}>🥜</div>
+                      <div>
+                        <h3 className="h6 fw-bold mb-0 text-dark">4 Premium Nuts</h3>
+                        <small className="text-muted" style={{ fontSize: '0.75rem' }}>Wholesome Crunch &amp; Good Fats</small>
+                      </div>
                     </div>
+                    <span className="badge rounded-pill fw-bold" style={{ backgroundColor: '#fef3c7', color: '#92400e', border: '1px solid #fde68a', fontSize: '0.72rem' }}>Heart Healthy</span>
                   </div>
-                  <div className="row g-2 row-cols-2">
+                  <p className="small text-secondary mb-3" style={{ fontSize: '0.82rem', lineHeight: 1.4 }}>
+                    Selected whole crunchy nuts rich in natural plant proteins, vitamin E, and good fats.
+                  </p>
+                  <div className="row g-2 mb-3">
                     {[
-                      ['Almonds', 'Vitamin E & Brain'],
-                      ['Cashews', 'Creamy Energy'],
-                      ['Walnuts', 'Omega-3 Rich'],
-                      ['Groundnuts', 'Pure Protein'],
-                    ].map(([name, tag]) => (
-                      <div className="col" key={name}>
-                        <div className="ingredient-pill-card">
-                          <span className="pill-icon">🥜</span>
+                      ['Almonds (Badam)', 'Vitamin E', '🌰'],
+                      ['Cashews (Kaju)', 'Healthy Fats', '🥜'],
+                      ['Walnuts (Akhrot)', 'Plant Omega-3', '🧠'],
+                      ['Pistachios (Pista)', 'Antioxidants', '🟢'],
+                    ].map(([name, tag, icon]) => (
+                      <div className="col-6" key={name}>
+                        <div className="ingredient-pill-card nut-pill">
+                          <span className="pill-icon">{icon}</span>
                           <div className="pill-content">
                             <strong className="pill-title">{name}</strong>
-                            <span className="pill-tag">{tag}</span>
+                            <span className="pill-tag text-muted">{tag}</span>
                           </div>
                         </div>
                       </div>
                     ))}
+                  </div>
+                  <div className="mt-auto pt-2 border-top small fw-bold d-flex align-items-center gap-1" style={{ fontSize: '0.78rem', color: '#92400e' }}>
+                    <span>✓</span> <span>Rich in Natural Proteins &amp; Healthy Fats</span>
                   </div>
                 </div>
               </div>
 
-              <div className="col-lg-6">
-                <div className="ingredient-bento-card p-3 p-md-4 rounded-4 bg-white border h-100">
-                  <div className="d-flex align-items-center gap-2 mb-3 pb-2 border-bottom">
-                    <div className="blend-icon-circle bg-info-subtle text-info fs-5">🌱</div>
-                    <div>
-                      <h3 className="h6 fw-bold mb-0 text-dark">7 Seeds &amp; Pulses</h3>
-                      <small className="text-secondary" style={{ fontSize: '0.8rem' }}>Digestive Herbs &amp; Superfood Seeds</small>
+              <div className="col-md-7">
+                <div className="ingredient-bento-subcard p-3 p-md-4 rounded-4 bg-white border h-100 d-flex flex-column seed-card-border">
+                  <div className="d-flex align-items-center justify-content-between mb-2 pb-2 border-bottom">
+                    <div className="d-flex align-items-center gap-2">
+                      <div className="blend-icon-circle bg-success-subtle text-success">🌱</div>
+                      <div>
+                        <h3 className="h6 fw-bold mb-0 text-dark">7 Seeds &amp; Pulses</h3>
+                        <small className="text-muted" style={{ fontSize: '0.75rem' }}>Nutrient-Dense Everyday Vitality</small>
+                      </div>
                     </div>
+                    <span className="badge rounded-pill fw-bold" style={{ backgroundColor: '#e0f2fe', color: '#075985', border: '1px solid #bae6fd', fontSize: '0.72rem' }}>Vital Minerals</span>
                   </div>
-                  <div className="row g-2 row-cols-2">
+                  <p className="small text-secondary mb-3" style={{ fontSize: '0.82rem', lineHeight: 1.4 }}>
+                    Nutrient-dense seeds for easy daily digestion, glow, natural zinc, and mineral balance.
+                  </p>
+                  <div className="row g-2 mb-3">
                     {[
-                      ['Chia Seeds', 'Super Hydration'],
-                      ['Flax Seeds', 'Heart Health'],
-                      ['Pumpkin Seeds', 'Zinc & Vitality'],
-                      ['Watermelon Seeds', 'Natural Minerals'],
-                      ['Sesame', 'Bone Strength'],
-                      ['Horsegram', 'Traditional Warmth'],
-                      ['Cardamom', 'Aromatic Digestion'],
-                    ].map(([name, tag]) => (
-                      <div className="col" key={name}>
-                        <div className="ingredient-pill-card">
-                          <span className="pill-icon">🌱</span>
+                      ['Pumpkin', 'Zinc & Glow', '🎃'],
+                      ['Watermelon', 'Heart Health', '🍉'],
+                      ['Sunflower', 'Cell Energy', '🌻'],
+                      ['Flax Seeds', 'Plant Omega-3', '🌾'],
+                      ['Sesame (Til)', 'Pure Calcium', '⚪'],
+                      ['Cucumber', 'Hydration', '🥒'],
+                    ].map(([name, tag, icon]) => (
+                      <div className="col-6 col-sm-4" key={name}>
+                        <div className="ingredient-pill-card seed-pill">
+                          <span className="pill-icon">{icon}</span>
                           <div className="pill-content">
                             <strong className="pill-title">{name}</strong>
-                            <span className="pill-tag">{tag}</span>
+                            <span className="pill-tag text-muted">{tag}</span>
                           </div>
                         </div>
                       </div>
                     ))}
+                    <div className="col-12">
+                      <div className="ingredient-pill-card seed-pill seed-pill-wide">
+                        <span className="pill-icon">⚫</span>
+                        <div className="pill-content d-flex align-items-center justify-content-between w-100 flex-wrap gap-1">
+                          <strong className="pill-title">Black Gram (Urad)</strong>
+                          <span className="pill-tag text-muted">Plant Protein &amp; Easy Digestion</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="mt-auto pt-2 border-top small text-success fw-bold d-flex align-items-center gap-1" style={{ fontSize: '0.78rem' }}>
+                    <span>✓</span> <span>High in Natural Minerals, Zinc &amp; Fiber</span>
                   </div>
                 </div>
               </div>
             </div>
           </div>
+
+          <div className="text-center mt-3 pt-1">
+            <Link to="/millets" className="btn btn-sm btn-outline-brand rounded-pill px-3 py-1 fw-semibold" style={{ fontSize: '0.85rem' }}>
+              Explore All 19 Ingredients &amp; Regional Names →
+            </Link>
+          </div>
         </div>
       </section>
 
       {/* Available Packs & Products */}
-      <section className="section-space bg-white border-top scroll-section-overlay">
+      <section className="section-space bg-white border-top scroll-section-overlay is-revealed">
         <div className="container">
           <div className="d-flex flex-wrap justify-content-between align-items-end gap-2 mb-3 mb-md-4">
             <div>
@@ -305,29 +348,50 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Customer Reviews Section */}
-      {reviews.length > 0 && (
-        <section className="py-5 bg-white border-top">
+      {/* Sliding Verified Customer Reviews */}
+      {reviews.length > 0 ? (
+        <section className="section-space bg-light border-top scroll-section-overlay is-revealed">
           <div className="container">
-            <div className="text-center mb-4">
-              <p className="eyebrow mb-1">Customer Feedback</p>
-              <h2 className="display-title mb-1">What Families Say About BR Millets</h2>
+            <div className="text-center mb-3 mb-md-4">
+              <span className="badge rounded-pill bg-success-subtle text-success border border-success-subtle px-3 py-1 mb-2 small fw-bold text-uppercase">
+                ⭐ Verified Customer Reviews
+              </span>
+              <h2 className="h3 fw-bold text-forest mb-1">What Our Customers Say</h2>
+              <p className="small text-secondary mb-0">Real experiences from customers enjoying fresh stone-ground millets.</p>
             </div>
-            <div className="row g-3">
-              {reviews.slice(0, 3).map((r) => (
-                <div className="col-md-4" key={r.id}>
-                  <div className="feature-card p-4 h-100">
-                    <div className="d-flex align-items-center gap-1 text-warning mb-2">
-                      {'★'.repeat(r.rating || 5)}{'☆'.repeat(5 - (r.rating || 5))}
-                    </div>
-                    <h3 className="h6 fw-bold mb-2">{r.title}</h3>
-                    <p className="small text-secondary mb-3">"{r.comment}"</p>
-                    <div className="mt-auto pt-2 border-top small text-muted">
-                      <strong>{r.customerName}</strong> · {r.productName}
-                    </div>
+          </div>
+          <div className="reviews-slider-outer py-2">
+            <div className="reviews-slider-track">
+              {[...reviews, ...reviews].map((r, i) => (
+                <div key={`${r.id}-${i}`} className="review-slide-card bg-white border rounded-4 p-3 shadow-xs">
+                  <div className="d-flex align-items-center justify-content-between mb-2">
+                    <div className="text-warning small">{'★'.repeat(r.rating || 5)}{'☆'.repeat(5 - (r.rating || 5))}</div>
+                    <span className="badge bg-success-subtle text-success border border-success-subtle rounded-pill" style={{ fontSize: '0.68rem' }}>
+                      ✓ Verified Purchase
+                    </span>
+                  </div>
+                  {r.title && <h3 className="h6 fw-bold mb-1 text-dark text-truncate">{r.title}</h3>}
+                  <p className="small text-secondary mb-2 review-comment-text">{r.comment.replace(/^•\s*/, '')}</p>
+                  <div className="d-flex align-items-center justify-content-between pt-2 border-top mt-auto">
+                    <span className="small fw-semibold text-forest">👤 {r.customerName || 'Verified Customer'}</span>
+                    <span className="small text-muted" style={{ fontSize: '0.72rem' }}>
+                      {new Date(r.createdAt).toLocaleDateString('en-IN', { month: 'short', day: 'numeric', year: 'numeric' })}
+                    </span>
                   </div>
                 </div>
               ))}
+            </div>
+          </div>
+        </section>
+      ) : (
+        <section className="py-4 bg-light border-top text-center scroll-section-overlay is-revealed">
+          <div className="container">
+            <div className="d-inline-flex flex-wrap align-items-center justify-content-center gap-3 text-secondary small">
+              <span className="text-forest fw-bold">⭐ 100% Quality &amp; Purity Promise</span>
+              <span>•</span>
+              <span>Hygienically Packed in Hyderabad</span>
+              <span>•</span>
+              <span>100% Cash on Delivery</span>
             </div>
           </div>
         </section>

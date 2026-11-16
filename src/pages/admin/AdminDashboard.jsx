@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import PageHeader from '../../components/PageHeader';
+import BrandLoader from '../../components/BrandLoader';
 import { api } from '../../services/api';
 
 export default function AdminDashboard() {
@@ -15,12 +16,7 @@ export default function AdminDashboard() {
   }, []);
 
   if (loading) {
-    return (
-      <div className="container py-5 text-center">
-        <div className="spinner-border text-forest" role="status" />
-        <p className="mt-2 text-secondary">Loading admin dashboard…</p>
-      </div>
-    );
+    return <BrandLoader message="Loading admin dashboard…" />;
   }
 
   const s = summary || {};

@@ -5,7 +5,7 @@ import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import { api, money } from '../services/api';
 
-const VALID_TABS = ['profile', 'addresses', 'orders', 'notifications', 'overview'];
+const VALID_TABS = ['profile', 'preferences', 'addresses', 'orders', 'notifications', 'overview'];
 
 export default function Profile({ initialTab = null }) {
   const { user, refreshUser, logout } = useAuth();
@@ -19,7 +19,8 @@ export default function Profile({ initialTab = null }) {
     if (p === '/addresses' || h === 'addresses') return 'addresses';
     if (p === '/notifications' || h === 'notifications') return 'notifications';
     if (p === '/account' || h === 'overview') return 'overview';
-    if (p === '/profile' || p === '/preferences' || p === '/email-preferences' || h === 'profile' || h === 'preferences') return 'profile';
+    if (p === '/preferences' || p === '/email-preferences' || h === 'preferences') return 'preferences';
+    if (p === '/profile' || h === 'profile') return 'profile';
     if (initialTab && VALID_TABS.includes(initialTab)) return initialTab;
     return 'profile';
   }, [location.pathname, location.hash, initialTab]);
@@ -277,6 +278,18 @@ export default function Profile({ initialTab = null }) {
 
               <button
                 type="button"
+                className={`profile-nav-tab ${activeTab === 'preferences' ? 'active' : ''}`}
+                onClick={() => handleTabSwitch('preferences')}
+              >
+                <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
+                  <polyline points="22,6 12,13 2,6" />
+                </svg>
+                <span>Email preferences</span>
+              </button>
+
+              <button
+                type="button"
                 className={`profile-nav-tab ${activeTab === 'addresses' ? 'active' : ''}`}
                 onClick={() => handleTabSwitch('addresses')}
               >
@@ -361,8 +374,26 @@ export default function Profile({ initialTab = null }) {
                 </form>
               </div>
 
-              {/* Dedicated Email Preferences Card under Profile (Image 3) */}
               <div className="feature-card mt-3">
+                <h2 className="h5 mb-2">Email verification</h2>
+                <p className="small text-secondary mb-0">
+                  {user.emailVerified
+                    ? 'Your email address is confirmed and ready for account updates.'
+                    : 'Confirm your email address to unlock all account features.'}
+                </p>
+                {!user.emailVerified && (
+                  <form onSubmit={handleResendVerification} className="mt-3">
+                    <button className="btn btn-outline-brand btn-sm" type="submit">
+                      Resend verification email
+                    </button>
+                  </form>
+                )}
+              </div>
+            </div>
+
+            {/* 2. Email Preferences Tab (Stand-alone tab view with side layout) */}
+            <div className={`profile-panel ${activeTab === 'preferences' ? 'active-tab-panel' : ''}`}>
+              <div className="feature-card">
                 <p className="eyebrow mb-1">YOUR CHOICES</p>
                 <h2 className="h4 mb-2">Email preferences</h2>
                 <p className="small text-secondary mb-3">
@@ -405,30 +436,14 @@ export default function Profile({ initialTab = null }) {
                     />
                     <span className="form-check-label">News and promotions</span>
                   </label>
-                  <button className="btn btn-outline-brand mt-3" type="submit">
+                  <button className="btn btn-brand mt-3" type="submit">
                     Save email preferences
                   </button>
                 </form>
               </div>
-
-              <div className="feature-card mt-3">
-                <h2 className="h5 mb-2">Email verification</h2>
-                <p className="small text-secondary mb-0">
-                  {user.emailVerified
-                    ? 'Your email address is confirmed and ready for account updates.'
-                    : 'Confirm your email address to unlock all account features.'}
-                </p>
-                {!user.emailVerified && (
-                  <form onSubmit={handleResendVerification} className="mt-3">
-                    <button className="btn btn-outline-brand btn-sm" type="submit">
-                      Resend verification email
-                    </button>
-                  </form>
-                )}
-              </div>
             </div>
 
-            {/* 2. Delivery Addresses Tab */}
+            {/* 3. Delivery Addresses Tab */}
             <div className={`profile-panel ${activeTab === 'addresses' ? 'active-tab-panel' : ''}`}>
               <div className="feature-card">
                 <div className="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3 pb-2 border-bottom">

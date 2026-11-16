@@ -26,6 +26,44 @@ export default function Layout({ children }) {
     document.body.classList.toggle('site-nav-open', Boolean(isSidebarOpen));
   }, [isSidebarOpen]);
 
+  // Scroll animations observer for sections
+  useEffect(() => {
+    const triggerReveal = (el) => el.classList.add('is-revealed');
+    if (typeof IntersectionObserver === 'undefined') {
+      document.querySelectorAll('.scroll-section-overlay, .scroll-reveal-item').forEach(triggerReveal);
+      return;
+    }
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('is-revealed');
+          }
+        });
+      },
+      { threshold: 0.05 }
+    );
+    const observeAll = () => {
+      document
+        .querySelectorAll('.scroll-section-overlay:not([data-observed]), .scroll-reveal-item:not([data-observed])')
+        .forEach((el) => {
+          el.dataset.observed = 'true';
+          observer.observe(el);
+          const rect = el.getBoundingClientRect();
+          if (rect.top < window.innerHeight && rect.bottom > 0) {
+            el.classList.add('is-revealed');
+          }
+        });
+    };
+    observeAll();
+    const mo = new MutationObserver(observeAll);
+    mo.observe(document.body, { childList: true, subtree: true });
+    return () => {
+      observer.disconnect();
+      mo.disconnect();
+    };
+  }, []);
+
   useEffect(() => {
     const handleScroll = () => {
       const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
@@ -51,6 +89,8 @@ export default function Layout({ children }) {
 
   return (
     <>
+      <div id="top-nav-loader" aria-hidden="true" />
+
       <Header
         onToggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
         isSidebarOpen={isSidebarOpen}

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import PageHeader from '../components/PageHeader';
+import BrandLoader from '../components/BrandLoader';
 import { api, money } from '../services/api';
 import { useCart } from '../context/CartContext';
 import { useToast } from '../context/ToastContext';
@@ -40,12 +41,7 @@ export default function ProductDetail() {
   }, [slug, showToast]);
 
   if (loading) {
-    return (
-      <div className="container py-5 text-center">
-        <div className="spinner-border text-forest" role="status" />
-        <p className="mt-2 text-secondary">Loading product details…</p>
-      </div>
-    );
+    return <BrandLoader message="Loading fresh product details…" />;
   }
 
   if (!product) {

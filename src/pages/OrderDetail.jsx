@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import PageHeader from '../components/PageHeader';
+import BrandLoader from '../components/BrandLoader';
 import { api, money } from '../services/api';
 import { useToast } from '../context/ToastContext';
 
@@ -41,12 +42,7 @@ export default function OrderDetail() {
   };
 
   if (loading) {
-    return (
-      <div className="container py-5 text-center">
-        <div className="spinner-border text-forest" role="status" />
-        <p className="mt-2 text-secondary">Loading order details…</p>
-      </div>
-    );
+    return <BrandLoader message="Loading order details…" />;
   }
 
   if (!order) {

@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import PageHeader from '../components/PageHeader';
 import ProductCard from '../components/ProductCard';
+import BrandLoader from '../components/BrandLoader';
 import { api } from '../services/api';
 
 export default function Shop() {
@@ -181,10 +182,7 @@ export default function Shop() {
         </div>
 
         {loading ? (
-          <div className="text-center py-5">
-            <div className="spinner-border text-forest" role="status" />
-            <p className="mt-2 text-secondary">Loading products…</p>
-          </div>
+          <BrandLoader message="Loading fresh millets & flours…" />
         ) : filteredProducts.length > 0 ? (
           <div className="row g-2 g-md-3">
             {filteredProducts.map((product) => (

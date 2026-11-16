@@ -232,12 +232,12 @@ export default function Sidebar({ isOpen, onClose, isCollapsed, onToggleCollapse
             {user && (
               <>
                 <hr className="nav-divider" aria-hidden="true" />
-                <NavLink to="/profile" aria-label={user.fullName} title={user.fullName}>
+                <NavLink to="/profile" aria-label="My profile" title="My profile">
                   <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <circle cx="12" cy="7" r="4" />
                     <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
                   </svg>
-                  <span>{user.fullName}</span>
+                  <span>My profile</span>
                 </NavLink>
               </>
             )}
