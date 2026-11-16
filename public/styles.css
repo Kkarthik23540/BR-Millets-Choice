@@ -10,8 +10,8 @@
   --line: #e4e6dc;
 }
 
-html { scroll-behavior: smooth; overflow-x: clip; }
-body { color: var(--ink); background: var(--warm-white); font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif; line-height: 1.55; overflow-x: clip; max-width: 100vw; width: 100%; position: relative; }
+html { scroll-behavior: smooth; }
+body { color: var(--ink); background: var(--warm-white); font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif; line-height: 1.55; max-width: 100vw; width: 100%; position: relative; }
 a { color: var(--forest); }
 a:hover { color: var(--earth); }
 .skip-link { position: absolute; left: 1rem; top: -4rem; z-index: 20; padding: .65rem 1rem; background: white; }
@@ -404,8 +404,8 @@ a:hover { color: var(--earth); }
 .profile-nav { display: flex; flex-direction: column; gap: .35rem; text-align: left; }
 .profile-nav a, .profile-nav-tab { display: flex; align-items: center; gap: .65rem; width: 100%; padding: .65rem .85rem; border: 1px solid transparent; border-radius: .55rem; background: transparent; color: var(--forest); text-decoration: none; font-size: .92rem; font-weight: 550; text-align: left; cursor: pointer; transition: all .15s ease; }
 .profile-nav a:hover, .profile-nav-tab:hover { background: var(--cream); color: var(--forest-deep); }
-.profile-nav a.active, .profile-nav-tab.active { background: var(--forest); color: #ffffff; font-weight: 650; box-shadow: 0 2px 6px rgba(21, 62, 46, 0.15); }
-.profile-nav-tab.active svg { stroke: #ffffff; }
+.profile-nav a.active, .profile-nav-tab.active { background: #f4efe4; color: var(--forest-deep); font-weight: 650; box-shadow: none; }
+.profile-nav-tab.active svg { stroke: var(--forest-deep); }
 .profile-nav-tab svg { width: 1.15rem; height: 1.15rem; flex: 0 0 1.15rem; stroke: currentColor; }
 .profile-tab-count { margin-left: auto; display: inline-flex; align-items: center; justify-content: center; min-width: 1.3rem; height: 1.3rem; padding: 0 .35rem; border-radius: 999px; background: var(--sage); color: var(--forest); font-size: .75rem; font-weight: 700; line-height: 1; }
 .profile-nav-tab.active .profile-tab-count { background: rgba(255, 255, 255, 0.25); color: #ffffff; }
@@ -2322,12 +2322,14 @@ body.admin-mode [data-header-cart] {
 @media (max-width: 576px) {
   html, body {
     max-width: 100vw;
-    overflow-x: clip !important;
   }
   .site-header {
     position: -webkit-sticky !important;
     position: sticky !important;
     top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    width: 100% !important;
     z-index: 1000 !important;
   }
   .brand-tagline {

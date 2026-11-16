@@ -1,25 +1,30 @@
-import React, { useState, useEffect } from 'react';
-import { useLocation, useNavigate, Link } from 'react-router-dom';
+import React, { useState, useEffect, useCallback } from 'react';
+import { useLocation, Link, Navigate } from 'react-router-dom';
 import PageHeader from '../components/PageHeader';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import { api, money } from '../services/api';
 
-const VALID_TABS = ['profile', 'preferences', 'addresses', 'orders', 'notifications', 'overview'];
+const VALID_TABS = ['profile', 'addresses', 'orders', 'notifications', 'overview'];
 
 export default function Profile({ initialTab = null }) {
   const { user, refreshUser, logout } = useAuth();
   const { showToast } = useToast();
   const location = useLocation();
-  const navigate = useNavigate();
 
-  const hashTab = (location.hash || '').replace('#', '').replace('account-', '');
-  const [activeTab, setActiveTab] = useState(() => {
+  const resolveTab = useCallback(() => {
+    const p = location.pathname;
+    const h = (location.hash || '').replace('#', '').replace('account-', '');
+    if (p === '/orders' || h === 'orders') return 'orders';
+    if (p === '/addresses' || h === 'addresses') return 'addresses';
+    if (p === '/notifications' || h === 'notifications') return 'notifications';
+    if (p === '/account' || h === 'overview') return 'overview';
+    if (p === '/profile' || p === '/preferences' || p === '/email-preferences' || h === 'profile' || h === 'preferences') return 'profile';
     if (initialTab && VALID_TABS.includes(initialTab)) return initialTab;
-    if (hashTab && VALID_TABS.includes(hashTab)) return hashTab;
     return 'profile';
-  });
+  }, [location.pathname, location.hash, initialTab]);
 
+  const [activeTab, setActiveTab] = useState(resolveTab);
   const [fullName, setFullName] = useState(user?.fullName || '');
   const [emailPreferences, setEmailPreferences] = useState({
     orderUpdates: true,
@@ -49,18 +54,17 @@ export default function Profile({ initialTab = null }) {
   const [deleteConfirm, setDeleteConfirm] = useState('');
   const [deletePassword, setDeletePassword] = useState('');
 
+  // Sync tab on URL / hash changes
+  useEffect(() => {
+    setActiveTab(resolveTab());
+  }, [resolveTab]);
+
   useEffect(() => {
     if (user?.fullName) setFullName(user.fullName);
   }, [user]);
 
-  useEffect(() => {
-    if (hashTab && VALID_TABS.includes(hashTab)) {
-      setActiveTab(hashTab);
-    }
-  }, [hashTab]);
-
-  const loadData = async () => {
-    if (!user) return;
+  const loadData = useCallback(async () => {
+    if (!user || user.role === 'admin') return;
     setLoading(true);
     try {
       const [addrRes, orderRes, notifRes, prefRes] = await Promise.all([
@@ -83,11 +87,16 @@ export default function Profile({ initialTab = null }) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user]);
 
   useEffect(() => {
     loadData();
-  }, [user]);
+  }, [loadData]);
+
+  // If user is admin, redirect to Admin Profile
+  if (user?.role === 'admin') {
+    return <Navigate to="/admin/profile" replace />;
+  }
 
   if (!user) {
     return (
@@ -100,6 +109,11 @@ export default function Profile({ initialTab = null }) {
       </>
     );
   }
+
+  const handleTabSwitch = (tab) => {
+    setActiveTab(tab);
+    window.history.replaceState(null, '', `/profile#${tab}`);
+  };
 
   const handleSaveProfile = async (e) => {
     e.preventDefault();
@@ -123,6 +137,19 @@ export default function Profile({ initialTab = null }) {
         body: JSON.stringify(emailPreferences),
       });
       showToast('✓ Email preferences saved.');
+    } catch (err) {
+      showToast(err.message, true);
+    }
+  };
+
+  const handleResendVerification = async (e) => {
+    e.preventDefault();
+    try {
+      const res = await api('/api/auth/verification/resend', {
+        method: 'POST',
+        body: JSON.stringify({ email: user.email }),
+      });
+      showToast(res.message || 'Verification email resent.');
     } catch (err) {
       showToast(err.message, true);
     }
@@ -211,7 +238,7 @@ export default function Profile({ initialTab = null }) {
     }
   };
 
-  const initials = user.fullName
+  const initialLetter = user.fullName
     ? user.fullName.trim().slice(0, 1).toUpperCase()
     : 'U';
 
@@ -225,10 +252,10 @@ export default function Profile({ initialTab = null }) {
 
       <section className="container profile-section">
         <div className="profile-layout">
-          {/* Left Sidebar inside page */}
+          {/* Left Sidebar inside page (Side-by-side on laptop, compact & horizontal scrollable on mobile) */}
           <aside className="profile-sidebar feature-card">
             <div className="profile-avatar" aria-hidden="true">
-              {initials}
+              {initialLetter}
             </div>
             <h2 className="h4 text-break mb-1 fw-bold">{user.fullName}</h2>
             <p className="profile-email text-break mb-2 small">{user.email}</p>
@@ -240,7 +267,7 @@ export default function Profile({ initialTab = null }) {
               <button
                 type="button"
                 className={`profile-nav-tab ${activeTab === 'profile' ? 'active' : ''}`}
-                onClick={() => setActiveTab('profile')}
+                onClick={() => handleTabSwitch('profile')}
               >
                 <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <circle cx="12" cy="8" r="4" /><path d="M6 20v-2a6 6 0 0 1 12 0v2" />
@@ -250,20 +277,8 @@ export default function Profile({ initialTab = null }) {
 
               <button
                 type="button"
-                className={`profile-nav-tab ${activeTab === 'preferences' ? 'active' : ''}`}
-                onClick={() => setActiveTab('preferences')}
-              >
-                <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
-                  <polyline points="22,6 12,13 2,6" />
-                </svg>
-                <span>Email preferences</span>
-              </button>
-
-              <button
-                type="button"
                 className={`profile-nav-tab ${activeTab === 'addresses' ? 'active' : ''}`}
-                onClick={() => setActiveTab('addresses')}
+                onClick={() => handleTabSwitch('addresses')}
               >
                 <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" /><circle cx="12" cy="10" r="3" />
@@ -275,7 +290,7 @@ export default function Profile({ initialTab = null }) {
               <button
                 type="button"
                 className={`profile-nav-tab ${activeTab === 'orders' ? 'active' : ''}`}
-                onClick={() => setActiveTab('orders')}
+                onClick={() => handleTabSwitch('orders')}
               >
                 <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <rect x="3" y="3" width="18" height="18" rx="2" /><path d="m9 12 2 2 4-4" />
@@ -287,7 +302,7 @@ export default function Profile({ initialTab = null }) {
               <button
                 type="button"
                 className={`profile-nav-tab ${activeTab === 'notifications' ? 'active' : ''}`}
-                onClick={() => setActiveTab('notifications')}
+                onClick={() => handleTabSwitch('notifications')}
               >
                 <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" /><path d="M13.73 21a2 2 0 0 1-3.46 0" />
@@ -301,7 +316,7 @@ export default function Profile({ initialTab = null }) {
               <button
                 type="button"
                 className={`profile-nav-tab ${activeTab === 'overview' ? 'active' : ''}`}
-                onClick={() => setActiveTab('overview')}
+                onClick={() => handleTabSwitch('overview')}
               >
                 <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <rect x="3" y="3" width="7" height="9" rx="1" /><rect x="14" y="3" width="7" height="5" rx="1" />
@@ -312,12 +327,12 @@ export default function Profile({ initialTab = null }) {
             </nav>
           </aside>
 
-          {/* Right Main Content */}
+          {/* Right Main: All panels contained in one page side-by-side */}
           <div className="profile-main">
             {/* 1. Profile Details Tab (shows Details + Email Preferences + Verification on same page!) */}
             <div className={`profile-panel ${activeTab === 'profile' ? 'active-tab-panel' : ''}`}>
               <div className="feature-card">
-                <p className="eyebrow mb-1">Personal information</p>
+                <p className="eyebrow mb-1">PERSONAL INFORMATION</p>
                 <h2 className="h4 mb-3">Profile details</h2>
                 <form onSubmit={handleSaveProfile}>
                   <div className="mb-3">
@@ -339,16 +354,16 @@ export default function Profile({ initialTab = null }) {
                   </div>
                   <div className="d-flex gap-2">
                     <button className="btn btn-brand" type="submit">Save changes</button>
-                    <button className="btn btn-outline-brand" type="button" onClick={() => setActiveTab('overview')}>
+                    <button className="btn btn-outline-brand" type="button" onClick={() => handleTabSwitch('overview')}>
                       Back to account
                     </button>
                   </div>
                 </form>
               </div>
 
-              {/* Dedicated Email Preferences Card under Profile */}
+              {/* Dedicated Email Preferences Card under Profile (Image 3) */}
               <div className="feature-card mt-3">
-                <p className="eyebrow mb-1">Your choices</p>
+                <p className="eyebrow mb-1">YOUR CHOICES</p>
                 <h2 className="h4 mb-2">Email preferences</h2>
                 <p className="small text-secondary mb-3">
                   Choose which optional account emails you receive. Security emails for verification and password changes are always sent.
@@ -390,7 +405,9 @@ export default function Profile({ initialTab = null }) {
                     />
                     <span className="form-check-label">News and promotions</span>
                   </label>
-                  <button className="btn btn-outline-brand mt-3" type="submit">Save email preferences</button>
+                  <button className="btn btn-outline-brand mt-3" type="submit">
+                    Save email preferences
+                  </button>
                 </form>
               </div>
 
@@ -401,60 +418,17 @@ export default function Profile({ initialTab = null }) {
                     ? 'Your email address is confirmed and ready for account updates.'
                     : 'Confirm your email address to unlock all account features.'}
                 </p>
+                {!user.emailVerified && (
+                  <form onSubmit={handleResendVerification} className="mt-3">
+                    <button className="btn btn-outline-brand btn-sm" type="submit">
+                      Resend verification email
+                    </button>
+                  </form>
+                )}
               </div>
             </div>
 
-            {/* 2. Preferences Tab (Stand-alone tab view) */}
-            <div className={`profile-panel ${activeTab === 'preferences' ? 'active-tab-panel' : ''}`}>
-              <div className="feature-card">
-                <p className="eyebrow mb-1">Your choices</p>
-                <h2 className="h4 mb-2">Email preferences</h2>
-                <p className="small text-secondary mb-3">
-                  Choose which optional account emails you receive. Security emails for verification and password changes are always sent.
-                </p>
-                <form onSubmit={handleSavePreferences} className="email-preferences-form">
-                  <label className="form-check">
-                    <input
-                      className="form-check-input"
-                      type="checkbox"
-                      checked={emailPreferences.orderUpdates}
-                      onChange={(e) => setEmailPreferences({ ...emailPreferences, orderUpdates: e.target.checked })}
-                    />
-                    <span className="form-check-label">Order and payment updates</span>
-                  </label>
-                  <label className="form-check">
-                    <input
-                      className="form-check-input"
-                      type="checkbox"
-                      checked={emailPreferences.enquiryAcknowledgements}
-                      onChange={(e) => setEmailPreferences({ ...emailPreferences, enquiryAcknowledgements: e.target.checked })}
-                    />
-                    <span className="form-check-label">Enquiry acknowledgements</span>
-                  </label>
-                  <label className="form-check">
-                    <input
-                      className="form-check-input"
-                      type="checkbox"
-                      checked={emailPreferences.backInStock}
-                      onChange={(e) => setEmailPreferences({ ...emailPreferences, backInStock: e.target.checked })}
-                    />
-                    <span className="form-check-label">Back-in-stock alerts</span>
-                  </label>
-                  <label className="form-check">
-                    <input
-                      className="form-check-input"
-                      type="checkbox"
-                      checked={emailPreferences.promotions}
-                      onChange={(e) => setEmailPreferences({ ...emailPreferences, promotions: e.target.checked })}
-                    />
-                    <span className="form-check-label">News and promotions</span>
-                  </label>
-                  <button className="btn btn-outline-brand mt-3" type="submit">Save email preferences</button>
-                </form>
-              </div>
-            </div>
-
-            {/* 3. Delivery Addresses Tab */}
+            {/* 2. Delivery Addresses Tab */}
             <div className={`profile-panel ${activeTab === 'addresses' ? 'active-tab-panel' : ''}`}>
               <div className="feature-card">
                 <div className="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3 pb-2 border-bottom">
@@ -572,7 +546,7 @@ export default function Profile({ initialTab = null }) {
               </div>
             </div>
 
-            {/* 4. Order History Tab */}
+            {/* 3. Order History Tab */}
             <div className={`profile-panel ${activeTab === 'orders' ? 'active-tab-panel' : ''}`}>
               <div className="feature-card">
                 <div className="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3 pb-2 border-bottom">
@@ -628,7 +602,7 @@ export default function Profile({ initialTab = null }) {
               </div>
             </div>
 
-            {/* 5. Notifications Tab */}
+            {/* 4. Notifications Tab */}
             <div className={`profile-panel ${activeTab === 'notifications' ? 'active-tab-panel' : ''}`}>
               <div className="feature-card">
                 <div className="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3 pb-2 border-bottom">
@@ -668,7 +642,7 @@ export default function Profile({ initialTab = null }) {
               </div>
             </div>
 
-            {/* 6. Account Overview Tab */}
+            {/* 5. Account Overview Tab */}
             <div className={`profile-panel ${activeTab === 'overview' ? 'active-tab-panel' : ''}`}>
               <div className="feature-card">
                 <p className="eyebrow mb-1">Account settings</p>

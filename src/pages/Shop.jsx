@@ -1,131 +1,215 @@
-import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import React, { useState, useEffect, useMemo } from 'react';
+import { Link, useSearchParams } from 'react-router-dom';
 import PageHeader from '../components/PageHeader';
-import { api, money } from '../services/api';
-import { useCart } from '../context/CartContext';
+import ProductCard from '../components/ProductCard';
+import { api } from '../services/api';
 
 export default function Shop() {
+  const [searchParams] = useSearchParams();
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [selectedPack, setSelectedPack] = useState({});
-  const [categoryFilter, setCategoryFilter] = useState('All');
-  const { addToCart } = useCart();
+  const [search, setSearch] = useState(searchParams.get('q') || '');
+  const [activeFilter, setActiveFilter] = useState(searchParams.get('category') || 'all');
+  const [activeSort, setActiveSort] = useState(searchParams.get('sort') || 'featured');
 
   useEffect(() => {
     api('/api/products')
-      .then((data) => {
-        const prods = data.products || [];
-        setProducts(prods);
-        const defaultPacks = {};
-        prods.forEach((p) => {
-          if (p.variants?.length) defaultPacks[p.id] = p.variants[0].id;
-        });
-        setSelectedPack(defaultPacks);
-      })
+      .then((data) => setProducts(data.products || []))
       .catch(() => {})
       .finally(() => setLoading(false));
   }, []);
 
-  const categories = ['All', ...new Set(products.map((p) => p.category).filter(Boolean))];
-  const filteredProducts = categoryFilter === 'All'
-    ? products
-    : products.filter((p) => p.category === categoryFilter);
+  const getMinPrice = (p) => {
+    const prices = (p.variants || []).map((v) => Number(v.pricePaise)).filter((n) => !isNaN(n) && n > 0);
+    return prices.length ? Math.min(...prices) : 0;
+  };
+
+  const getMaxPrice = (p) => {
+    const prices = (p.variants || []).map((v) => Number(v.pricePaise)).filter((n) => !isNaN(n) && n > 0);
+    return prices.length ? Math.max(...prices) : 0;
+  };
+
+  const filteredProducts = useMemo(() => {
+    let result = [...products];
+
+    if (search.trim()) {
+      const q = search.toLowerCase().trim();
+      result = result.filter((p) => {
+        const name = (p.name || '').toLowerCase();
+        const desc = (p.description || '').toLowerCase();
+        const cat = (p.category || '').toLowerCase();
+        const ing = (p.ingredients || '').toLowerCase();
+        const packSizes = (p.variants || []).map((v) => (v.packSize || '').toLowerCase()).join(' ');
+        return name.includes(q) || desc.includes(q) || cat.includes(q) || ing.includes(q) || packSizes.includes(q);
+      });
+    }
+
+    if (activeFilter !== 'all') {
+      const q = activeFilter.toLowerCase();
+      result = result.filter((p) => {
+        const name = (p.name || '').toLowerCase();
+        const desc = (p.description || '').toLowerCase();
+        const cat = (p.category || '').toLowerCase();
+        const ing = (p.ingredients || '').toLowerCase();
+        const packSizes = (p.variants || []).map((v) => (v.packSize || '').toLowerCase()).join(' ');
+        return name.includes(q) || desc.includes(q) || cat.includes(q) || ing.includes(q) || packSizes.includes(q);
+      });
+    }
+
+    if (activeSort === 'price-asc') {
+      result.sort((a, b) => getMinPrice(a) - getMinPrice(b));
+    } else if (activeSort === 'price-desc') {
+      result.sort((a, b) => getMaxPrice(b) - getMaxPrice(a));
+    } else if (activeSort === 'name-asc') {
+      result.sort((a, b) => (a.name || '').localeCompare(b.name || '', undefined, { sensitivity: 'base' }));
+    } else if (activeSort === 'name-desc') {
+      result.sort((a, b) => (b.name || '').localeCompare(a.name || '', undefined, { sensitivity: 'base' }));
+    } else if (activeSort === 'in-stock') {
+      const stockScore = (p) => ((p.variants || []).some((v) => v.stockQuantity > 0) ? 1 : 0);
+      result.sort((a, b) => stockScore(b) - stockScore(a));
+    } else if (activeSort === 'featured') {
+      result.sort((a, b) => {
+        const isAFlagship = (a.name || '').toLowerCase().includes('choice') || (a.category || '').toLowerCase().includes('blend');
+        const isBFlagship = (b.name || '').toLowerCase().includes('choice') || (b.category || '').toLowerCase().includes('blend');
+        if (isAFlagship && !isBFlagship) return -1;
+        if (!isAFlagship && isBFlagship) return 1;
+        return 0;
+      });
+    }
+
+    return result;
+  }, [products, search, activeFilter, activeSort]);
 
   return (
     <>
       <PageHeader
-        eyebrow="Stone-ground catalogue"
-        title="Millet products &amp; available packs"
-        description="Select a pack size and submit an order request. Availability and dispatch are confirmed directly with you."
+        eyebrow="The Shop"
+        title="Millet Powder Products"
+        description="Choose a product to see its pack options, stone-ground details and current stock availability."
       />
 
-      <section className="container section-space py-4">
-        {/* Category Filter Pills */}
-        {categories.length > 1 && (
-          <div className="d-flex flex-wrap gap-2 mb-4">
-            {categories.map((cat) => (
+      <section className="container section-space">
+        <div className="shop-filter-bar mb-3 p-2 p-md-3 bg-white border rounded-4 shadow-sm">
+          <form className="d-flex gap-2 mb-3" onSubmit={(e) => e.preventDefault()}>
+            <input
+              className="form-control form-control-sm"
+              name="q"
+              placeholder="Search millets, nuts, seeds, 500g, 1kg..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+            <button className="btn btn-sm btn-brand text-nowrap" type="submit">
+              Search
+            </button>
+            {search && (
               <button
-                key={cat}
+                className="btn btn-sm btn-outline-secondary text-nowrap"
                 type="button"
-                className={`btn btn-sm rounded-pill px-3 ${categoryFilter === cat ? 'btn-brand' : 'btn-outline-brand'}`}
-                onClick={() => setCategoryFilter(cat)}
+                onClick={() => setSearch('')}
               >
-                {cat}
+                Clear
               </button>
-            ))}
+            )}
+          </form>
+
+          <div className="d-flex flex-wrap align-items-center justify-content-between gap-2">
+            <div className="shop-category-pills">
+              <button
+                type="button"
+                className={`filter-pill ${activeFilter === 'all' ? 'active' : ''}`}
+                onClick={() => setActiveFilter('all')}
+              >
+                All Items
+              </button>
+              <button
+                type="button"
+                className={`filter-pill ${activeFilter === 'blend' ? 'active' : ''}`}
+                onClick={() => setActiveFilter('blend')}
+              >
+                Special Blend
+              </button>
+              <button
+                type="button"
+                className={`filter-pill ${activeFilter === '500' ? 'active' : ''}`}
+                onClick={() => setActiveFilter('500')}
+              >
+                500 g Pack
+              </button>
+              <button
+                type="button"
+                className={`filter-pill ${activeFilter === '1 kg' ? 'active' : ''}`}
+                onClick={() => setActiveFilter('1 kg')}
+              >
+                1 kg Pack
+              </button>
+              <button
+                type="button"
+                className={`filter-pill ${activeFilter === 'millet' ? 'active' : ''}`}
+                onClick={() => setActiveFilter('millet')}
+              >
+                Millets
+              </button>
+              <button
+                type="button"
+                className={`filter-pill ${activeFilter === 'nuts' ? 'active' : ''}`}
+                onClick={() => setActiveFilter('nuts')}
+              >
+                Nuts &amp; Seeds
+              </button>
+            </div>
+
+            <div className="shop-sort-compact d-flex align-items-center gap-1 ms-auto">
+              <label className="small text-secondary text-nowrap fw-semibold" htmlFor="shop-sort">
+                Sort:
+              </label>
+              <select
+                className="form-select form-select-sm fw-semibold"
+                id="shop-sort"
+                value={activeSort}
+                onChange={(e) => setActiveSort(e.target.value)}
+                style={{ width: 'auto', cursor: 'pointer' }}
+              >
+                <option value="featured">Featured</option>
+                <option value="price-asc">Price: Low to High</option>
+                <option value="price-desc">Price: High to Low</option>
+                <option value="name-asc">Name: A to Z</option>
+                <option value="name-desc">Name: Z to A</option>
+                <option value="in-stock">In Stock First</option>
+              </select>
+            </div>
           </div>
-        )}
+        </div>
 
         {loading ? (
           <div className="text-center py-5">
             <div className="spinner-border text-forest" role="status" />
-            <p className="mt-2 text-secondary">Loading millet packs…</p>
+            <p className="mt-2 text-secondary">Loading products…</p>
           </div>
         ) : filteredProducts.length > 0 ? (
-          <div className="product-grid">
-            {filteredProducts.map((product) => {
-              const activeVariantId = selectedPack[product.id] || product.variants?.[0]?.id;
-              const activeVariant = product.variants?.find((v) => v.id === activeVariantId) || product.variants?.[0];
-              const isOutOfStock = !activeVariant || Number(activeVariant.stockQuantity) <= 0;
-
-              return (
-                <article className="product-card" key={product.id}>
-                  <div className="product-card-visual">
-                    <Link to={`/product/${product.slug}`} aria-label={`View ${product.name}`}>
-                      {product.imageUrl ? (
-                        <img src={product.imageUrl} alt={product.name} className="product-card-img" />
-                      ) : (
-                        <div className="product-placeholder-icon">🌾</div>
-                      )}
-                    </Link>
-                    <span className="status-pill status-in_stock">100% Cash on Delivery</span>
-                  </div>
-                  <div className="product-card-body">
-                    <p className="product-category mb-1">{product.category || 'Millet Blend'}</p>
-                    <h2 className="product-title h5 mb-2">
-                      <Link to={`/product/${product.slug}`}>{product.name}</Link>
-                    </h2>
-                    <p className="product-description small mb-3">{product.description}</p>
-
-                    {product.variants?.length > 1 && (
-                      <div className="d-flex gap-2 mb-3">
-                        {product.variants.map((v) => (
-                          <button
-                            key={v.id}
-                            type="button"
-                            className={`btn btn-sm ${v.id === activeVariantId ? 'btn-brand' : 'btn-outline-brand'}`}
-                            onClick={() => setSelectedPack({ ...selectedPack, [product.id]: v.id })}
-                          >
-                            {v.packSize}
-                          </button>
-                        ))}
-                      </div>
-                    )}
-
-                    <div className="d-flex justify-content-between align-items-center mt-auto pt-2 border-top">
-                      <div>
-                        <span className="price-label small text-secondary d-block">Price</span>
-                        <strong className="product-price text-forest fs-5">
-                          {activeVariant ? money(activeVariant.pricePaise) : '—'}
-                        </strong>
-                      </div>
-                      <button
-                        type="button"
-                        className="btn btn-brand btn-sm"
-                        disabled={isOutOfStock}
-                        onClick={() => activeVariant && addToCart(activeVariant.id)}
-                      >
-                        {isOutOfStock ? 'Out of Stock' : '+ Add to Cart'}
-                      </button>
-                    </div>
-                  </div>
-                </article>
-              );
-            })}
+          <div className="row g-2 g-md-3">
+            {filteredProducts.map((product) => (
+              <div key={product.id} className="col-12 col-sm-6 col-lg-4">
+                <ProductCard product={product} />
+              </div>
+            ))}
           </div>
         ) : (
-          <div className="text-center py-5">
-            <p className="text-secondary">No products available in this category.</p>
+          <div className="empty-products-slider my-4">
+            <div className="sliding-empty-card">
+              <div className="sliding-empty-icon">🌾</div>
+              <div className="sliding-empty-content">
+                <h3 className="h5 mb-1 text-forest fw-bold">Fresh Harvest Batches Arriving Soon!</h3>
+                <p className="mb-2 text-secondary">
+                  Our stone mills in Hyderabad are freshly preparing new unpolished millet powder batches. Check back soon or contact us directly.
+                </p>
+                <div className="d-flex gap-2 flex-wrap mt-3">
+                  <Link to="/contact" className="btn btn-sm btn-brand">Ask about restock</Link>
+                  <a href="https://whatsapp.com/channel/0029Vb909Ye7oQhkdutTQM24" target="_blank" rel="noopener noreferrer" className="btn btn-sm btn-outline-brand">
+                    Follow WhatsApp Updates
+                  </a>
+                </div>
+              </div>
+            </div>
           </div>
         )}
       </section>

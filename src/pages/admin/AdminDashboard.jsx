@@ -143,7 +143,7 @@ export default function AdminDashboard() {
           </div>
 
           <div className="col-sm-6 col-lg-4">
-            <Link className="admin-shortcut" to="/profile">
+            <Link className="admin-shortcut" to="/admin/profile">
               <strong>My profile</strong>
               <span>Public address, phone, WhatsApp &amp; working hours</span>
               <span className="admin-shortcut-action">

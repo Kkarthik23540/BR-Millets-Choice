@@ -1,18 +1,21 @@
 import React from 'react';
 
-export default function PageHeader({ eyebrow, title, description, actions }) {
+export default function PageHeader({ eyebrow, title, description, actions, badge }) {
   return (
-    <header className="page-header">
+    <section className="page-hero">
       <div className="container">
-        <div className="d-flex flex-wrap align-items-center justify-content-between gap-3">
+        <div className="d-flex flex-wrap justify-content-between align-items-center gap-3">
           <div>
-            {eyebrow && <p className="eyebrow">{eyebrow}</p>}
-            <h1 className="display-title">{title}</h1>
-            {description && <p className="lead-copy">{description}</p>}
+            {eyebrow && <p className="eyebrow mb-1">{eyebrow}</p>}
+            <h1 className="d-flex flex-wrap align-items-center gap-2 mb-1">
+              <span>{title}</span>
+              {badge}
+            </h1>
+            {description && <p className="section-intro mb-0">{description}</p>}
           </div>
-          {actions && <div>{actions}</div>}
+          {actions && <div className="d-flex align-items-center ms-auto">{actions}</div>}
         </div>
       </div>
-    </header>
+    </section>
   );
 }

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { api, money } from '../services/api';
 import { useCart } from '../context/CartContext';
+import ProductCard from '../components/ProductCard';
 
 export default function Home() {
   const [products, setProducts] = useState([]);
@@ -261,81 +262,46 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Featured Products */}
-      <section className="section-space">
+      {/* Available Packs & Products */}
+      <section className="section-space bg-white border-top scroll-section-overlay">
         <div className="container">
-          <div className="d-flex justify-content-between align-items-end mb-4">
+          <div className="d-flex flex-wrap justify-content-between align-items-end gap-2 mb-3 mb-md-4">
             <div>
-              <p className="eyebrow mb-1">Store Catalogue</p>
-              <h2 className="display-title mb-0">Order Fresh Millet Packs</h2>
+              <p className="eyebrow mb-1">FRESH BATCHES</p>
+              <h2 className="section-heading mb-0">Choose Your Pack</h2>
             </div>
-            <Link to="/shop" className="btn btn-outline-brand btn-sm">
-              View All Products →
+            <Link to="/shop" className="btn btn-sm btn-outline-brand">
+              View shop →
             </Link>
           </div>
 
-          <div className="product-grid">
-            {products.map((product) => {
-              const activeVariantId = selectedPack[product.id] || product.variants?.[0]?.id;
-              const activeVariant = product.variants?.find((v) => v.id === activeVariantId) || product.variants?.[0];
-              const isOutOfStock = !activeVariant || Number(activeVariant.stockQuantity) <= 0;
-
-              return (
-                <article className="product-card" key={product.id}>
-                  <div className="product-card-visual">
-                    <Link to={`/product/${product.slug}`} aria-label={`View ${product.name}`}>
-                      {product.imageUrl ? (
-                        <img src={product.imageUrl} alt={product.name} className="product-card-img" />
-                      ) : (
-                        <div className="product-placeholder-icon">🌾</div>
-                      )}
-                    </Link>
-                    <span className="status-pill status-in_stock">Freshly Ground</span>
+          {products.length > 0 ? (
+            <div className="row g-2 g-md-3">
+              {products.map((product) => (
+                <div key={product.id} className="col-12 col-sm-6 col-lg-4">
+                  <ProductCard product={product} />
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="empty-products-slider my-4">
+              <div className="sliding-empty-card">
+                <div className="sliding-empty-icon">🌾</div>
+                <div className="sliding-empty-content">
+                  <h3 className="h5 mb-1 text-forest fw-bold">Fresh Harvest Batches Arriving Soon!</h3>
+                  <p className="mb-2 text-secondary">
+                    Our stone mills in Hyderabad are freshly preparing new unpolished millet powder batches. Check back soon or contact us directly.
+                  </p>
+                  <div className="d-flex gap-2 flex-wrap mt-3">
+                    <Link to="/contact" className="btn btn-sm btn-brand">Ask about restock</Link>
+                    <a href="https://whatsapp.com/channel/0029Vb909Ye7oQhkdutTQM24" target="_blank" rel="noopener noreferrer" className="btn btn-sm btn-outline-brand">
+                      Follow WhatsApp Updates
+                    </a>
                   </div>
-                  <div className="product-card-body">
-                    <p className="product-category mb-1">{product.category || 'Millet Blend'}</p>
-                    <h3 className="product-title h5 mb-2">
-                      <Link to={`/product/${product.slug}`}>{product.name}</Link>
-                    </h3>
-                    <p className="product-description small mb-3">{product.description}</p>
-
-                    {/* Pack Selectors */}
-                    {product.variants?.length > 1 && (
-                      <div className="d-flex gap-2 mb-3">
-                        {product.variants.map((v) => (
-                          <button
-                            key={v.id}
-                            type="button"
-                            className={`btn btn-sm ${v.id === activeVariantId ? 'btn-brand' : 'btn-outline-brand'}`}
-                            onClick={() => setSelectedPack({ ...selectedPack, [product.id]: v.id })}
-                          >
-                            {v.packSize}
-                          </button>
-                        ))}
-                      </div>
-                    )}
-
-                    <div className="d-flex justify-content-between align-items-center mt-auto pt-2 border-top">
-                      <div>
-                        <span className="price-label small text-secondary d-block">Price (COD)</span>
-                        <strong className="product-price text-forest fs-5">
-                          {activeVariant ? money(activeVariant.pricePaise) : '—'}
-                        </strong>
-                      </div>
-                      <button
-                        type="button"
-                        className="btn btn-brand btn-sm"
-                        disabled={isOutOfStock}
-                        onClick={() => activeVariant && addToCart(activeVariant.id)}
-                      >
-                        {isOutOfStock ? 'Out of Stock' : '+ Add to Cart'}
-                      </button>
-                    </div>
-                  </div>
-                </article>
-              );
-            })}
-          </div>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </section>
 

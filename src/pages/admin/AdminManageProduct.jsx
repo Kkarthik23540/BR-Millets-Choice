@@ -1,10 +1,14 @@
 import React, { useState, useEffect } from 'react';
+import { useLocation, Link } from 'react-router-dom';
 import PageHeader from '../../components/PageHeader';
 import { api, money } from '../../services/api';
 import { useToast } from '../../context/ToastContext';
 import { useAuth } from '../../context/AuthContext';
 
 export default function AdminManageProduct() {
+  const location = useLocation();
+  const isAddView = location.pathname === '/admin/products';
+
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
@@ -145,15 +149,31 @@ export default function AdminManageProduct() {
     <>
       <PageHeader
         eyebrow="Administration"
-        title="Manage products"
-        description="Update catalogue details, pack options and inventory."
+        title={isAddView ? 'Add products' : 'Manage products'}
+        description={
+          isAddView
+            ? 'Create a new product and its first pack option.'
+            : 'Update catalogue details, pack options and inventory.'
+        }
+        actions={
+          isAddView ? (
+            <Link to="/admin/manage-products" className="btn btn-sm btn-outline-brand">
+              Manage catalogue →
+            </Link>
+          ) : (
+            <Link to="/admin/products" className="btn btn-sm btn-brand">
+              + Add product
+            </Link>
+          )
+        }
       />
 
       <section className="container section-space">
         <div className="row g-4">
           {/* Add Product Form */}
-          <div className="col-12">
-            <form className="address-card" onSubmit={handleCreateProduct}>
+          {isAddView && (
+            <div className="col-12">
+              <form className="address-card" onSubmit={handleCreateProduct}>
               <p className="eyebrow mb-1">Catalogue management</p>
               <h2 className="h4">Add product</h2>
               <p className="small text-secondary">
@@ -333,8 +353,10 @@ export default function AdminManageProduct() {
               </button>
             </form>
           </div>
+        )}
 
-          {/* Existing Products List */}
+        {/* Existing Products List */}
+        {!isAddView && (
           <div className="col-12">
             <h2 className="h4">Products and inventory <span className="small text-secondary">({products.length})</span></h2>
             {products.map((product) => (
@@ -377,6 +399,7 @@ export default function AdminManageProduct() {
               </article>
             ))}
           </div>
+        )}
         </div>
       </section>
     </>

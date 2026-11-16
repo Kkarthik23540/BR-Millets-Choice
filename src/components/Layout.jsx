@@ -2,8 +2,10 @@ import React, { useState, useEffect } from 'react';
 import Header from './Header';
 import Sidebar from './Sidebar';
 import Footer from './Footer';
+import { useAuth } from '../context/AuthContext';
 
 export default function Layout({ children }) {
+  const { isAdmin } = useAuth();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(() => {
     return localStorage.getItem('brmc-sidebar-collapsed') === 'true';
@@ -13,6 +15,16 @@ export default function Layout({ children }) {
   useEffect(() => {
     localStorage.setItem('brmc-sidebar-collapsed', String(isCollapsed));
   }, [isCollapsed]);
+
+  // Toggle admin-mode on body for CSS styling parity
+  useEffect(() => {
+    document.body.classList.toggle('admin-mode', Boolean(isAdmin));
+  }, [isAdmin]);
+
+  // Lock mobile body scroll when drawer open
+  useEffect(() => {
+    document.body.classList.toggle('site-nav-open', Boolean(isSidebarOpen));
+  }, [isSidebarOpen]);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -42,6 +54,14 @@ export default function Layout({ children }) {
       <Header
         onToggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
         isSidebarOpen={isSidebarOpen}
+      />
+
+      <button
+        className="site-nav-backdrop"
+        type="button"
+        onClick={() => setIsSidebarOpen(false)}
+        aria-label="Close navigation"
+        hidden={!isSidebarOpen}
       />
 
       <div className={`site-layout ${isCollapsed ? 'sidebar-collapsed' : ''}`}>
