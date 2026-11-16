@@ -8,16 +8,14 @@
     "node": ">=20"
   },
   "scripts": {
-    "build": "vite build",
+    "build": "node -e \"import fs from 'node:fs'; fs.rmSync('dist', { recursive: true, force: true }); fs.cpSync('public', 'dist', { recursive: true }); console.log('Build completed: static assets prepared in dist.');\"",
     "start": "node server/index.js",
     "dev": "node --watch server/index.js",
-    "dev:client": "vite",
-    "dev:server": "node --watch server/index.js",
     "db:migrate": "node server/migrate.js",
     "admin:create": "node server/create-admin.js",
     "admin:promote": "node server/promote-admin.js",
     "test": "node --test",
-    "check": "node --check server/index.js && node --check server/app.js && node --check server/promote-admin.js && node --check api/index.js && vite build"
+    "check": "node --check server/index.js && node --check server/app.js && node --check server/promote-admin.js && node --check public/app.js && node --check api/index.js"
   },
   "dependencies": {
     "bcryptjs": "2.4.3",
@@ -30,13 +28,6 @@
     "multer": "^2.5.0",
     "nodemailer": "10.2.1",
     "pg": "8.13.1",
-    "react": "^19.3.1",
-    "react-dom": "^19.3.1",
-    "react-router-dom": "^7.18.5",
     "zod": "4.6.7"
-  },
-  "devDependencies": {
-    "@vitejs/plugin-react": "^6.3.0",
-    "vite": "^8.3.8"
   }
 }
