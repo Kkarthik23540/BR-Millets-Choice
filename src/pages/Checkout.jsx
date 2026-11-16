@@ -109,12 +109,14 @@ export default function Checkout() {
         return;
       }
 
+      const idempotencyKey = typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : undefined;
       const orderRes = await api('/api/orders', {
         method: 'POST',
+        headers: idempotencyKey ? { 'Idempotency-Key': idempotencyKey } : {},
         body: JSON.stringify({
           addressId: finalAddressId,
           paymentMethod: 'cash_on_handover',
-          customerNotes,
+          customerNote: customerNotes,
         }),
       });
 
@@ -277,7 +279,7 @@ export default function Checkout() {
                       <span>
                         {it.productName} ({it.packSize}) × {it.quantity}
                       </span>
-                      <strong>{money(it.lineTotalPaise)}</strong>
+                      <strong>{money(it.lineTotalPaise ?? (Number(it.pricePaise) * Number(it.quantity || 1)))}</strong>
                     </div>
                   ))}
                 </div>

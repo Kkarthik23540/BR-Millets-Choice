@@ -1071,6 +1071,7 @@ app.get('/api/products/:slug', asyncRoute(async (req, res) => {
 const cartQuery = `
   SELECT ci.variant_id AS "variantId", ci.quantity, p.name AS "productName", p.slug,
          v.sku, v.pack_size AS "packSize", v.price_paise AS "pricePaise",
+         (v.price_paise * ci.quantity) AS "lineTotalPaise",
          v.stock_quantity AS "stockQuantity", v.low_stock_threshold AS "lowStockThreshold",
          p.active AS "productActive", v.active AS "variantActive",
          (SELECT i.image_url FROM product_images i WHERE i.product_id = p.id ORDER BY i.sort_order LIMIT 1) AS "imageUrl"
@@ -1143,9 +1144,12 @@ app.post('/api/orders', requireUser, asyncRoute(async (req, res) => {
     addressId: z.string().uuid(),
     paymentMethod: z.string().optional().default('cash_on_handover'),
     customerNote: z.string().trim().max(500).optional().default(''),
+    customerNotes: z.string().trim().max(500).optional().default(''),
   }), req.body);
+  const note = (data.customerNote || data.customerNotes || '').trim();
   const canonicalPaymentMethod = 'cash_on_handover';
-  const idempotencyKey = parse(z.string().uuid(), req.get('idempotency-key'));
+  const rawIdempotencyKey = req.get('idempotency-key') || crypto.randomUUID();
+  const idempotencyKey = parse(z.string().uuid(), rawIdempotencyKey);
   const outcome = await inTransaction(async (client) => {
     await client.query('UPDATE users SET email_verified_at = COALESCE(email_verified_at, NOW()) WHERE id = $1', [req.user.id]);
     await client.query(
@@ -1200,7 +1204,7 @@ app.post('/api/orders', requireUser, asyncRoute(async (req, res) => {
          subtotal_paise, delivery_fee_paise, total_paise, idempotency_key, customer_note
        ) VALUES ($1, $2, $3::jsonb, 'confirmed', $4, $5, 0, $5, $6, $7)
        RETURNING id, order_number, status, payment_status, total_paise, created_at`,
-      [orderNumber, req.user.id, JSON.stringify(address), canonicalPaymentMethod, subtotal.toString(), idempotencyKey, data.customerNote],
+      [orderNumber, req.user.id, JSON.stringify(address), canonicalPaymentMethod, subtotal.toString(), idempotencyKey, note],
     );
     const order = created.rows[0];
     for (const item of itemData) {
