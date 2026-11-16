@@ -13,17 +13,38 @@ const AuthContext = createContext({
 });
 
 export function AuthProvider({ children }) {
-  const [user, setUser] = useState(null);
-  const [config, setConfig] = useState(null);
+  const [user, setUser] = useState(() => {
+    try {
+      const cached = localStorage.getItem('brmc-user');
+      return cached ? JSON.parse(cached) : null;
+    } catch {
+      return null;
+    }
+  });
+  const [config, setConfig] = useState(() => {
+    try {
+      const cached = localStorage.getItem('brmc-config');
+      return cached ? JSON.parse(cached) : null;
+    } catch {
+      return null;
+    }
+  });
   const [loading, setLoading] = useState(true);
 
   const refreshUser = useCallback(async () => {
     try {
       const data = await api('/api/auth/me');
-      setUser(data.user || null);
-      return data.user;
+      const currentUser = data.user || null;
+      setUser(currentUser);
+      if (currentUser) {
+        try { localStorage.setItem('brmc-user', JSON.stringify(currentUser)); } catch {}
+      } else {
+        try { localStorage.removeItem('brmc-user'); } catch {}
+      }
+      return currentUser;
     } catch {
       setUser(null);
+      try { localStorage.removeItem('brmc-user'); } catch {}
       return null;
     }
   }, []);
@@ -32,6 +53,9 @@ export function AuthProvider({ children }) {
     try {
       const data = await api('/api/config');
       setConfig(data);
+      if (data) {
+        try { localStorage.setItem('brmc-config', JSON.stringify(data)); } catch {}
+      }
       return data;
     } catch {
       return null;
@@ -62,6 +86,7 @@ export function AuthProvider({ children }) {
     } catch (e) {
       console.warn('Logout error:', e);
     }
+    try { localStorage.removeItem('brmc-user'); } catch {}
     setUser(null);
     window.location.href = '/login';
     return true;

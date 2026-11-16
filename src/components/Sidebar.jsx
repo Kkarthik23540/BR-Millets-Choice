@@ -10,6 +10,7 @@ export default function Sidebar({ isOpen, onClose, isCollapsed, onToggleCollapse
   const location = useLocation();
   const [accountMenuOpen, setAccountMenuOpen] = useState(false);
   const accountMenuRef = useRef(null);
+  const isOnAdmin = Boolean(isAdmin || location.pathname.startsWith('/admin'));
 
   // Close mobile sidebar on route change
   useEffect(() => {
@@ -28,7 +29,9 @@ export default function Sidebar({ isOpen, onClose, isCollapsed, onToggleCollapse
     return () => document.removeEventListener('pointerdown', handleClickOutside);
   }, []);
 
-  const [productCount, setProductCount] = useState(() => config?.productCount ?? 2);
+  const [productCount, setProductCount] = useState(() =>
+    typeof config?.productCount === 'number' && config.productCount > 0 ? config.productCount : null
+  );
 
   useEffect(() => {
     if (config?.productCount != null) {
@@ -89,7 +92,7 @@ export default function Sidebar({ isOpen, onClose, isCollapsed, onToggleCollapse
 
       {/* Navigation items */}
       <nav className="site-nav" aria-label="Main navigation">
-        {isAdmin ? (
+        {isOnAdmin ? (
           /* ADMIN NAVIGATION */
           <>
             <NavLink to="/admin" end aria-label="Dashboard" title="Dashboard">
@@ -118,7 +121,9 @@ export default function Sidebar({ isOpen, onClose, isCollapsed, onToggleCollapse
                 <path d="M16 10a4 4 0 0 1-8 0" />
               </svg>
               <span>Products</span>
-              {productCount != null && <span className="nav-count">{productCount}</span>}
+              {typeof productCount === 'number' && productCount > 0 && (
+                <span className="nav-count">{productCount}</span>
+              )}
             </NavLink>
 
             <NavLink to="/admin/orders" aria-label="Orders" title="Orders">
@@ -182,7 +187,9 @@ export default function Sidebar({ isOpen, onClose, isCollapsed, onToggleCollapse
                 <path d="M16 10a4 4 0 0 1-8 0" />
               </svg>
               <span>Products</span>
-              {productCount != null && <span className="nav-count">{productCount}</span>}
+              {typeof productCount === 'number' && productCount > 0 && (
+                <span className="nav-count">{productCount}</span>
+              )}
             </NavLink>
 
             <NavLink to="/about" aria-label="Our story" title="Our story">
@@ -265,7 +272,7 @@ export default function Sidebar({ isOpen, onClose, isCollapsed, onToggleCollapse
               <div className="account-menu-panel">
                 <p className="account-menu-greeting">Hi, {user.fullName}</p>
                 <hr className="my-2 border-secondary border-opacity-25" />
-                {isAdmin ? (
+                {isOnAdmin ? (
                   <>
                     <Link to="/admin">Dashboard</Link>
                     <Link to="/admin/profile">Admin profile</Link>

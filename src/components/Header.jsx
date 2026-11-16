@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
 
 export default function Header({ onToggleSidebar, isSidebarOpen }) {
-  const { isAdmin } = useAuth();
+  const { user, isAdmin } = useAuth();
   const { cartCount } = useCart();
+  const location = useLocation();
+  const isOnAdmin = Boolean(isAdmin || user?.role === 'admin' || location.pathname.startsWith('/admin'));
   const [scrollProgress, setScrollProgress] = useState(0);
 
   useEffect(() => {
@@ -20,7 +22,7 @@ export default function Header({ onToggleSidebar, isSidebarOpen }) {
 
   return (
     <header className="site-header">
-      {!isAdmin && (
+      {!isOnAdmin && (
         <div className="announcement-bar" role="region" aria-label="Announcements">
           <div className="announcement-track">
             <span>🌾 <strong>BR Millets</strong> — Fresh &amp; Healthy</span>
@@ -65,8 +67,8 @@ export default function Header({ onToggleSidebar, isSidebarOpen }) {
 
         <Link
           className="brand-wordmark"
-          to={isAdmin ? '/admin' : '/'}
-          aria-label={isAdmin ? 'BR Millet Choice admin dashboard' : 'BR Millet Choice home'}
+          to={isOnAdmin ? '/admin' : '/'}
+          aria-label={isOnAdmin ? 'BR Millet Choice admin dashboard' : 'BR Millet Choice home'}
         >
           <img
             className="brand-logo"
@@ -83,7 +85,7 @@ export default function Header({ onToggleSidebar, isSidebarOpen }) {
         </Link>
 
         <div className="d-flex align-items-center gap-2 ms-auto">
-          {!isAdmin && (
+          {!isOnAdmin && (
             <Link className="mobile-header-cart" to="/cart" aria-label="Shopping Cart">
               <svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <path d="M3 4h2l2.2 11h11.5l2-8H6" />

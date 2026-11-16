@@ -56,7 +56,8 @@ export default function Footer() {
             <Link to="/orders">My Orders</Link>
             <Link to="/cart">Shopping Cart</Link>
             <Link to="/contact">Contact Us</Link>
-            <Link to="/contact">FAQs</Link>
+            <Link to="/faq">FAQs</Link>
+            <Link to="/refunds">Refunds &amp; Cancellations</Link>
           </div>
 
           <div className="col-12 col-md-6 col-lg-4">
@@ -93,11 +94,11 @@ export default function Footer() {
         </div>
 
         <div className="footer-bottom mt-3 pt-3 border-top border-white border-opacity-10 d-flex flex-column flex-sm-row justify-content-between align-items-center gap-2 small">
-          <span className="text-white-50">© 2026 BR Millet Choice. Pure Millets • Healthy Living.</span>
+          <span className="text-white-50">© {new Date().getFullYear()} BR Millet Choice. Pure Millets • Healthy Living.</span>
           <div className="d-flex flex-wrap gap-3 align-items-center">
-            <Link to="/about" className="text-white-50 text-decoration-none">About</Link>
-            <Link to="/contact" className="text-white-50 text-decoration-none">Contact</Link>
-            <Link to="/millets" className="text-white-50 text-decoration-none">Millets</Link>
+            <Link to="/privacy" className="text-white-50 text-decoration-none">Privacy Policy</Link>
+            <Link to="/terms" className="text-white-50 text-decoration-none">Terms of Service</Link>
+            <Link to="/shipping" className="text-white-50 text-decoration-none">Shipping &amp; Delivery</Link>
           </div>
         </div>
       </div>

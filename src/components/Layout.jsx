@@ -1,11 +1,15 @@
 import React, { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import Header from './Header';
 import Sidebar from './Sidebar';
 import Footer from './Footer';
 import { useAuth } from '../context/AuthContext';
 
 export default function Layout({ children }) {
-  const { isAdmin } = useAuth();
+  const { user, isAdmin } = useAuth();
+  const location = useLocation();
+  const isOnAdmin = Boolean(isAdmin || user?.role === 'admin' || location.pathname.startsWith('/admin'));
+  const isHomePage = location.pathname === '/';
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(() => {
     return localStorage.getItem('brmc-sidebar-collapsed') === 'true';
@@ -18,8 +22,8 @@ export default function Layout({ children }) {
 
   // Toggle admin-mode on body for CSS styling parity
   useEffect(() => {
-    document.body.classList.toggle('admin-mode', Boolean(isAdmin));
-  }, [isAdmin]);
+    document.body.classList.toggle('admin-mode', Boolean(isOnAdmin));
+  }, [isOnAdmin]);
 
   // Lock mobile body scroll when drawer open
   useEffect(() => {
@@ -116,7 +120,7 @@ export default function Layout({ children }) {
           <main id="main-content" tabIndex={-1}>
             {children}
           </main>
-          <Footer />
+          {isHomePage && !isOnAdmin && <Footer />}
         </div>
       </div>
 
