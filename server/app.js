@@ -1,4 +1,5 @@
 import crypto from 'node:crypto';
+import fs from 'node:fs';
 import path from 'node:path';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
@@ -18,6 +19,7 @@ import { enqueueEmail, flushPendingEmails } from './email.js';
 const app = express();
 const PgSession = connectPgSimple(session);
 const publicDir = fileURLToPath(new URL('../public/', import.meta.url));
+const distDir = fileURLToPath(new URL('../dist/', import.meta.url));
 const productUploadDir = path.join(publicDir, 'uploads', 'products');
 const productImageUpload = multer({
   storage: multer.memoryStorage(),
@@ -562,31 +564,49 @@ app.get('/api/auth/google', (req, res, next) => {
   const state = randomToken();
   req.session.googleState = state;
   req.session.googleRedirectUri = redirectUri;
-  const params = new URLSearchParams({
-    client_id: config.googleClientId,
-    redirect_uri: redirectUri,
-    response_type: 'code',
-    scope: 'openid email profile',
-    state,
-    prompt: 'select_account',
+  req.session.save((err) => {
+    if (err) return next(err);
+    const params = new URLSearchParams({
+      client_id: config.googleClientId,
+      redirect_uri: redirectUri,
+      response_type: 'code',
+      scope: 'openid email profile',
+      state,
+      prompt: 'select_account',
+    });
+    res.redirect(`https://accounts.google.com/o/oauth2/v2/auth?${params}`);
   });
-  res.redirect(`https://accounts.google.com/o/oauth2/v2/auth?${params}`);
 });
 
 app.get('/api/auth/google/callback', asyncRoute(async (req, res) => {
-  const state = parse(z.string().min(20).max(200), req.query.state);
-  if (!req.session.googleState || !crypto.timingSafeEqual(Buffer.from(state), Buffer.from(req.session.googleState))) {
-    throw new HttpError(400, 'Google sign-in could not be verified.', 'OAUTH_STATE_INVALID');
+  if (req.query.error) {
+    return res.redirect(`/login?error=${encodeURIComponent(req.query.error_description || req.query.error)}`);
+  }
+  const state = req.query.state;
+  const expectedState = req.session.googleState;
+  if (!state || !expectedState || typeof state !== 'string' || typeof expectedState !== 'string') {
+    delete req.session.googleState;
+    return res.redirect('/login?error=Google%20sign-in%20session%20expired.%20Please%20try%20again.');
+  }
+  const stateBuffer = Buffer.from(state);
+  const expectedBuffer = Buffer.from(expectedState);
+  if (stateBuffer.length !== expectedBuffer.length || !crypto.timingSafeEqual(stateBuffer, expectedBuffer)) {
+    delete req.session.googleState;
+    return res.redirect('/login?error=Google%20sign-in%20verification%20failed.%20Please%20try%20again.');
   }
   delete req.session.googleState;
   const host = req.get('host') || 'br-millets-choice.vercel.app';
   const proto = req.get('x-forwarded-proto') || (req.secure ? 'https' : 'http');
   const isLocal = host.includes('localhost') || host.includes('127.0.0.1');
   const redirectUri = req.session.googleRedirectUri
+    || config.googleCallbackUrl
     || (isLocal ? `${proto}://${host}/api/auth/google/callback` : `https://${host}/api/auth/google/callback`);
   delete req.session.googleRedirectUri;
 
-  const code = parse(z.string().min(1).max(2000), req.query.code);
+  const code = req.query.code;
+  if (!code || typeof code !== 'string') {
+    return res.redirect('/login?error=Authorization%20code%20missing%20from%20Google.');
+  }
   const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -599,18 +619,18 @@ app.get('/api/auth/google/callback', asyncRoute(async (req, res) => {
     }),
     signal: AbortSignal.timeout(10_000),
   });
-  if (!tokenResponse.ok) throw new HttpError(401, 'Google sign-in was not completed.', 'OAUTH_FAILED');
+  if (!tokenResponse.ok) return res.redirect('/login?error=Google%20authentication%20failed%20with%20Google%20servers.');
   const tokenData = await tokenResponse.json();
-  if (typeof tokenData.id_token !== 'string') throw new HttpError(401, 'Google did not return a verified identity.', 'OAUTH_FAILED');
+  if (typeof tokenData.id_token !== 'string') return res.redirect('/login?error=Google%20did%20not%20return%20a%20verified%20identity.');
   const identityResponse = await fetch(
     `https://oauth2.googleapis.com/tokeninfo?id_token=${encodeURIComponent(tokenData.id_token)}`,
     { signal: AbortSignal.timeout(10_000) },
   );
-  if (!identityResponse.ok) throw new HttpError(401, 'Google identity verification failed.', 'OAUTH_FAILED');
+  if (!identityResponse.ok) return res.redirect('/login?error=Google%20identity%20verification%20failed.');
   const identity = await identityResponse.json();
   if (identity.aud !== config.googleClientId || identity.email_verified !== 'true'
       || !identity.sub || !identity.email || !identity.name) {
-    throw new HttpError(401, 'Google did not return a verified account.', 'OAUTH_FAILED');
+    return res.redirect('/login?error=Google%20did%20not%20return%20a%20verified%20account.');
   }
   const result = await inTransaction(async (client) => {
     const email = parse(emailSchema, identity.email);
@@ -666,7 +686,10 @@ app.get('/api/auth/google/callback', asyncRoute(async (req, res) => {
   await new Promise((resolve, reject) => req.session.regenerate((error) => (error ? reject(error) : resolve())));
   req.session.userId = user.id;
   req.session.csrfToken = randomToken();
-  res.redirect(user.role === 'admin' ? '/admin' : '/account');
+  req.session.save((err) => {
+    if (err) console.error('Session save error after Google sign-in:', err);
+    res.redirect(user.role === 'admin' ? '/admin' : '/account');
+  });
 }));
 
 app.get('/api/profile', requireUser, (req, res) => {
@@ -2520,6 +2543,21 @@ app.get('/robots.txt', (_req, res) => {
   ].join('\n'));
 });
 
+app.use('/uploads', express.static(path.join(publicDir, 'uploads'), {
+  maxAge: config.isProduction ? '1h' : 0,
+}));
+
+app.use((req, res, next) => {
+  const hasDist = fs.existsSync(path.join(distDir, 'index.html'));
+  if (hasDist) {
+    return express.static(distDir, {
+      index: false,
+      maxAge: config.isProduction ? '1h' : 0,
+    })(req, res, next);
+  }
+  next();
+});
+
 app.use(express.static(publicDir, {
   index: false,
   maxAge: config.isProduction ? '1h' : 0,
@@ -2530,7 +2568,7 @@ const pageRoutes = new Set([
   '/shipping', '/refunds', '/privacy', '/terms', '/signup', '/login', '/verify',
   '/forgot-password', '/reset-password', '/account', '/profile', '/addresses', '/cart',
   '/checkout', '/orders', '/notifications', '/admin', '/admin/products', '/admin/manage-products', '/admin/orders',
-  '/admin/reviews', '/admin/enquiries', '/admin/customers',
+  '/admin/reviews', '/admin/enquiries', '/admin/customers', '/admin/profile', '/preferences', '/email-preferences',
 ]);
 const publicPageMeta = {
   '/': ['BR Millet Choice | Millet powder', 'Explore millet powder products from BR Millet Choice.'],
@@ -2549,6 +2587,7 @@ const privateRoutes = new Set([
   '/signup', '/login', '/verify', '/forgot-password', '/reset-password', '/account',
   '/profile', '/addresses', '/cart', '/checkout', '/orders', '/notifications', '/admin',
   '/admin/products', '/admin/manage-products', '/admin/orders', '/admin/reviews', '/admin/enquiries', '/admin/customers',
+  '/admin/profile', '/preferences', '/email-preferences',
 ]);
 function escapeAttribute(value) {
   return String(value).replace(/[&<>"']/g, (char) => ({
@@ -2630,18 +2669,27 @@ app.get('*', asyncRoute(async (req, res, next) => {
   res.setHeader('X-Robots-Tag', robots);
   const canonical = `${config.baseUrl}${canonicalPath}`;
   const jsonLd = JSON.stringify(structuredData).replace(/</g, '\\u003c');
-  let html = await readFile(path.join(publicDir, 'index.html'), 'utf8');
+  const hasDist = fs.existsSync(path.join(distDir, 'index.html'));
+  const staticDir = hasDist ? distDir : publicDir;
+  let html = await readFile(path.join(staticDir, 'index.html'), 'utf8');
   html = html
     .replace('<title>BR Millet Choice | Millet powder</title>', `<title>${escapeAttribute(title)}</title>`)
+    .replace('<title>BR Millet Choice | Pure Millets, Healthy Living</title>', `<title>${escapeAttribute(title)}</title>`)
+    .replace('BR Millet Choice — Introducing our Special Millet, Nuts & Seeds Blend. Carefully prepared with selected quality ingredients in Hyderabad. Pure Millets • Healthy Living.', escapeAttribute(description))
     .replace('Discover BR Millet Choice. Explore millet powder products and submit an order request for availability confirmation.', escapeAttribute(description))
     .replace('<meta name="robots" content="index,follow">', `<meta name="robots" content="${robots}">`)
-    .replace('<link rel="canonical" href="/">', `<link rel="canonical" href="${escapeAttribute(canonical)}">`)
+    .replace(/<link rel="canonical"[^>]*>/, `<link rel="canonical" href="${escapeAttribute(canonical)}">`)
     .replace('<meta property="og:title" content="BR Millet Choice | Pure Millets, Healthy Living">', `<meta property="og:title" content="${escapeAttribute(title)}">`)
     .replace('<meta property="og:description" content="Explore pure millet powder products from BR Millet Choice. Wholesome goodness for your family.">', `<meta property="og:description" content="${escapeAttribute(description)}">`)
     .replace('<meta property="og:url" content="/">', `<meta property="og:url" content="${escapeAttribute(canonical)}">`)
     .replace('<meta name="twitter:title" content="BR Millet Choice | Pure Millets, Healthy Living">', `<meta name="twitter:title" content="${escapeAttribute(title)}">`)
-    .replace('<meta name="twitter:description" content="Explore pure millet powder products from BR Millet Choice. Wholesome goodness for your family.">', `<meta name="twitter:description" content="${escapeAttribute(description)}">`)
-    .replace('<script defer src="/app.js"></script>', `<script type="application/ld+json">${jsonLd}</script>\n    <script defer src="/app.js"></script>`);
+    .replace('<meta name="twitter:description" content="Explore pure millet powder products from BR Millet Choice. Wholesome goodness for your family.">', `<meta name="twitter:description" content="${escapeAttribute(description)}">`);
+
+  if (html.includes('<script defer src="/app.js"></script>')) {
+    html = html.replace('<script defer src="/app.js"></script>', `<script type="application/ld+json">${jsonLd}</script>\n    <script defer src="/app.js"></script>`);
+  } else {
+    html = html.replace('</head>', `    <script type="application/ld+json">${jsonLd}</script>\n  </head>`);
+  }
   res.status(200).type('html').send(html);
 }));
 
