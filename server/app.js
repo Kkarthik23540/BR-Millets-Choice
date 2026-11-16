@@ -942,6 +942,7 @@ app.delete('/api/addresses/:id', requireVerifiedUser, asyncRoute(async (req, res
 
 const productQuery = `
   SELECT p.id, p.slug, p.name, p.description, p.category, p.ingredients, p.storage_instructions,
+         (SELECT i.image_url FROM product_images i WHERE i.product_id = p.id ORDER BY i.sort_order LIMIT 1) AS "imageUrl",
          COALESCE(
            json_agg(json_build_object(
              'id', v.id, 'sku', v.sku, 'packSize', v.pack_size, 'pricePaise', v.price_paise,

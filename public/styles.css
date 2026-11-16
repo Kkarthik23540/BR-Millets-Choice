@@ -1994,6 +1994,29 @@ body.admin-mode [data-header-cart] {
   box-shadow: none !important;
   padding: 0 !important;
   margin: 0 4px !important;
+  -moz-appearance: textfield !important;
+  appearance: textfield !important;
+}
+.cart-stepper-btn:disabled, .quantity-stepper button:disabled {
+  opacity: 0.35 !important;
+  cursor: not-allowed !important;
+  transform: none !important;
+  background: #f1f5f9 !important;
+  color: #94a3b8 !important;
+  box-shadow: none !important;
+}
+.cart-qty-val::-webkit-inner-spin-button,
+.cart-qty-val::-webkit-outer-spin-button,
+.quantity-stepper input::-webkit-inner-spin-button,
+.quantity-stepper input::-webkit-outer-spin-button,
+input[type=number]::-webkit-inner-spin-button,
+input[type=number]::-webkit-outer-spin-button {
+  -webkit-appearance: none !important;
+  margin: 0 !important;
+}
+input[type=number] {
+  -moz-appearance: textfield !important;
+  appearance: textfield !important;
 }
 @media (max-width: 576px) {
   .site-header-inner {

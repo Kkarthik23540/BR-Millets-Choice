@@ -61,6 +61,14 @@ export default function ProductDetail() {
 
   const selectedVariant = product.variants?.find((v) => v.id === selectedVariantId) || product.variants?.[0];
   const isOutOfStock = !selectedVariant || Number(selectedVariant.stockQuantity) <= 0;
+  const maxQuantity = Math.min(10, Math.max(1, Number(selectedVariant?.stockQuantity) || 10));
+  const mainImage = product.imageUrl || product.images?.[0]?.url || product.images?.[0]?.image_url;
+
+  useEffect(() => {
+    if (quantity > maxQuantity) {
+      setQuantity(maxQuantity);
+    }
+  }, [maxQuantity, quantity]);
 
   const averageRating = reviews.length
     ? reviews.reduce((acc, r) => acc + (Number(r.rating) || 5), 0) / reviews.length
@@ -164,17 +172,27 @@ export default function ProductDetail() {
                 🌾 100% Stone-Ground
               </span>
               <div className="product-main-image-wrap text-center py-2">
-                {product.imageUrl ? (
+                {mainImage ? (
                   <img
-                    src={product.imageUrl}
+                    src={mainImage}
                     alt={product.name}
                     className="img-fluid rounded-3 product-zoom-img"
-                    style={{ maxHeight: '380px', objectFit: 'contain' }}
+                    style={{ maxHeight: '380px', objectFit: 'contain', width: '100%' }}
+                    onError={(e) => {
+                      e.currentTarget.onerror = null;
+                      e.currentTarget.src = '/images/br-millet-choice-logo.png';
+                    }}
                   />
                 ) : (
-                  <div className="product-placeholder-box py-5">
-                    <span className="fs-1">🌾</span>
-                    <p className="text-secondary small mt-2">100% Pure Millet Powder</p>
+                  <div className="product-placeholder-box py-5 d-flex flex-column align-items-center justify-content-center">
+                    <img
+                      src="/images/br-millet-choice-logo.png"
+                      alt={product.name}
+                      style={{ width: '110px', height: '110px', objectFit: 'contain' }}
+                      className="mb-2"
+                    />
+                    <p className="text-dark fw-bold small mt-2 mb-1">{product.name}</p>
+                    <span className="text-secondary small">100% Pure Stone-Ground Millet Powder</span>
                   </div>
                 )}
               </div>
@@ -251,8 +269,9 @@ export default function ProductDetail() {
                     <button
                       type="button"
                       className="btn btn-sm btn-link text-dark px-3 py-1 text-decoration-none"
-                      onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                      onClick={() => setQuantity((q) => Math.max(1, q - 1))}
                       disabled={quantity <= 1}
+                      aria-label="Decrease quantity"
                     >
                       −
                     </button>
@@ -262,14 +281,20 @@ export default function ProductDetail() {
                       style={{ width: '44px' }}
                       type="number"
                       min="1"
-                      max="99"
+                      max={maxQuantity}
                       value={quantity}
-                      onChange={(e) => setQuantity(Math.max(1, parseInt(e.target.value, 10) || 1))}
+                      onChange={(e) => {
+                        const val = parseInt(e.target.value, 10);
+                        if (isNaN(val)) setQuantity(1);
+                        else setQuantity(Math.min(maxQuantity, Math.max(1, val)));
+                      }}
                     />
                     <button
                       type="button"
                       className="btn btn-sm btn-link text-dark px-3 py-1 text-decoration-none"
-                      onClick={() => setQuantity(quantity + 1)}
+                      onClick={() => setQuantity((q) => Math.min(maxQuantity, q + 1))}
+                      disabled={quantity >= maxQuantity}
+                      aria-label="Increase quantity"
                     >
                       +
                     </button>

@@ -31,6 +31,10 @@ export default function Checkout() {
   });
 
   useEffect(() => {
+    refreshCart();
+  }, [refreshCart]);
+
+  useEffect(() => {
     if (user?.emailVerified) {
       api('/api/addresses')
         .then((data) => {
